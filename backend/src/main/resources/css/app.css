@@ -1,0 +1,180 @@
+/*
+ * app.css
+ *
+ * Este archivo NO redefine un tema completo: AtlantaFX (PrimerDark) ya provee la paleta
+ * de colores, contraste y estilos base de todos los controles estandar de JavaFX.
+ * Aqui solo se ajusta layout, espaciado y las clases propias (sidebar, cards, login),
+ * usando siempre las variables de color de AtlantaFX (-color-*) en vez de valores hex
+ * fijos. Esto es importante: si en el futuro cambiamos a PrimerLight o a un tema con
+ * marca propia, este archivo no necesita tocarse.
+ */
+
+.app-root {
+    -fx-background-color: -color-bg-default;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: transparent -color-border-default transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.sidebar-username {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.sidebar-role {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-accent-fg;
+}
+
+.nav-button {
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-fg-default;
+    -fx-padding: 10 14 10 14;
+    -fx-background-radius: 8;
+    -fx-graphic-text-gap: 12;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: -color-bg-inset;
+}
+
+.nav-button:armed,
+.nav-button:pressed {
+    -fx-background-color: -color-accent-muted;
+    -fx-text-fill: -color-accent-fg;
+}
+
+.logout-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-danger-fg;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.logout-button:hover {
+    -fx-background-color: -color-danger-subtle;
+    -fx-background-radius: 8;
+}
+
+/* ---------- Área de contenido ---------- */
+
+.content-area {
+    -fx-background-color: -color-bg-default;
+}
+
+.page-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.page-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.placeholder-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+/* ---------- Tarjetas del dashboard ---------- */
+
+.stat-card {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 12;
+    -fx-padding: 20;
+    -fx-spacing: 6;
+}
+
+.stat-icon {
+    -fx-icon-color: -color-accent-fg;
+    -fx-icon-size: 22;
+}
+
+.stat-icon-success {
+    -fx-icon-color: -color-success-fg;
+}
+
+.stat-icon-warning {
+    -fx-icon-color: -color-warning-fg;
+}
+
+.stat-value {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.stat-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+/* ---------- Login ---------- */
+
+.login-root {
+    -fx-background-color: -color-bg-default;
+}
+
+.login-card {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 16;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, -color-shadow-default, 24, 0.15, 0, 6);
+}
+
+.login-icon {
+    -fx-icon-color: -color-accent-fg;
+}
+
+.login-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.login-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.login-field {
+    -fx-pref-height: 38px;
+}
+
+.login-button {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-pref-height: 38px;
+    -fx-background-radius: 8;
+}
+
+.login-button:hover {
+    -fx-opacity: 0.9;
+}
+
+.login-error {
+    -fx-text-fill: -color-danger-fg;
+    -fx-font-size: 12px;
+    -fx-wrap-text: true;
+}
