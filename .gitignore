@@ -38,3 +38,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### ENV ###
+.env
+
+### docker ###
+docker-compose.yml
+
+### schema ###
+schema.sql
