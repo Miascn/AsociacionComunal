@@ -5,40 +5,50 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           fx:controller="sv.asociacion.frontend.controller.LoginController"
+           fx:controller="controller.LoginController"
            styleClass="login-root">
-    <VBox alignment="CENTER" spacing="14" maxWidth="360" maxHeight="-Infinity" styleClass="login-card">
-        <padding>
-            <Insets top="40" right="40" bottom="40" left="40"/>
-        </padding>
+    <HBox alignment="CENTER" spacing="40" maxWidth="1040" styleClass="login-layout">
+        <StackPane.margin>
+            <Insets top="36" right="36" bottom="36" left="36"/>
+        </StackPane.margin>
 
-        <FontIcon iconLiteral="fth-users" iconSize="42" styleClass="login-icon"/>
+        <VBox alignment="CENTER" spacing="20" prefWidth="420" styleClass="login-brand-panel">
+            <padding>
+                <Insets top="48" right="36" bottom="48" left="36"/>
+            </padding>
+            <FontIcon iconLiteral="fth-users" iconSize="72" styleClass="login-brand-icon"/>
+            <Label text="Asociación Comunal" styleClass="login-brand-title"/>
+            <Label text="ERP de gestión administrativa para tu comunidad."
+                   styleClass="login-brand-text" wrapText="true" textAlignment="CENTER"/>
+        </VBox>
 
-        <Label text="Sistema de Gestión Comunal" styleClass="login-title" wrapText="true"
-               alignment="CENTER" textAlignment="CENTER"/>
-        <Label text="Ingresa tus credenciales para continuar" styleClass="login-subtitle"/>
+        <VBox alignment="TOP_LEFT" spacing="18" prefWidth="480" maxWidth="520" styleClass="login-card">
+            <padding>
+                <Insets top="44" right="44" bottom="44" left="44"/>
+            </padding>
 
-        <TextField fx:id="campoUsuario" promptText="Usuario" styleClass="login-field">
-            <VBox.margin>
-                <Insets top="12"/>
-            </VBox.margin>
-        </TextField>
-        <PasswordField fx:id="campoContrasena" promptText="Contraseña" styleClass="login-field"
-                        onAction="#onIniciarSesion"/>
+            <Label text="Iniciar sesión" styleClass="login-title"/>
+            <Label text="Usa tu usuario y contraseña para acceder al panel."
+                   styleClass="login-subtitle" wrapText="true"/>
 
-        <Button text="Iniciar sesión" onAction="#onIniciarSesion" defaultButton="true"
-                maxWidth="Infinity" styleClass="login-button">
-            <VBox.margin>
-                <Insets top="6"/>
-            </VBox.margin>
-        </Button>
+            <TextField fx:id="campoUsuario" promptText="Usuario" styleClass="login-field">
+                <VBox.margin>
+                    <Insets top="10"/>
+                </VBox.margin>
+            </TextField>
+            <PasswordField fx:id="campoContrasena" promptText="Contraseña"
+                           styleClass="login-field" onAction="#onIniciarSesion"/>
 
-        <Label fx:id="mensajeError" styleClass="login-error" wrapText="true"/>
-    </VBox>
+            <Button text="Iniciar sesión" onAction="#onIniciarSesion" defaultButton="true"
+                    maxWidth="Infinity" styleClass="login-button"/>
+            <Label fx:id="mensajeError" styleClass="login-error" wrapText="true"/>
+        </VBox>
+    </HBox>
 </StackPane>

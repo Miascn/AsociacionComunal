@@ -1,37 +1,25 @@
 package sv.asociacion.backend.config;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 
-public class DBConnection {
-    private static final String DB_URL;
-    private static final String DB_USER;
-    private static final String DB_PASSWORD;
+public final class DBConnection {
+    private static final String DB_URL = buildUrl();
+    private static final String DB_USER = requiredEnvironmentVariable("DB_USER");
+    private static final String DB_PASSWORD = requiredEnvironmentVariable("DB_PASSWORD");
     private static DBConnection instance;
 
     static {
-        Properties props = new Properties();
-        try (InputStream is = DBConnection.class.getResourceAsStream("/config.properties")) {
-            if (is == null) {
-                throw new RuntimeException("config.properties no encontrado en el classpath");
-            }
-            props.load(is);
-            DB_URL = props.getProperty("db.url");
-            DB_USER = props.getProperty("db.user");
-            DB_PASSWORD = props.getProperty("db.password");
+        try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (IOException e) {
-            throw new RuntimeException("Error al cargar config.properties", e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("MySQL Driver not found", e);
+        } catch (ClassNotFoundException exception) {
+            throw new IllegalStateException("No se encontró el controlador JDBC de MySQL.", exception);
         }
     }
 
-    private DBConnection() {}
+    private DBConnection() {
+    }
 
     public static synchronized DBConnection getInstance() {
         if (instance == null) {
@@ -42,5 +30,25 @@ public class DBConnection {
 
     public Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+    }
+
+    private static String buildUrl() {
+        String host = environmentVariableOrDefault("DB_HOST", "localhost");
+        String port = environmentVariableOrDefault("DB_PORT", "3306");
+        String database = environmentVariableOrDefault("DB_NAME", "asociacion_comunal");
+        return "jdbc:mysql://" + host + ":" + port + "/" + database;
+    }
+
+    private static String requiredEnvironmentVariable(String name) {
+        String value = System.getenv(name);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Falta configurar la variable de entorno " + name + ".");
+        }
+        return value;
+    }
+
+    private static String environmentVariableOrDefault(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 }

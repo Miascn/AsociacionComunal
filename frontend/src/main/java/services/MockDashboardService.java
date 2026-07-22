@@ -1,6 +1,6 @@
-package sv.asociacion.frontend.services;
+package services;
 
-import sv.asociacion.frontend.models.DashboardData;
+import models.DashboardData;
 
 public class MockDashboardService {
 

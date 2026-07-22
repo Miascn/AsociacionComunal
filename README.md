@@ -1,93 +1,59 @@
-# AsociacionComunal
-Sistema ERP para la administracion de una Asociacion Comunal
+# Asociación Comunal
 
-## Estructura del Proyecto
+Sistema de escritorio para la administración de una asociación comunal, desarrollado con JavaFX y Maven.
 
+## Estado actual
+
+El frontend cuenta con un flujo base funcional compuesto por:
+
+- Inicio de sesión definido mediante FXML.
+- Autenticación temporal con usuarios simulados y contraseñas procesadas con PBKDF2.
+- Gestión de la sesión autenticada mediante `SessionManager`.
+- Dashboard con indicadores simulados.
+- Menú lateral y navegación entre módulos.
+- Cierre de sesión con retorno al login.
+- Vistas placeholder para los módulos que todavía no han sido implementados.
+
+Los controladores JavaFX contienen la interacción de la interfaz, mientras los datos del dashboard y la autenticación permanecen separados en servicios. La autenticación simulada deberá sustituirse posteriormente por un repositorio JDBC conectado a MySQL.
+
+## Interfaz
+
+Las pantallas activas se encuentran en `frontend/src/main/resources/fxml` y utilizan:
+
+- JavaFX 21.0.2.
+- AtlantaFX para el tema visual.
+- Ikonli Feather para los iconos.
+- CSS propio en `frontend/src/main/resources/css/app.css`.
+
+Las vistas construidas programáticamente que sirvieron como referencia durante la migración fueron retiradas después de comprobar el flujo FXML.
+
+## Verificación
+
+Desde la carpeta `frontend`:
+
+```bash
+mvn test
 ```
-AsociacionComunal/
-├── backend/                  # Modulo libreria (Java SE + JDBC)
-│   ├── src/main/java/       # Codigo fuente (sv.asociacion.backend)
-│   └── src/main/resources/  # config.properties
-│
-├── frontend/                # Modulo aplicacion (JavaFX)
-│   └── src/main/
-│       ├── java/            # Codigo fuente (sv.asociacion.frontend)
-│       └── resources/       # FXML, CSS, iconos
-│
-├── .env                    # Variables de entorno (NO committing)
-└── .env.example            # Template de variables
+
+Las pruebas cargan los FXML, verifican sus controladores, recorren los botones de navegación y comprueban el inicio y cierre de sesión.
+
+Para ejecutar la aplicación:
+
+```bash
+mvn javafx:run
 ```
 
-## Modulos
+## Nota sobre Maven
 
-### Backend (`sv.asociacion:backend`)
-- **Tipo:** Libreria JAR
-- **Paquete base:** `sv.asociacion.backend`
-- **Contiene:** DAOs, Entities, Database, Utilidades
-- **Dependencias:** MySQL Connector (solo runtime JDBC)
+La carpeta local `apache-maven-3.9.16/` no forma parte del proyecto y está excluida mediante `.gitignore`. Cada integrante debe utilizar una instalación local de Maven o el Maven Wrapper cuando este sea incorporado al repositorio.
 
-### Frontend (`sv.asociacion:frontend`)
-- **Tipo:** Aplicacion JavaFX
-- **Paquete base:** `sv.asociacion.frontend`
-- **Contiene:** Controllers, Views, Services, Models, Components
-- **Dependencias:** JavaFX 21, Backend JAR
+## Backend y persistencia
 
-## Compilacion
-
-### Paso 1: Compilar e instalar el Backend
+El módulo `backend` contiene las entidades del dominio y una capa DAO basada en JDBC para MySQL. El frontend declara una dependencia Maven hacia este módulo, por lo que primero debe instalarse localmente:
 
 ```bash
 cd backend
 mvn clean install
 ```
 
-Esto genera el JAR en el repositorio local de Maven.
-
-### Paso 2: Compilar el Frontend
-
-```bash
-cd ../frontend
-mvn compile
-```
-
-O para empaquetar:
-```bash
-mvn package
-```
-
-### Ejecutar la aplicacion
-
-```bash
-cd frontend
-mvn javafx:run
-```
-
-## Configuracion
-
-### Variables de entorno
-
-El Backend usa variables de entorno para la conexion a la base de datos:
-
-| Variable | Descripcion | Valor por defecto |
-|----------|-------------|-------------------|
-| `DB_URL` | URL de conexion JDBC | `jdbc:mysql://localhost:3306/asociacion_db` |
-| `DB_USER` | Usuario de MySQL | `root` |
-| `DB_PASSWORD` | Contrasena de MySQL | `secret` |
-
-### Archivo .env
-
-Copia `.env.example` a `.env` y ajusta los valores:
-
-```bash
-cp .env.example .env
-```
-
-**Importante:** No hagas commit del archivo `.env` (esta en `.gitignore`).
-
-## Tecnologias
-
-- **Java:** 21
-- **JavaFX:** 21
-- **Maven:** 3.x
-- **MySQL:** 8.0
-- **JDBC:** Conexion directa (sin ORM)
+La conexión no contiene credenciales dentro del repositorio. Antes de utilizar los DAO deben configurarse las variables descritas en `.env.example`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`.

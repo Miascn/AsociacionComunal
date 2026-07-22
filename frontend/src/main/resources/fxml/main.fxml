@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -12,11 +13,10 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="sv.asociacion.frontend.controller.MainController"
+            fx:controller="controller.MainController"
             styleClass="app-root">
     <left>
         <VBox prefWidth="240" styleClass="sidebar" BorderPane.alignment="CENTER">
-
             <VBox spacing="4" styleClass="sidebar-header">
                 <padding>
                     <Insets top="24" right="20" bottom="16" left="20"/>
@@ -28,20 +28,49 @@
 
             <Separator/>
 
-            <VBox fx:id="navContainer" spacing="4" styleClass="nav-list">
-                <padding>
-                    <Insets top="12" right="12" bottom="12" left="12"/>
-                </padding>
-            </VBox>
+            <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="nav-scroll" VBox.vgrow="ALWAYS">
+                <content>
+                    <VBox spacing="4" styleClass="nav-list">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+                        <Button text="Dashboard" onAction="#mostrarDashboard" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-home"/></graphic>
+                        </Button>
+                        <Button text="Personas" onAction="#mostrarPersonas" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-user"/></graphic>
+                        </Button>
+                        <Button text="Miembros" onAction="#mostrarMiembros" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-users"/></graphic>
+                        </Button>
+                        <Button text="Viviendas" onAction="#mostrarViviendas" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-map-pin"/></graphic>
+                        </Button>
+                        <Button text="Aportaciones" onAction="#mostrarAportaciones" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-dollar-sign"/></graphic>
+                        </Button>
+                        <Button text="Proyectos" onAction="#mostrarProyectos" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-briefcase"/></graphic>
+                        </Button>
+                        <Button text="Reuniones" onAction="#mostrarReuniones" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
+                        </Button>
+                        <Button text="Votaciones" onAction="#mostrarVotaciones" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
+                        </Button>
+                        <Button text="Reportes" onAction="#mostrarReportes" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-bar-chart-2"/></graphic>
+                        </Button>
+                    </VBox>
+                </content>
+            </ScrollPane>
 
-            <Region VBox.vgrow="ALWAYS"/>
-
+            <Region minHeight="8"/>
             <Separator/>
 
-            <Button text="Cerrar sesión" onAction="#onCerrarSesion" styleClass="logout-button" maxWidth="Infinity">
-                <graphic>
-                    <FontIcon iconLiteral="fth-log-out"/>
-                </graphic>
+            <Button text="Cerrar sesión" onAction="#onCerrarSesion"
+                    styleClass="logout-button" maxWidth="Infinity">
+                <graphic><FontIcon iconLiteral="fth-log-out"/></graphic>
                 <VBox.margin>
                     <Insets top="12" right="12" bottom="16" left="12"/>
                 </VBox.margin>

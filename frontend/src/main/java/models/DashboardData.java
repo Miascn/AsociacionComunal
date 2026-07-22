@@ -1,4 +1,4 @@
-package sv.asociacion.frontend.models;
+package models;
 
 public class DashboardData {
 
