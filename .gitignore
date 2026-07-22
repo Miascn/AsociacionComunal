@@ -1,8 +1,14 @@
 target/
+out/
+apache-maven-*/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
+.env
+*.log
+application-local.properties
+database-local.properties
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
