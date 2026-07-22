@@ -27,6 +27,18 @@ Las pantallas activas se encuentran en `frontend/src/main/resources/fxml` y util
 
 Las vistas construidas programáticamente que sirvieron como referencia durante la migración fueron retiradas después de comprobar el flujo FXML.
 
+## Credenciales de prueba
+
+La autenticación actual utiliza usuarios simulados. Para probar el inicio de sesión se puede usar cualquiera de estas cuentas:
+
+| Usuario | Contraseña | Rol |
+| --- | --- | --- |
+| `admin` | `Admin2026!` | Administrador |
+| `secretaria` | `Secretaria2026!` | Secretaria |
+| `tesorero` | `Tesorero2026!` | Tesorero |
+
+Estas credenciales son exclusivamente para desarrollo y pruebas. Después de cinco intentos fallidos, la cuenta queda bloqueada durante 30 segundos.
+
 ## Verificación
 
 Desde la carpeta `frontend`:

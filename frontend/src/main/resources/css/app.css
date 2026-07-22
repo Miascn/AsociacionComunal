@@ -27,6 +27,10 @@
     -fx-text-fill: -color-fg-default;
 }
 
+.sidebar-logo {
+    -fx-opacity: 0.96;
+}
+
 .sidebar-username {
     -fx-font-size: 12px;
     -fx-text-fill: -color-fg-muted;
@@ -148,14 +152,8 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 24, 0.12, 0, 10);
 }
 
-.login-brand-icon {
-    -fx-icon-color: white;
-}
-
-.login-brand-title {
-    -fx-font-size: 26px;
-    -fx-font-weight: 800;
-    -fx-text-fill: white;
+.login-logo {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 16, 0.08, 0, 6);
 }
 
 .login-brand-text {
