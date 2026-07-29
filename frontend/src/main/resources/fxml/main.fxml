@@ -5,6 +5,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -21,7 +23,12 @@
                 <padding>
                     <Insets top="24" right="20" bottom="16" left="20"/>
                 </padding>
-                <Label text="Asociación Comunal" styleClass="sidebar-title" wrapText="true"/>
+                <ImageView fitWidth="150" fitHeight="150" preserveRatio="true" smooth="true"
+                           accessibleText="Logo de Asociación Comunal" styleClass="sidebar-logo">
+                    <image>
+                        <Image url="@../images/logo-asociacion-comunal.png"/>
+                    </image>
+                </ImageView>
                 <Label fx:id="lblNombreUsuario" styleClass="sidebar-username" wrapText="true"/>
                 <Label fx:id="lblRolUsuario" styleClass="sidebar-role"/>
             </VBox>
