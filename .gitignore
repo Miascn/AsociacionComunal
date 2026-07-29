@@ -9,6 +9,7 @@ apache-maven-*/
 *.log
 application-local.properties
 database-local.properties
+config.properties
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
