@@ -68,4 +68,23 @@ cd backend
 mvn clean install
 ```
 
-La conexión no contiene credenciales dentro del repositorio. Antes de utilizar los DAO deben configurarse las variables descritas en `.env.example`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`.
+La conexión no contiene credenciales dentro del repositorio. Para configurarla:
+
+1. Copiar `database-example.properties` como `database-local.properties`.
+2. Completar en el archivo local el servidor, usuario y contraseña de MySQL.
+3. Ejecutar el backend desde la raíz del repositorio o desde la carpeta `backend`.
+
+`database-local.properties` está ignorado por Git y nunca debe subirse. También se
+pueden utilizar las variables de entorno `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+`DB_PASSWORD` y `DB_PARAMETERS`; estas tienen prioridad sobre el archivo local.
+Si el archivo se encuentra en otra ubicación, `DB_CONFIG_FILE` permite indicar su
+ruta completa.
+
+Para verificar la conexión:
+
+```bash
+cd backend
+mvn test-compile exec:java \
+  -Dexec.mainClass=sv.asociacion.backend.DatabaseConnectionTest \
+  -Dexec.classpathScope=test
+```
