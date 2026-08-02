@@ -63,6 +63,9 @@ La carpeta local `apache-maven-3.9.16/` no forma parte del proyecto y está excl
 
 El módulo `backend` contiene las entidades del dominio y una capa DAO basada en JDBC para MySQL. El frontend declara una dependencia Maven hacia este módulo, por lo que primero debe instalarse localmente:
 
+La estructura del esquema, sus relaciones y la configuración segura de acceso se
+documentan en [`backend/README.md`](backend/README.md).
+
 ```bash
 cd backend
 mvn clean install
