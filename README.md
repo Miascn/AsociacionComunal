@@ -2,6 +2,9 @@
 
 Sistema de escritorio para la administración de una asociación comunal, desarrollado con JavaFX y Maven.
 
+El procedimiento para crear ramas, commits y Pull Requests por ticket se
+encuentra en [`docs/FLUJO_GIT.md`](docs/FLUJO_GIT.md).
+
 ## Estado actual
 
 El frontend cuenta con un flujo base funcional compuesto por:
