@@ -47,7 +47,7 @@ public class MainController {
 
     @FXML
     private void mostrarMiembros() {
-        mostrarPlaceholder("Miembros");
+        cargarVista("/fxml/views/miembros.fxml");
     }
 
     @FXML

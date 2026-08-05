@@ -65,7 +65,12 @@ class FxmlNavigationTest {
             assertEquals(10, botones.size());
 
             for (Button boton : botones) {
-                if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
+                if ("Miembros".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Gestión de miembros"::equals));
+                } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()
                             .map(Label::getText)

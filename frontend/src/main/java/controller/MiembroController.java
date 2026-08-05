@@ -40,6 +40,7 @@ public class MiembroController {
 
     @FXML
     private void initialize() {
+        tablaMiembros.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         columnaDui.setCellValueFactory(new PropertyValueFactory<>("dui"));
         columnaNombres.setCellValueFactory(new PropertyValueFactory<>("nombres"));
         columnaApellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
