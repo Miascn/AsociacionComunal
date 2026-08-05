@@ -1,0 +1,8 @@
+# Plantilla de produccion. Mantenga la copia con valores reales fuera del
+# repositorio y restrinja su lectura al usuario que ejecuta la aplicacion.
+db.host=SERVIDOR_MYSQL_PROD
+db.port=3306
+db.name=asociacion_comunal
+db.user=USUARIO_MYSQL_APLICACION
+db.password=CONTRASENA_MYSQL_APLICACION
+db.parameters=serverTimezone=America/El_Salvador&useUnicode=true&characterEncoding=UTF-8&useSSL=true&requireSSL=true&verifyServerCertificate=true
