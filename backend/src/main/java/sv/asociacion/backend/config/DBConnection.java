@@ -57,7 +57,7 @@ public final class DBConnection {
             throw new IllegalStateException(
                 "Falta configurar " + environmentName
                     + " o la propiedad " + propertyName
-                    + " en database-local.properties."
+                    + " en connection-local.properties."
             );
         }
         return value;
@@ -114,6 +114,8 @@ public final class DBConnection {
         }
 
         return List.of(
+                Path.of("connection-local.properties"),
+                Path.of("..", "connection-local.properties"),
                 Path.of("database-local.properties"),
                 Path.of("..", "database-local.properties")
             )
