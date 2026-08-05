@@ -141,6 +141,15 @@
     -fx-graphic-text-gap: 8;
 }
 
+.search-field {
+    -fx-pref-height: 38px;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-default;
+    -fx-padding: 0 12 0 12;
+}
+
 /* ---------- Tarjetas del dashboard ---------- */
 
 .stat-card {

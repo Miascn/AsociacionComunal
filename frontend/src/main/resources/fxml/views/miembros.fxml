@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -40,6 +41,8 @@
         <HBox alignment="CENTER_LEFT">
             <Label text="Miembros registrados" styleClass="section-title"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="campoBusqueda" promptText="Buscar por DUI, nombre o correo"
+                       prefWidth="280" styleClass="search-field"/>
             <Button text="Exportar" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-download"/></graphic>
             </Button>

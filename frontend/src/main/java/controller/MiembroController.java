@@ -1,13 +1,17 @@
 package controller;
 
 import java.time.LocalDate;
+import java.text.Normalizer;
+import java.util.Locale;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import sv.asociacion.backend.entity.Miembro;
 
@@ -36,7 +40,11 @@ public class MiembroController {
     @FXML
     private Label lblTotalMiembros;
 
+    @FXML
+    private TextField campoBusqueda;
+
     private final ObservableList<Miembro> miembros = FXCollections.observableArrayList();
+    private FilteredList<Miembro> miembrosFiltrados;
 
     @FXML
     private void initialize() {
@@ -49,7 +57,9 @@ public class MiembroController {
         columnaEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
 
         miembros.setAll(datosDeDemostracion());
-        tablaMiembros.setItems(miembros);
+        miembrosFiltrados = new FilteredList<>(miembros, miembro -> true);
+        tablaMiembros.setItems(miembrosFiltrados);
+        campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
         actualizarTotal();
     }
 
@@ -58,7 +68,35 @@ public class MiembroController {
     }
 
     private void actualizarTotal() {
-        lblTotalMiembros.setText(miembros.size() + " miembros registrados");
+        int visibles = miembrosFiltrados == null ? miembros.size() : miembrosFiltrados.size();
+        if (visibles == miembros.size()) {
+            lblTotalMiembros.setText(miembros.size() + " miembros registrados");
+        } else {
+            lblTotalMiembros.setText(visibles + " de " + miembros.size() + " miembros");
+        }
+    }
+
+    private void filtrar(String texto) {
+        String criterio = normalizar(texto);
+        miembrosFiltrados.setPredicate(miembro -> criterio.isBlank()
+            || contiene(miembro.getDui(), criterio)
+            || contiene(miembro.getNombres(), criterio)
+            || contiene(miembro.getApellidos(), criterio)
+            || contiene(miembro.getCorreo(), criterio));
+        actualizarTotal();
+    }
+
+    private boolean contiene(String valor, String criterio) {
+        return valor != null && normalizar(valor).contains(criterio);
+    }
+
+    private String normalizar(String valor) {
+        if (valor == null) {
+            return "";
+        }
+        String sinTildes = Normalizer.normalize(valor, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "");
+        return sinTildes.toLowerCase(Locale.ROOT).trim();
     }
 
     private ObservableList<Miembro> datosDeDemostracion() {
