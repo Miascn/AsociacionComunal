@@ -1,0 +1,36 @@
+name: Paquete QA para Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Construir paquete QA
+        shell: powershell
+        run: .\scripts\build-qa-package.ps1 -Version "1.0.${{ github.run_number }}"
+
+      - name: Publicar artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: AsociacionComunalQA-win64
+          path: dist/AsociacionComunalQA-*-win64.zip
+          if-no-files-found: error
+          retention-days: 14
