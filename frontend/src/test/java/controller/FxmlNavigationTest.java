@@ -82,9 +82,9 @@ class FxmlNavigationTest {
                             .map(TableView.class::cast)
                             .findFirst()
                             .orElseThrow();
-                    assertEquals(4, tabla.getItems().size());
+                    assertEquals(0, tabla.getItems().size());
                     busqueda.setText("María");
-                    assertEquals(1, tabla.getItems().size());
+                    assertEquals(0, tabla.getItems().size());
                     busqueda.clear();
                 } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();

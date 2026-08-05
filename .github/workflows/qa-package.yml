@@ -25,6 +25,9 @@ jobs:
 
       - name: Construir paquete QA
         shell: powershell
+        env:
+          QA_API_URL: ${{ secrets.QA_API_URL }}
+          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
         run: .\scripts\build-qa-package.ps1 -Version "1.0.${{ github.run_number }}"
 
       - name: Publicar artefacto

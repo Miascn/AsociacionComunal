@@ -10,6 +10,8 @@ apache-maven-*/
 *.log
 application-local.properties
 database-local.properties
+qa-local.properties
+qa-token.upload
 config.properties
 
 ### IntelliJ IDEA ###

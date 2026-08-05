@@ -33,7 +33,7 @@
         </VBox>
         <VBox spacing="4" styleClass="summary-card" HBox.hgrow="ALWAYS">
             <Label text="Estado del módulo" styleClass="summary-label"/>
-            <Label text="Listado disponible" styleClass="summary-value-success"/>
+            <Label fx:id="lblEstadoModulo" text="Conectando al servidor..." styleClass="summary-value-success"/>
         </VBox>
     </HBox>
 

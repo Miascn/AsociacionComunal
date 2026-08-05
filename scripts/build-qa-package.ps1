@@ -17,6 +17,7 @@ $applicationName = "AsociacionComunalQA"
 $applicationImage = Join-Path $OutputDirectory $applicationName
 $zipPath = Join-Path $OutputDirectory "$applicationName-$Version-win64.zip"
 $mavenRepository = Join-Path $env:USERPROFILE ".m2\repository"
+$localQaConfig = Join-Path $repositoryRoot "qa-local.properties"
 
 $maven = Get-Command mvn.cmd -ErrorAction SilentlyContinue
 if (-not $maven) {
@@ -67,6 +68,20 @@ if (Test-Path $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
     --dest $OutputDirectory
 
 if ($LASTEXITCODE -ne 0) { throw "jpackage no pudo generar la aplicacion de Windows." }
+
+$qaConfigDirectory = Join-Path $applicationImage "config"
+$qaConfigDestination = Join-Path $qaConfigDirectory "qa.properties"
+New-Item -ItemType Directory -Path $qaConfigDirectory -Force | Out-Null
+if (Test-Path $localQaConfig) {
+    Copy-Item -LiteralPath $localQaConfig -Destination $qaConfigDestination
+} elseif ($env:QA_API_URL -and $env:QA_API_TOKEN) {
+    [System.IO.File]::WriteAllLines($qaConfigDestination, @(
+        "api.url=$($env:QA_API_URL)",
+        "api.token=$($env:QA_API_TOKEN)"
+    ))
+} else {
+    throw "Falta qa-local.properties o los secretos QA_API_URL y QA_API_TOKEN."
+}
 
 Compress-Archive -Path $applicationImage -DestinationPath $zipPath -CompressionLevel Optimal
 
