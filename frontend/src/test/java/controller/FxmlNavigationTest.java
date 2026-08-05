@@ -19,6 +19,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import models.AuthUser;
 import security.SessionManager;
@@ -65,7 +67,26 @@ class FxmlNavigationTest {
             assertEquals(10, botones.size());
 
             for (Button boton : botones) {
-                if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
+                if ("Miembros".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Gestión de miembros"::equals));
+                    TextField busqueda = recorrer(root).stream()
+                            .filter(TextField.class::isInstance)
+                            .map(TextField.class::cast)
+                            .findFirst()
+                            .orElseThrow();
+                    TableView<?> tabla = recorrer(root).stream()
+                            .filter(TableView.class::isInstance)
+                            .map(TableView.class::cast)
+                            .findFirst()
+                            .orElseThrow();
+                    assertEquals(4, tabla.getItems().size());
+                    busqueda.setText("María");
+                    assertEquals(1, tabla.getItems().size());
+                    busqueda.clear();
+                } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()
                             .map(Label::getText)
