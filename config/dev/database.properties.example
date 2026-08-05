@@ -1,0 +1,8 @@
+# Configuracion de desarrollo. Copie este archivo fuera del control de versiones
+# y establezca DB_CONFIG_FILE con la ruta de la copia local.
+db.host=localhost
+db.port=3306
+db.name=asociacion_comunal
+db.user=USUARIO_MYSQL_DEV
+db.password=CONTRASENA_MYSQL_DEV
+db.parameters=serverTimezone=America/El_Salvador&useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
