@@ -1,0 +1,16 @@
+[Unit]
+Description=Tunel HTTPS de Asociacion Comunal
+After=network-online.target asociacion-api.service
+Wants=network-online.target
+Requires=asociacion-api.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/ngrok http --url=myesha-peroneal-unimpulsively.ngrok-free.dev 127.0.0.1:8080
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
