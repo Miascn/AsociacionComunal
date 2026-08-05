@@ -28,5 +28,14 @@ systemctl --user daemon-reload
 systemctl --user enable --now asociacion-api.service asociacion-ngrok.service
 
 echo "Usuario MySQL creado y servicios iniciados."
-curl --fail --silent --show-error http://127.0.0.1:8080/health
-echo
+for attempt in {1..15}; do
+    if curl --fail --silent --show-error http://127.0.0.1:8080/health; then
+        echo
+        exit 0
+    fi
+    sleep 1
+done
+
+echo "La API no respondio dentro de 15 segundos." >&2
+systemctl --user --no-pager --full status asociacion-api.service >&2 || true
+exit 1
