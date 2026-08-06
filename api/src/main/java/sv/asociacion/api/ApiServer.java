@@ -8,6 +8,8 @@ import sv.asociacion.backend.dao.MiembroDAO;
 import sv.asociacion.backend.entity.Miembro;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -35,6 +37,8 @@ public final class ApiServer {
             config.routes.get("/health", ApiServer::health);
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
             config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
+            config.routes.get("/api/updates/windows/manifest", ApiServer::updateManifest);
+            config.routes.get("/api/updates/windows/package", ApiServer::updatePackage);
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
                 context.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -106,6 +110,30 @@ public final class ApiServer {
 
     private static String clean(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static Path updateDirectory() {
+        return Path.of(System.getProperty("user.home"), "apps", "asociacion-api", "updates");
+    }
+
+    private static void updateManifest(Context context) throws Exception {
+        Path version = updateDirectory().resolve("version.txt");
+        Path archive = updateDirectory().resolve("AsociacionComunalQA-win64.zip");
+        Path checksum = updateDirectory().resolve("sha256.txt");
+        if (!Files.isRegularFile(version) || !Files.isRegularFile(archive) || !Files.isRegularFile(checksum)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualización publicada."));
+            return;
+        }
+        context.json(Map.of("version", Files.readString(version).trim(), "sha256", Files.readString(checksum).trim()));
+    }
+
+    private static void updatePackage(Context context) throws Exception {
+        Path archive = updateDirectory().resolve("AsociacionComunalQA-win64.zip");
+        if (!Files.isRegularFile(archive)) {
+            context.status(HttpStatus.NOT_FOUND); return;
+        }
+        context.header("Content-Disposition", "attachment; filename=AsociacionComunalQA-win64.zip");
+        context.contentType("application/zip").result(Files.newInputStream(archive));
     }
 
     private record CreateMemberRequest(
