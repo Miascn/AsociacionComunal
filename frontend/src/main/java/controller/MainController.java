@@ -19,6 +19,9 @@ public class MainController {
     private Label lblRolUsuario;
 
     @FXML
+    private Label lblVersion;
+
+    @FXML
     private StackPane contentArea;
 
     private Runnable onLogout;
@@ -28,6 +31,7 @@ public class MainController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         lblNombreUsuario.setText(user.getDisplayName());
         lblRolUsuario.setText(user.getRole());
+        lblVersion.setText("Versión " + System.getProperty("jpackage.app-version", "DEV"));
         mostrarDashboard();
     }
 
