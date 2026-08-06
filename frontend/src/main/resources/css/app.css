@@ -150,6 +150,17 @@
     -fx-padding: 0 12 0 12;
 }
 
+.dialog-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.form-error {
+    -fx-text-fill: -color-danger-fg;
+    -fx-font-size: 12px;
+}
+
 /* ---------- Tarjetas del dashboard ---------- */
 
 .stat-card {

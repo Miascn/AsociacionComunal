@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ public final class ApiServer {
             config.routes.before("/api/*", context -> authenticate(context, apiSecret));
             config.routes.get("/health", ApiServer::health);
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
+            config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
                 context.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -73,6 +75,66 @@ public final class ApiServer {
 
     private static List<MiembroResponse> toResponse(List<Miembro> miembros) {
         return miembros.stream().map(MiembroResponse::from).toList();
+    }
+
+    private static void createMember(Context context, MiembroDAO miembroDAO) {
+        CreateMemberRequest request = context.bodyAsClass(CreateMemberRequest.class);
+        String validationError = request.validationError();
+        if (validationError != null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", validationError));
+            return;
+        }
+        if (miembroDAO.existsByDui(request.dui().trim())) {
+            context.status(HttpStatus.CONFLICT)
+                .json(Map.of("error", "Ya existe un miembro con ese DUI."));
+            return;
+        }
+        Miembro miembro = new Miembro(
+            null,
+            request.dui().trim(),
+            request.nombres().trim(),
+            request.apellidos().trim(),
+            clean(request.telefono()),
+            clean(request.correo()),
+            request.direccion().trim(),
+            LocalDate.now(),
+            Miembro.Estado.ACTIVO
+        );
+        miembroDAO.save(miembro);
+        context.status(HttpStatus.CREATED).json(MiembroResponse.from(miembro));
+    }
+
+    private static String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private record CreateMemberRequest(
+        String dui,
+        String nombres,
+        String apellidos,
+        String telefono,
+        String correo,
+        String direccion
+    ) {
+        private String validationError() {
+            if (dui == null || !dui.trim().matches("\\d{8}-\\d")) {
+                return "El DUI debe tener el formato 00000000-0.";
+            }
+            if (nombres == null || nombres.isBlank() || apellidos == null || apellidos.isBlank()) {
+                return "Los nombres y apellidos son obligatorios.";
+            }
+            if (direccion == null || direccion.isBlank()) {
+                return "La direccion es obligatoria.";
+            }
+            if (telefono != null && !telefono.isBlank() && !telefono.trim().matches("\\d{4}-\\d{4}")) {
+                return "El telefono debe tener el formato 0000-0000.";
+            }
+            if (correo != null && !correo.isBlank()
+                && !correo.trim().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+                return "El correo electronico no es valido.";
+            }
+            return null;
+        }
     }
 
     private static int readPort() {

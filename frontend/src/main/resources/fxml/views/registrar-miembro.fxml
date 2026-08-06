@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.RegistrarMiembroController" spacing="16" prefWidth="560">
+    <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+    <VBox spacing="4">
+        <Label text="Nuevo miembro" styleClass="dialog-title"/>
+        <Label text="Completa la información del integrante de la comunidad" styleClass="page-subtitle"/>
+    </VBox>
+    <GridPane hgap="14" vgap="12">
+        <Label text="DUI *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <TextField fx:id="campoDui" promptText="00000000-0" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <Label text="Teléfono" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <TextField fx:id="campoTelefono" promptText="0000-0000" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label text="Nombres *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <TextField fx:id="campoNombres" promptText="Nombres" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <Label text="Apellidos *" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <TextField fx:id="campoApellidos" promptText="Apellidos" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        <Label text="Correo electrónico" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <TextField fx:id="campoCorreo" promptText="persona@correo.com" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+        <Label text="Dirección *" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+        <TextField fx:id="campoDireccion" promptText="Dirección dentro de la comunidad" GridPane.rowIndex="7" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+    </GridPane>
+    <Label fx:id="lblErrorRegistro" wrapText="true" styleClass="form-error"/>
+</VBox>

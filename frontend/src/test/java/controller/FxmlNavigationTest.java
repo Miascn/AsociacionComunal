@@ -52,6 +52,19 @@ class FxmlNavigationTest {
     }
 
     @Test
+    void cargaFormularioRegistrarMiembro() throws Exception {
+        ejecutarEnJavaFx(() -> {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/views/registrar-miembro.fxml"));
+            Parent root = loader.load();
+            assertNotNull(loader.<RegistrarMiembroController>getController());
+            long campos = recorrer(root).stream().filter(TextField.class::isInstance).count();
+            assertEquals(6, campos);
+            return null;
+        });
+    }
+
+    @Test
     void cargaDashboardNavegaYCierraSesion() throws Exception {
         ejecutarEnJavaFx(() -> {
             SessionManager session = SessionManager.getInstance();

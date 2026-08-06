@@ -21,7 +21,7 @@
             <Label text="Administra el censo y la información de la comunidad" styleClass="page-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Nuevo miembro" styleClass="primary-action">
+        <Button text="Nuevo miembro" styleClass="primary-action" onAction="#abrirRegistro">
             <graphic><FontIcon iconLiteral="fth-user-plus"/></graphic>
         </Button>
     </HBox>

@@ -45,6 +45,38 @@ public final class MiembroApiClient {
         return Arrays.stream(values).map(MiembroResponse::toEntity).toList();
     }
 
+    public Miembro create(CreateMemberRequest value) throws IOException, InterruptedException {
+        HttpRequest request = authorizedRequest("/api/miembros")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(value)))
+            .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 201) {
+            throw new IOException(response.statusCode() == 409
+                ? "Ya existe un miembro con ese DUI."
+                : "No fue posible registrar el miembro (HTTP " + response.statusCode() + ").");
+        }
+        return objectMapper.readValue(response.body(), MiembroResponse.class).toEntity();
+    }
+
+    private HttpRequest.Builder authorizedRequest(String path) {
+        return HttpRequest.newBuilder()
+            .uri(URI.create(config.baseUrl() + path))
+            .timeout(Duration.ofSeconds(20))
+            .header("Authorization", "Bearer " + config.token())
+            .header("Accept", "application/json")
+            .header("ngrok-skip-browser-warning", "1");
+    }
+
+    public record CreateMemberRequest(
+        String dui,
+        String nombres,
+        String apellidos,
+        String telefono,
+        String correo,
+        String direccion
+    ) {}
+
     private record MiembroResponse(
         Integer id, String dui, String nombres, String apellidos, String telefono,
         String correo, String direccion, String fechaIngreso, String estado

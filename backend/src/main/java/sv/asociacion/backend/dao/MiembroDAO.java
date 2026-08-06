@@ -61,9 +61,22 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No fue posible guardar el miembro.", e);
         }
         return entity;
+    }
+
+    public boolean existsByDui(String dui) {
+        String sql = "SELECT 1 FROM miembro WHERE dui = ? LIMIT 1";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, dui);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No fue posible validar el DUI.", e);
+        }
     }
 
     @Override
