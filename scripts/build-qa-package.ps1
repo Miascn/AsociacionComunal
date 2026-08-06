@@ -125,6 +125,14 @@ Get-ChildItem -LiteralPath (Join-Path $applicationImage "app") -File -Recurse | 
     }
 }
 
+$launcherRelative = "$applicationName.exe"
+$launcherSource = Join-Path $applicationImage $launcherRelative
+$launcherHash = (Get-FileHash -LiteralPath $launcherSource -Algorithm SHA256).Hash.ToLowerInvariant()
+$files += [ordered]@{ path = $launcherRelative; sha256 = $launcherHash; size = (Get-Item $launcherSource).Length }
+if (-not $previousHashes.ContainsKey($launcherRelative) -or $previousHashes[$launcherRelative] -ne $launcherHash) {
+    Copy-Item -LiteralPath $launcherSource -Destination (Join-Path (Join-Path $deltaRoot "app") $launcherRelative)
+}
+
 Compress-Archive -Path (Join-Path $deltaRoot "app") -DestinationPath $deltaPath -CompressionLevel Optimal
 $deltaHash = (Get-FileHash -LiteralPath $deltaPath -Algorithm SHA256).Hash.ToLowerInvariant()
 $manifest = [ordered]@{
