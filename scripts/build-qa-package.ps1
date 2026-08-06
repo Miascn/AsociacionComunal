@@ -19,7 +19,7 @@ $applicationName = "AsociacionComunalQA"
 $applicationImage = Join-Path $OutputDirectory $applicationName
 $deltaPath = Join-Path $OutputDirectory "$applicationName-$Version-delta.zip"
 $manifestPath = Join-Path $OutputDirectory "update-manifest.json"
-$portablePath = Join-Path $OutputDirectory "$applicationName-$Version-portable.exe"
+$zipPath = Join-Path $OutputDirectory "$applicationName-$Version-win64.zip"
 $mavenRepository = Join-Path $env:USERPROFILE ".m2\repository"
 $localQaConfig = Join-Path $repositoryRoot "qa-local.properties"
 
@@ -119,43 +119,10 @@ $manifest = [ordered]@{
 }
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding utf8
 
-$portableStaging = Join-Path $env:TEMP "$applicationName-portable-build"
-if (Test-Path $portableStaging) { Remove-Item -LiteralPath $portableStaging -Recurse -Force }
-New-Item -ItemType Directory -Path $portableStaging -Force | Out-Null
-$payloadZip = Join-Path $portableStaging "payload.zip"
-Compress-Archive -Path $applicationImage -DestinationPath $payloadZip -CompressionLevel Optimal
-Copy-Item -LiteralPath (Join-Path $repositoryRoot "scripts\portable-bootstrap.ps1") -Destination $portableStaging
+if (Test-Path $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
+Compress-Archive -Path $applicationImage -DestinationPath $zipPath -CompressionLevel Optimal
 
-$sevenZip = Join-Path $repositoryRoot ".tools\7zip\extra\x64\7za.exe"
-$sfxModule = Join-Path $repositoryRoot ".tools\7zip\sdk\bin\7zSD.sfx"
-if (-not (Test-Path $sevenZip) -or -not (Test-Path $sfxModule)) {
-    throw "Faltan las herramientas 7-Zip SFX en .tools\7zip."
-}
-$portableArchive = Join-Path $portableStaging "portable.7z"
-$sfxConfig = Join-Path $portableStaging "sfx-config.txt"
-& $sevenZip a -t7z $portableArchive (Join-Path $portableStaging "portable-bootstrap.ps1") $payloadZip -mx=9
-if ($LASTEXITCODE -ne 0) { throw "7-Zip no pudo comprimir el ejecutable portatil." }
-$configuration = @"
-;!@Install@!UTF-8!
-Title="Asociacion Comunal QA"
-BeginPrompt="Abriendo Asociacion Comunal QA..."
-Directory=""
-RunProgram="powershell.exe -NoProfile -ExecutionPolicy Bypass -File portable-bootstrap.ps1"
-GUIMode="2"
-;!@InstallEnd@!
-"@
-[IO.File]::WriteAllText($sfxConfig, $configuration, [Text.UTF8Encoding]::new($false))
-
-if (Test-Path $portablePath) { Remove-Item -LiteralPath $portablePath -Force }
-$output = [IO.File]::Open($portablePath, [IO.FileMode]::CreateNew)
-try {
-    foreach ($part in @($sfxModule, $sfxConfig, $portableArchive)) {
-        $input = [IO.File]::OpenRead($part)
-        try { $input.CopyTo($output) } finally { $input.Dispose() }
-    }
-} finally { $output.Dispose() }
-
-Write-Host "Ejecutable portatil: $portablePath"
+Write-Host "Paquete QA: $zipPath"
 Write-Host "Actualizacion incremental: $deltaPath"
 Write-Host "Manifiesto: $manifestPath"
 Write-Host "Ejecutable: $(Join-Path $applicationImage "$applicationName.exe")"

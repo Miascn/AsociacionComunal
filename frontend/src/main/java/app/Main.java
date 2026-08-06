@@ -14,6 +14,7 @@ import controller.LoginController;
 import controller.MainController;
 import security.SessionManager;
 import service.UpdateService;
+import service.DesktopShortcutService;
 
 public class Main extends Application {
     private Stage stage;
@@ -33,6 +34,7 @@ public class Main extends Application {
         showLogin();
         stage.centerOnScreen();
         stage.show();
+        DesktopShortcutService.ensureAsync();
         UpdateService.checkAsync(stage);
     }
 
