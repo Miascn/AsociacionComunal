@@ -38,5 +38,7 @@ jobs:
             dist/AsociacionComunalQA-*-win64.zip
             dist/AsociacionComunalQA-*-delta.zip
             dist/update-manifest.json
+            dist/version.txt
+            dist/sha256.txt
           if-no-files-found: error
           retention-days: 14

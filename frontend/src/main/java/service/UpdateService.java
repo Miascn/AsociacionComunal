@@ -28,7 +28,7 @@ public final class UpdateService {
                 QaApiConfig config = QaApiConfig.load();
                 HttpClient client = HttpClient.newHttpClient();
                 HttpResponse<String> response = client.send(
-                    request(config, "/api/updates/windows/manifest").GET().build(),
+                    request(config, "/api/updates/windows/manifest-v2").GET().build(),
                     HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() != 200) return;
                 Manifest manifest = new ObjectMapper().readValue(response.body(), Manifest.class);

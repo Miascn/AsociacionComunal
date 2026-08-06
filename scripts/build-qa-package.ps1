@@ -1,7 +1,8 @@
 param(
     [string]$Version = "1.0.0",
     [string]$OutputDirectory = (Join-Path $PSScriptRoot "..\dist"),
-    [string]$PreviousManifest = ""
+    [string]$PreviousManifest = "",
+    [string]$LegacyImage = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,6 +74,19 @@ if (Test-Path $deltaPath) { Remove-Item -LiteralPath $deltaPath -Force }
 
 if ($LASTEXITCODE -ne 0) { throw "jpackage no pudo generar la aplicacion de Windows." }
 
+if ($LegacyImage) {
+    $legacyRoot = (Resolve-Path $LegacyImage).Path
+    $legacyExecutable = Join-Path $legacyRoot "$applicationName.exe"
+    $legacyRuntime = Join-Path $legacyRoot "runtime"
+    if (-not (Test-Path $legacyExecutable) -or -not (Test-Path $legacyRuntime)) {
+        throw "La imagen base no contiene el ejecutable y runtime esperados: $legacyRoot"
+    }
+    Copy-Item -LiteralPath $legacyExecutable -Destination $applicationImage -Force
+    Remove-Item -LiteralPath (Join-Path $applicationImage "runtime") -Recurse -Force
+    Copy-Item -LiteralPath $legacyRuntime -Destination $applicationImage -Recurse
+    Write-Host "Lanzador y runtime conservados desde: $legacyRoot"
+}
+
 $qaConfigDirectory = Join-Path $applicationImage "config"
 $qaConfigDestination = Join-Path $qaConfigDirectory "qa.properties"
 New-Item -ItemType Directory -Path $qaConfigDirectory -Force | Out-Null
@@ -121,6 +135,9 @@ $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -En
 
 if (Test-Path $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
 Compress-Archive -Path $applicationImage -DestinationPath $zipPath -CompressionLevel Optimal
+$legacyHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+[IO.File]::WriteAllText((Join-Path $OutputDirectory "version.txt"), $Version, [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText((Join-Path $OutputDirectory "sha256.txt"), $legacyHash, [Text.UTF8Encoding]::new($false))
 
 Write-Host "Paquete QA: $zipPath"
 Write-Host "Actualizacion incremental: $deltaPath"

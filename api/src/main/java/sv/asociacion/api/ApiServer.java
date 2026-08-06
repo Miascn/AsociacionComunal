@@ -38,6 +38,8 @@ public final class ApiServer {
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
             config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
             config.routes.get("/api/updates/windows/manifest", ApiServer::updateManifest);
+            config.routes.get("/api/updates/windows/manifest-v2", ApiServer::updateManifestV2);
+            config.routes.get("/api/updates/windows/package", ApiServer::legacyUpdatePackage);
             config.routes.get("/api/updates/windows/delta", ApiServer::updatePackage);
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
@@ -117,6 +119,17 @@ public final class ApiServer {
     }
 
     private static void updateManifest(Context context) throws Exception {
+        Path version = updateDirectory().resolve("version.txt");
+        Path archive = updateDirectory().resolve("AsociacionComunalQA-win64.zip");
+        Path checksum = updateDirectory().resolve("sha256.txt");
+        if (!Files.isRegularFile(version) || !Files.isRegularFile(archive) || !Files.isRegularFile(checksum)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualizaciÃ³n publicada."));
+            return;
+        }
+        context.json(Map.of("version", Files.readString(version).trim(), "sha256", Files.readString(checksum).trim()));
+    }
+
+    private static void updateManifestV2(Context context) throws Exception {
         Path manifest = updateDirectory().resolve("update-manifest.json");
         Path archive = updateDirectory().resolve("AsociacionComunalQA-delta.zip");
         if (!Files.isRegularFile(manifest) || !Files.isRegularFile(archive)) {
@@ -124,6 +137,15 @@ public final class ApiServer {
             return;
         }
         context.contentType("application/json").result(Files.readString(manifest));
+    }
+
+    private static void legacyUpdatePackage(Context context) throws Exception {
+        Path archive = updateDirectory().resolve("AsociacionComunalQA-win64.zip");
+        if (!Files.isRegularFile(archive)) {
+            context.status(HttpStatus.NOT_FOUND); return;
+        }
+        context.header("Content-Disposition", "attachment; filename=AsociacionComunalQA-win64.zip");
+        context.contentType("application/zip").result(Files.newInputStream(archive));
     }
 
     private static void updatePackage(Context context) throws Exception {
