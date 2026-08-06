@@ -1,12 +1,14 @@
 param(
     [string]$Version = "1.0.0",
-    [string]$OutputDirectory = (Join-Path $PSScriptRoot "..\dist")
+    [string]$OutputDirectory = (Join-Path $PSScriptRoot "..\dist"),
+    [string]$PreviousManifest = ""
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 $frontendPom = Join-Path $repositoryRoot "frontend\pom.xml"
 $backendPom = Join-Path $repositoryRoot "backend\pom.xml"
 $frontendTarget = Join-Path $repositoryRoot "frontend\target"
@@ -15,7 +17,8 @@ $applicationJar = Join-Path $frontendTarget "AsociacionComunal-1.0-SNAPSHOT.jar"
 $stagingDirectory = Join-Path $frontendTarget "jpackage-input"
 $applicationName = "AsociacionComunalQA"
 $applicationImage = Join-Path $OutputDirectory $applicationName
-$zipPath = Join-Path $OutputDirectory "$applicationName-$Version-win64.zip"
+$deltaPath = Join-Path $OutputDirectory "$applicationName-$Version-delta.zip"
+$manifestPath = Join-Path $OutputDirectory "update-manifest.json"
 $mavenRepository = Join-Path $env:USERPROFILE ".m2\repository"
 $localQaConfig = Join-Path $repositoryRoot "qa-local.properties"
 
@@ -54,7 +57,7 @@ Copy-Item -Path (Join-Path $packageInput "lib") -Destination $stagingDirectory -
 
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 if (Test-Path $applicationImage) { Remove-Item -LiteralPath $applicationImage -Recurse -Force }
-if (Test-Path $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
+if (Test-Path $deltaPath) { Remove-Item -LiteralPath $deltaPath -Force }
 
 & $jpackage `
     --type app-image `
@@ -83,7 +86,59 @@ if (Test-Path $localQaConfig) {
     throw "Falta qa-local.properties o los secretos QA_API_URL y QA_API_TOKEN."
 }
 
-Compress-Archive -Path $applicationImage -DestinationPath $zipPath -CompressionLevel Optimal
+$deltaRoot = Join-Path $frontendTarget "delta"
+if (Test-Path $deltaRoot) { Remove-Item -LiteralPath $deltaRoot -Recurse -Force }
+New-Item -ItemType Directory -Path (Join-Path $deltaRoot "app") -Force | Out-Null
 
-Write-Host "Paquete QA generado: $zipPath"
+$previousHashes = @{}
+if ($PreviousManifest -and (Test-Path $PreviousManifest)) {
+    $previous = Get-Content -LiteralPath $PreviousManifest -Raw | ConvertFrom-Json
+    foreach ($file in $previous.files) { $previousHashes[$file.path] = $file.sha256 }
+}
+
+$files = @()
+Get-ChildItem -LiteralPath (Join-Path $applicationImage "app") -File -Recurse | ForEach-Object {
+    $relative = $_.FullName.Substring($applicationImage.Length + 1).Replace('\', '/')
+    $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    $files += [ordered]@{ path = $relative; sha256 = $hash; size = $_.Length }
+    if (-not $previousHashes.ContainsKey($relative) -or $previousHashes[$relative] -ne $hash) {
+        $destination = Join-Path $deltaRoot $relative
+        New-Item -ItemType Directory -Path (Split-Path $destination) -Force | Out-Null
+        Copy-Item -LiteralPath $_.FullName -Destination $destination
+    }
+}
+
+Compress-Archive -Path (Join-Path $deltaRoot "app") -DestinationPath $deltaPath -CompressionLevel Optimal
+$deltaHash = (Get-FileHash -LiteralPath $deltaPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$manifest = [ordered]@{
+    version = $Version
+    sha256 = $deltaHash
+    size = (Get-Item -LiteralPath $deltaPath).Length
+    files = $files
+}
+$manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+
+$wixDirectory = Join-Path $repositoryRoot ".tools\wix314"
+if (Test-Path (Join-Path $wixDirectory "candle.exe")) { $env:PATH = "$wixDirectory;$env:PATH" }
+& $jpackage `
+    --type exe `
+    --name $applicationName `
+    --app-version $Version `
+    --description "Sistema para Administracion de Asociacion Comunal - QA" `
+    --vendor "Asociacion Comunal Team" `
+    --app-image $applicationImage `
+    --dest $OutputDirectory `
+    --win-menu `
+    --win-menu-group "Asociacion Comunal" `
+    --win-shortcut `
+    --win-dir-chooser `
+    --win-per-user-install
+
+if ($LASTEXITCODE -ne 0) {
+    throw "jpackage no pudo generar el instalador. Instale WiX 3.14 en .tools\wix314."
+}
+
+Write-Host "Instalador QA generado en: $OutputDirectory"
+Write-Host "Actualizacion incremental: $deltaPath"
+Write-Host "Manifiesto: $manifestPath"
 Write-Host "Ejecutable: $(Join-Path $applicationImage "$applicationName.exe")"

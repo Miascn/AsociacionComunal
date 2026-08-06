@@ -1,15 +1,30 @@
-# Versiones de la aplicación QA
+# Versiones de la aplicaciÃ³n QA
 
-La versión visible en la esquina inferior del menú proviene directamente del
-paquete generado con `jpackage`. Cuando se ejecuta desde el código muestra
-`Versión DEV`.
+La versiÃ³n visible en la esquina inferior del menÃº proviene directamente del
+paquete generado con `jpackage`. Cuando se ejecuta desde el cÃ³digo muestra
+`VersiÃ³n DEV`.
 
-Los commits que generan una entrega deben comenzar con la versión, seguida del
+Los commits que generan una entrega deben comenzar con la versiÃ³n, seguida del
 tipo y del ticket:
 
 ```text
-v1.3.1 feat(SCRUM-156): mostrar versión de la aplicación
+v1.4.0 fix(SCRUM-156): instalar y actualizar incrementalmente QA
 ```
 
-La misma versión debe utilizarse para construir el ZIP y publicar el manifiesto
-de actualización del servidor.
+La misma versiÃ³n debe utilizarse para construir el instalador y publicar el
+manifiesto de actualizaciÃ³n del servidor.
+
+Desde la versiÃ³n 1.4.0, QA instala una sola vez
+`AsociacionComunalQA-<version>.exe`. El instalador crea accesos directos en el
+escritorio y el menÃº Inicio, y registra la aplicaciÃ³n para poder desinstalarla.
+Las entregas posteriores usan un ZIP incremental que contiene Ãºnicamente los
+archivos de `app/` cuyo hash cambiÃ³ respecto al manifiesto anterior; el runtime
+de Java no vuelve a descargarse.
+
+Para construir una entrega incremental se conserva el manifiesto publicado y
+se ejecuta:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-qa-package.ps1 `
+  -Version 1.4.1 -PreviousManifest ruta/al/update-manifest.json
+```

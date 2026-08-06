@@ -33,7 +33,7 @@ public class Main extends Application {
         showLogin();
         stage.centerOnScreen();
         stage.show();
-        UpdateService.checkAsync();
+        UpdateService.checkAsync(stage);
     }
 
     private void showLogin() throws IOException {

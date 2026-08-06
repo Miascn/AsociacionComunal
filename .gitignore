@@ -1,5 +1,6 @@
 target/
 dist/
+.tools/
 out/
 apache-maven-*/
 !.mvn/wrapper/maven-wrapper.jar

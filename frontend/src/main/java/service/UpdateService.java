@@ -2,14 +2,17 @@ package service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.*;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -18,64 +21,120 @@ import java.util.HexFormat;
 public final class UpdateService {
     private UpdateService() {}
 
-    public static void checkAsync() {
+    public static void checkAsync(Window owner) {
         if (System.getProperty("jpackage.app-path") == null) return;
         Thread.ofVirtual().start(() -> {
             try {
                 QaApiConfig config = QaApiConfig.load();
                 HttpClient client = HttpClient.newHttpClient();
-                HttpRequest manifestRequest = request(config, "/api/updates/windows/manifest").GET().build();
-                HttpResponse<String> manifestResponse = client.send(manifestRequest, HttpResponse.BodyHandlers.ofString());
-                if (manifestResponse.statusCode() != 200) return;
-                Manifest manifest = new ObjectMapper().readValue(manifestResponse.body(), Manifest.class);
-                String current = System.getProperty("jpackage.app-version", "0.0.0");
-                if (compare(manifest.version(), current) <= 0) return;
-                Platform.runLater(() -> offerUpdate(config, client, manifest));
+                HttpResponse<String> response = client.send(
+                    request(config, "/api/updates/windows/manifest").GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() != 200) return;
+                Manifest manifest = new ObjectMapper().readValue(response.body(), Manifest.class);
+                if (compare(manifest.version(), System.getProperty("jpackage.app-version", "0.0.0")) > 0) {
+                    Platform.runLater(() -> offerUpdate(owner, config, client, manifest));
+                }
             } catch (Exception ignored) {
-                // Una falla de actualización nunca debe impedir usar la aplicación.
+                // La comprobacion nunca debe impedir que la aplicacion inicie.
             }
         });
     }
 
-    private static void offerUpdate(QaApiConfig config, HttpClient client, Manifest manifest) {
+    private static void offerUpdate(Window owner, QaApiConfig config, HttpClient client, Manifest manifest) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "Está disponible la versión " + manifest.version() + ". Se descargará y reiniciará la aplicación.",
+            "La versiÃ³n " + manifest.version() + " estÃ¡ lista. Solo se descargarÃ¡n los archivos modificados.",
             ButtonType.OK, ButtonType.CANCEL);
-        alert.setHeaderText("Actualización disponible");
+        alert.initOwner(owner);
+        alert.setHeaderText("ActualizaciÃ³n disponible");
+        alert.setTitle("AsociaciÃ³n Comunal QA");
         if (alert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
-        Thread.ofVirtual().start(() -> install(config, client, manifest));
+        Stage progress = progressWindow(owner);
+        progress.show();
+        Thread.ofVirtual().start(() -> install(config, client, manifest, progress));
     }
 
-    private static void install(QaApiConfig config, HttpClient client, Manifest manifest) {
+    private static Stage progressWindow(Window owner) {
+        ProgressIndicator spinner = new ProgressIndicator();
+        spinner.setPrefSize(48, 48);
+        ProgressBar bar = new ProgressBar(ProgressBar.INDETERMINATE_PROGRESS);
+        bar.setPrefWidth(320);
+        Label status = new Label("Preparando actualizaciÃ³n...");
+        VBox content = new VBox(14, new HBox(14, spinner, new Label("Actualizando AsociaciÃ³n Comunal")), bar, status);
+        content.setPadding(new Insets(24));
+        Stage stage = new Stage(StageStyle.UTILITY);
+        stage.initOwner(owner);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Actualizando");
+        stage.setResizable(false);
+        stage.setOnCloseRequest(event -> event.consume());
+        stage.setScene(new Scene(content));
+        stage.getProperties().put("progress", bar);
+        stage.getProperties().put("status", status);
+        return stage;
+    }
+
+    private static void install(QaApiConfig config, HttpClient client, Manifest manifest, Stage window) {
+        Path archive = null;
         try {
-            Path archive = Files.createTempFile("asociacion-update-", ".zip");
-            HttpResponse<Path> response = client.send(
-                request(config, "/api/updates/windows/package").GET().build(),
-                HttpResponse.BodyHandlers.ofFile(archive));
-            if (response.statusCode() != 200 || !sha256(archive).equalsIgnoreCase(manifest.sha256())) {
-                Files.deleteIfExists(archive);
-                throw new IllegalStateException("La descarga no superó la verificación de seguridad.");
+            archive = Files.createTempFile("asociacion-delta-", ".zip");
+            HttpResponse<InputStream> response = client.send(
+                request(config, "/api/updates/windows/delta").GET().build(),
+                HttpResponse.BodyHandlers.ofInputStream());
+            if (response.statusCode() != 200) throw new IllegalStateException("El servidor no entregÃ³ la actualizaciÃ³n.");
+            long total = response.headers().firstValueAsLong("Content-Length").orElse(manifest.size());
+            download(response.body(), archive, total, window);
+            if (!sha256(archive).equalsIgnoreCase(manifest.sha256())) {
+                throw new IllegalStateException("La descarga no superÃ³ la verificaciÃ³n de seguridad.");
             }
+            setStatus(window, "Instalando cambios y reiniciando...");
             Path script = Files.createTempFile("asociacion-updater-", ".ps1");
             try (InputStream input = UpdateService.class.getResourceAsStream("/updater/update.ps1")) {
+                if (input == null) throw new IllegalStateException("No se encontrÃ³ el instalador interno.");
                 Files.copy(input, script, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
             Path executable = Path.of(System.getProperty("jpackage.app-path")).toAbsolutePath();
-            new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
-                "-File", script.toString(), "-InstallDir", executable.getParent().toString(),
-                "-Archive", archive.toString(), "-ProcessId", Long.toString(ProcessHandle.current().pid()))
-                .start();
-            Platform.exit();
+            new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                script.toString(), "-InstallDir", executable.getParent().toString(), "-Archive", archive.toString(),
+                "-ProcessId", Long.toString(ProcessHandle.current().pid())).start();
+            Platform.runLater(Platform::exit);
         } catch (Exception exception) {
-            Platform.runLater(() -> new Alert(Alert.AlertType.ERROR,
-                "No fue posible instalar la actualización: " + exception.getMessage(), ButtonType.OK).show());
+            if (archive != null) try { Files.deleteIfExists(archive); } catch (Exception ignored) {}
+            Platform.runLater(() -> {
+                window.close();
+                new Alert(Alert.AlertType.ERROR,
+                    "No fue posible instalar la actualizaciÃ³n: " + exception.getMessage(), ButtonType.OK).show();
+            });
         }
+    }
+
+    private static void download(InputStream input, Path target, long total, Stage window) throws Exception {
+        try (input; OutputStream output = Files.newOutputStream(target)) {
+            byte[] buffer = new byte[64 * 1024];
+            long downloaded = 0; int read;
+            while ((read = input.read(buffer)) >= 0) {
+                output.write(buffer, 0, read);
+                downloaded += read;
+                long done = downloaded;
+                Platform.runLater(() -> {
+                    ProgressBar bar = (ProgressBar) window.getProperties().get("progress");
+                    Label status = (Label) window.getProperties().get("status");
+                    if (total > 0) {
+                        bar.setProgress(Math.min(1d, (double) done / total));
+                        status.setText("Descargando cambios: " + (done * 100 / total) + "%");
+                    } else status.setText("Descargando archivos modificados...");
+                });
+            }
+        }
+    }
+
+    private static void setStatus(Stage window, String value) {
+        Platform.runLater(() -> ((Label) window.getProperties().get("status")).setText(value));
     }
 
     private static HttpRequest.Builder request(QaApiConfig config, String path) {
         return HttpRequest.newBuilder(URI.create(config.baseUrl() + path))
-            .header("Authorization", "Bearer " + config.token())
-            .header("ngrok-skip-browser-warning", "1");
+            .header("Authorization", "Bearer " + config.token()).header("ngrok-skip-browser-warning", "1");
     }
 
     private static String sha256(Path path) throws Exception {
@@ -97,5 +156,5 @@ public final class UpdateService {
         return 0;
     }
 
-    private record Manifest(String version, String sha256) {}
+    private record Manifest(String version, String sha256, long size) {}
 }
