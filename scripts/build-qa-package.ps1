@@ -23,6 +23,7 @@ $manifestPath = Join-Path $OutputDirectory "update-manifest.json"
 $zipPath = Join-Path $OutputDirectory "$applicationName-$Version-win64.zip"
 $mavenRepository = Join-Path $env:USERPROFILE ".m2\repository"
 $localQaConfig = Join-Path $repositoryRoot "qa-local.properties"
+$applicationIcon = Join-Path $repositoryRoot "frontend\src\main\resources\images\app-icon.ico"
 
 $maven = Get-Command mvn.cmd -ErrorAction SilentlyContinue
 if (-not $maven) {
@@ -67,6 +68,7 @@ if (Test-Path $deltaPath) { Remove-Item -LiteralPath $deltaPath -Force }
     --app-version $Version `
     --description "Sistema para Administracion de Asociacion Comunal - QA" `
     --vendor "Asociacion Comunal Team" `
+    --icon $applicationIcon `
     --input $stagingDirectory `
     --main-jar (Split-Path $applicationJar -Leaf) `
     --main-class app.Launcher `
