@@ -35,7 +35,7 @@ jobs:
         with:
           name: AsociacionComunalQA-win64
           path: |
-            dist/AsociacionComunalQA-*.exe
+            dist/AsociacionComunalQA-*-portable.exe
             dist/AsociacionComunalQA-*-delta.zip
             dist/update-manifest.json
           if-no-files-found: error
