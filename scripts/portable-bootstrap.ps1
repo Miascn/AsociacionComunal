@@ -18,4 +18,9 @@ if (-not (Test-Path -LiteralPath $executable)) {
     }
 }
 
+if ($env:QA_PORTABLE_VERIFY -eq '1') {
+    if (-not (Test-Path -LiteralPath $executable)) { throw 'La aplicacion portatil no se preparo correctamente.' }
+    exit 0
+}
+
 Start-Process -FilePath $executable

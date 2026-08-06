@@ -139,6 +139,7 @@ $configuration = @"
 ;!@Install@!UTF-8!
 Title="Asociacion Comunal QA"
 BeginPrompt="Abriendo Asociacion Comunal QA..."
+Directory=""
 RunProgram="powershell.exe -NoProfile -ExecutionPolicy Bypass -File portable-bootstrap.ps1"
 GUIMode="2"
 ;!@InstallEnd@!
