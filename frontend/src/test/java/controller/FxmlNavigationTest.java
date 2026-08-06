@@ -19,6 +19,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.Pane;
 import models.AuthUser;
 import security.SessionManager;
@@ -65,7 +66,13 @@ class FxmlNavigationTest {
             assertEquals(10, botones.size());
 
             for (Button boton : botones) {
-                if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
+                if ("Proyectos".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Gestión de proyectos"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
+                } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()
                             .map(Label::getText)

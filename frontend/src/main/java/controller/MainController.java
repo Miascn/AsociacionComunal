@@ -62,7 +62,7 @@ public class MainController {
 
     @FXML
     private void mostrarProyectos() {
-        mostrarPlaceholder("Proyectos");
+        cargarVista("/fxml/views/proyectos.fxml");
     }
 
     @FXML

@@ -102,6 +102,69 @@
     -fx-text-fill: -color-fg-muted;
 }
 
+/* ---------- Módulos de gestión ---------- */
+
+.module-page { -fx-background-color: -color-bg-default; }
+
+.summary-card,
+.table-card {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 12;
+}
+
+.summary-card { -fx-padding: 16 18 16 18; }
+.table-card { -fx-padding: 18; }
+
+.summary-label,
+.empty-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.summary-value,
+.summary-value-accent,
+.summary-value-success {
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+}
+
+.summary-value { -fx-text-fill: -color-fg-default; }
+.summary-value-accent { -fx-text-fill: -color-accent-fg; }
+.summary-value-success { -fx-text-fill: -color-success-fg; }
+
+.section-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.primary-action,
+.secondary-action {
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 9 14 9 14;
+    -fx-cursor: hand;
+}
+
+.primary-action {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-fg-on-emphasis;
+}
+
+.secondary-action {
+    -fx-background-color: -color-bg-inset;
+    -fx-text-fill: -color-fg-default;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 8;
+}
+
+.search-field,
+.filter-field { -fx-pref-height: 36px; }
+
+.empty-icon { -fx-icon-color: -color-fg-muted; }
+
 /* ---------- Tarjetas del dashboard ---------- */
 
 .stat-card {
