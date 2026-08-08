@@ -11,6 +11,10 @@ import sv.asociacion.backend.dao.MiembroDAO;
 import sv.asociacion.backend.dao.ProyectoDAO;
 import sv.asociacion.backend.entity.Miembro;
 import sv.asociacion.backend.entity.Proyecto;
+import sv.asociacion.api.auth.AuthRoutes;
+import sv.asociacion.api.auth.AuthService;
+import sv.asociacion.api.auth.JdbcSessionRepository;
+import sv.asociacion.api.auth.JdbcUserAuthRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -37,11 +41,13 @@ public final class ApiServer {
         MiembroDAO miembroDAO = new MiembroDAO();
         ProyectoDAO proyectoDAO = new ProyectoDAO();
 
-        Javalin.start(config -> {
+        Javalin app = Javalin.create(config -> {
             config.jetty.host = HOST;
             config.jetty.port = port;
             config.http.maxRequestSize = 268_435_456L;
-            config.routes.before("/api/*", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/miembros", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/proyectos", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/updates/*", context -> authenticate(context, apiSecret));
             config.routes.get("/health", ApiServer::health);
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
             config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
@@ -52,12 +58,14 @@ public final class ApiServer {
             config.routes.get("/api/updates/windows/package", ApiServer::legacyUpdatePackage);
             config.routes.get("/api/updates/windows/delta", ApiServer::updatePackage);
             config.routes.post("/api/updates/windows/publish", ApiServer::publishUpdate);
+            new AuthRoutes(new AuthService(new JdbcUserAuthRepository(), new JdbcSessionRepository())).register(config.routes);
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
                 context.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .json(Map.of("error", "No fue posible procesar la solicitud."));
             });
         });
+        app.start(HOST, port);
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, port);
     }
 

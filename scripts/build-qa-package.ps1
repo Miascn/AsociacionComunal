@@ -12,6 +12,7 @@ $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 $frontendPom = Join-Path $repositoryRoot "frontend\pom.xml"
 $backendPom = Join-Path $repositoryRoot "backend\pom.xml"
+$apiPom = Join-Path $repositoryRoot "api\pom.xml"
 $frontendTarget = Join-Path $repositoryRoot "frontend\target"
 $packageInput = Join-Path $frontendTarget "package-input"
 $applicationJar = Join-Path $frontendTarget "AsociacionComunal-1.0-SNAPSHOT.jar"
@@ -49,6 +50,9 @@ if (-not (Test-Path $jpackage)) {
 
 & $mavenPath "-Dmaven.repo.local=$mavenRepository" -f $backendPom clean install -DskipTests
 if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion del backend." }
+
+& $mavenPath "-Dmaven.repo.local=$mavenRepository" -f $apiPom clean package
+if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion o las pruebas de la API." }
 
 & $mavenPath "-Dmaven.repo.local=$mavenRepository" -f $frontendPom clean package
 if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion o las pruebas del frontend." }
