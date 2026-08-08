@@ -10,6 +10,11 @@ import sv.asociacion.comunal.BuildConfig
 
 class AppContainer(context: Context) {
     private val client = OkHttpClient.Builder()
+        // Evita la página informativa de ngrok en el entorno QA gratuito.
+        // Los servidores de producción pueden ignorar este encabezado sin efectos.
+        .addInterceptor { chain ->
+            chain.proceed(chain.request().newBuilder().header("ngrok-skip-browser-warning", "asociacion-android").build())
+        }
         .addInterceptor(HttpLoggingInterceptor().apply { level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE })
         .build()
     private val api = Retrofit.Builder().baseUrl(BuildConfig.API_BASE_URL).client(client)
