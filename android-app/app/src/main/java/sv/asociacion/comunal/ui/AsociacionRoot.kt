@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import sv.asociacion.comunal.LoginValidator
+import sv.asociacion.comunal.BuildConfig
 import sv.asociacion.comunal.MainViewModel
 import sv.asociacion.comunal.R
 import sv.asociacion.comunal.SessionState
@@ -47,9 +48,26 @@ private val DeepBlue = Color(0xFF002D72)
             SessionState.SignedOut -> LoginScreen(onLogin = viewModel::login)
             is SessionState.Error -> LoginScreen(state.message, viewModel::login, viewModel::dismissError)
             is SessionState.SignedIn -> ResidentApp(state.profile, viewModel::logout)
+            is SessionState.PasswordChange -> PasswordChangeScreen(state.temporaryPassword, viewModel::changePassword)
         }
         UpdateOverlay(viewModel.updateState.collectAsStateWithLifecycle().value, viewModel::downloadUpdate, viewModel::dismissUpdate)
     }
+}
+
+@Composable private fun PasswordChangeScreen(knownTemporary: String?, onChange: (String, String) -> Unit) {
+    var current by rememberSaveable { mutableStateOf(knownTemporary.orEmpty()) }
+    var next by rememberSaveable { mutableStateOf("") }
+    var confirmation by rememberSaveable { mutableStateOf("") }
+    Surface(Modifier.fillMaxSize()) { Column(Modifier.fillMaxSize().padding(26.dp), verticalArrangement = Arrangement.Center) {
+        Icon(Icons.Default.Password, null, tint = BrandBlue, modifier = Modifier.size(54.dp)); Spacer(Modifier.height(18.dp))
+        Text("Crea tu contraseña", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Por seguridad debes reemplazar la contraseña temporal antes de continuar.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(24.dp))
+        OutlinedTextField(current, { current=it }, Modifier.fillMaxWidth(), label={Text("Contraseña temporal")}, visualTransformation=PasswordVisualTransformation(), singleLine=true)
+        Spacer(Modifier.height(12.dp)); OutlinedTextField(next, { next=it }, Modifier.fillMaxWidth(), label={Text("Nueva contraseña (mínimo 12 caracteres)")}, visualTransformation=PasswordVisualTransformation(), singleLine=true)
+        Spacer(Modifier.height(12.dp)); OutlinedTextField(confirmation, { confirmation=it }, Modifier.fillMaxWidth(), label={Text("Confirmar nueva contraseña")}, visualTransformation=PasswordVisualTransformation(), singleLine=true)
+        Spacer(Modifier.height(22.dp)); Button({ onChange(current,next) }, Modifier.fillMaxWidth().height(52.dp), enabled=current.isNotBlank() && next.length>=12 && next==confirmation) { Text("Guardar y continuar") }
+    } }
 }
 
 @Composable private fun UpdateOverlay(state: UpdateState, download: (sv.asociacion.comunal.update.AppUpdate) -> Unit, dismiss: () -> Unit) {
@@ -190,7 +208,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
         ElevatedCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(54.dp).clip(CircleShape).background(BrandBlue.copy(alpha = .12f)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, null, tint = BrandBlue, modifier = Modifier.size(32.dp)) }; Spacer(Modifier.width(14.dp)); Column { Text(profile.member?.let { "${it.names} ${it.lastNames}" } ?: profile.user.username, fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("● Miembro activo", color = Color(0xFF21A453), style = MaterialTheme.typography.bodySmall) } } }
         Spacer(Modifier.height(16.dp)); AccountRow("Información personal", Icons.Default.Badge); AccountRow("Mi vivienda", Icons.Default.HomeWork); AccountRow("Configuración", Icons.Default.Settings)
         Spacer(Modifier.height(24.dp)); OutlinedButton(onLogout, Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), shape = RoundedCornerShape(12.dp)) { Icon(Icons.AutoMirrored.Filled.Logout, null); Spacer(Modifier.width(8.dp)); Text("Cerrar sesión") }
-        Text("Versión 0.2.0", Modifier.fillMaxWidth().padding(top = 18.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Text("Versión ${BuildConfig.VERSION_NAME}", Modifier.fillMaxWidth().padding(top = 18.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
 }
 

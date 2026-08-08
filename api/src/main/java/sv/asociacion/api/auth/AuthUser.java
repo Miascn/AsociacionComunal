@@ -6,6 +6,7 @@ public record AuthUser(
     String username,
     String passwordHash,
     String userStatus,
+    boolean passwordChangeRequired,
     String role,
     String memberNames,
     String memberLastNames,

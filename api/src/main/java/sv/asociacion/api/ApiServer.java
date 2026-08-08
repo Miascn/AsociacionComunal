@@ -15,6 +15,7 @@ import sv.asociacion.api.auth.AuthRoutes;
 import sv.asociacion.api.auth.AuthService;
 import sv.asociacion.api.auth.JdbcSessionRepository;
 import sv.asociacion.api.auth.JdbcUserAuthRepository;
+import sv.asociacion.api.auth.MemberProvisioningService;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -50,7 +51,7 @@ public final class ApiServer {
             config.routes.before("/api/updates/*", context -> authenticate(context, apiSecret));
             config.routes.get("/health", ApiServer::health);
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
-            config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
+            config.routes.post("/api/miembros", ApiServer::createMember);
             config.routes.get("/api/proyectos", context -> context.json(toProjectResponse(proyectoDAO.findAll())));
             config.routes.get("/api/updates/windows/manifest", ApiServer::updateManifest);
             config.routes.get("/api/updates/windows/manifest-v2", ApiServer::updateManifestV2);
@@ -109,31 +110,21 @@ public final class ApiServer {
         return proyectos.stream().map(ProyectoResponse::from).toList();
     }
 
-    private static void createMember(Context context, MiembroDAO miembroDAO) {
+    private static void createMember(Context context) {
         CreateMemberRequest request = context.bodyAsClass(CreateMemberRequest.class);
         String validationError = request.validationError();
         if (validationError != null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", validationError));
             return;
         }
-        if (miembroDAO.existsByDui(request.dui().trim())) {
-            context.status(HttpStatus.CONFLICT)
-                .json(Map.of("error", "Ya existe un miembro con ese DUI."));
-            return;
+        try {
+            var created = new MemberProvisioningService().create(request.dui().trim(), request.nombres().trim(), request.apellidos().trim(), clean(request.telefono()), clean(request.correo()), request.direccion().trim());
+            Miembro miembro = new Miembro(created.memberId(), request.dui().trim(), request.nombres().trim(), request.apellidos().trim(), clean(request.telefono()), clean(request.correo()), request.direccion().trim(), LocalDate.now(), Miembro.Estado.ACTIVO);
+            context.status(HttpStatus.CREATED).json(new CreateMemberResponse(MiembroResponse.from(miembro), request.dui().trim(), created.temporaryPassword()));
+        } catch (IllegalStateException exception) {
+            if (exception.getCause() instanceof SQLException sql && "23000".equals(sql.getSQLState())) context.status(HttpStatus.CONFLICT).json(Map.of("error", "Ya existe un miembro o usuario con ese DUI."));
+            else throw exception;
         }
-        Miembro miembro = new Miembro(
-            null,
-            request.dui().trim(),
-            request.nombres().trim(),
-            request.apellidos().trim(),
-            clean(request.telefono()),
-            clean(request.correo()),
-            request.direccion().trim(),
-            LocalDate.now(),
-            Miembro.Estado.ACTIVO
-        );
-        miembroDAO.save(miembro);
-        context.status(HttpStatus.CREATED).json(MiembroResponse.from(miembro));
     }
 
     private static String clean(String value) {
@@ -425,4 +416,5 @@ public final class ApiServer {
             );
         }
     }
+    private record CreateMemberResponse(MiembroResponse member, String username, String temporaryPassword) { }
 }

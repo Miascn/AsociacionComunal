@@ -24,4 +24,10 @@ class AuthRepository(private val api: AuthApi, private val sessions: SessionStor
         if (refresh != null) runCatching { api.logout(TokenRequest(refresh)) }
         sessions.clear()
     }
+    suspend fun changePassword(current: String, newPassword: String): MeResponse {
+        val access = sessions.tokens().first ?: error("Sesión no disponible")
+        val changed = api.changePassword("Bearer $access", ChangePasswordRequest(current, newPassword))
+        sessions.save(changed.accessToken, changed.refreshToken)
+        return api.me("Bearer ${changed.accessToken}")
+    }
 }

@@ -22,9 +22,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.PropertyValueFactory;
 import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
+import service.MiembroApiClient.CreateMemberResult;
 import sv.asociacion.backend.entity.Miembro;
 
 public class MiembroController {
@@ -99,17 +101,18 @@ public class MiembroController {
         Button guardar
     ) {
         lblEstadoModulo.setText("Guardando miembro...");
-        Task<Miembro> task = new Task<>() {
+        Task<CreateMemberResult> task = new Task<>() {
             @Override
-            protected Miembro call() throws Exception {
+            protected CreateMemberResult call() throws Exception {
                 return new MiembroApiClient().create(request);
             }
         };
         task.setOnSucceeded(event -> {
-            miembros.add(task.getValue());
+            miembros.add(task.getValue().member());
             lblEstadoModulo.setText("Miembro registrado");
             actualizarTotal();
             dialog.close();
+            mostrarCredenciales(task.getValue());
         });
         task.setOnFailed(event -> {
             guardar.setDisable(false);
@@ -122,6 +125,20 @@ public class MiembroController {
         Thread thread = new Thread(task, "registrar-miembro-api");
         thread.setDaemon(true);
         thread.start();
+    }
+
+    private void mostrarCredenciales(CreateMemberResult result) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Cuenta del miembro creada");
+        alert.setHeaderText("Entregue estas credenciales una sola vez al miembro");
+        TextArea credentials = new TextArea("Usuario (DUI): " + result.username()
+            + "\nContraseña temporal: " + result.temporaryPassword());
+        credentials.setEditable(false);
+        credentials.setWrapText(true);
+        credentials.setPrefRowCount(3);
+        alert.getDialogPane().setContent(credentials);
+        alert.setContentText(null);
+        alert.showAndWait();
     }
 
     private void mostrarError(String message) {

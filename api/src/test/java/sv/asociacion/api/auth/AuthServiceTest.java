@@ -52,8 +52,19 @@ class AuthServiceTest {
         assertCode("INVALID_TOKEN", () -> service.authenticate(login.accessToken()));
         assertCode("INVALID_TOKEN", () -> service.refresh(login.refreshToken()));
     }
+    @Test void cambioClaveReemplazaTemporalYRevocaSesionAnterior() {
+        AuthUser original = memberUser(1, "ACTIVO", 10, "ACTIVO", "MIEMBRO");
+        users.replace(new AuthUser(original.id(), original.memberId(), original.username(), original.passwordHash(), original.userStatus(), true, original.role(), original.memberNames(), original.memberLastNames(), original.memberStatus()));
+        var login = login();
+        assertTrue(login.principal().passwordChangeRequired());
+        var changed = service.changePassword(login.accessToken(), "Correcta2026!", "NuevaCorrecta2026!");
+        assertFalse(changed.principal().passwordChangeRequired());
+        assertCode("INVALID_TOKEN", () -> service.authenticate(login.accessToken()));
+        assertCode("INVALID_CREDENTIALS", this::login);
+        assertEquals(1, service.login("residente", "NuevaCorrecta2026!").principal().userId());
+    }
     @Test void rolIncorrectoEsRechazado() {
-        AuthPrincipal principal = new AuthPrincipal(1, 1, null, "tesorero", "TESORERO", null, null, null);
+        AuthPrincipal principal = new AuthPrincipal(1, 1, null, "tesorero", "TESORERO", false, null, null, null);
         AuthException error = assertThrows(AuthException.class,
             () -> new AuthorizationService().requireAnyRole(principal, Set.of("MIEMBRO")));
         assertEquals("FORBIDDEN", error.code());
@@ -62,7 +73,7 @@ class AuthServiceTest {
     private AuthService.LoginResult login() { return service.login("residente", "Correcta2026!"); }
     private static void assertCode(String code, Runnable action) { assertEquals(code, assertThrows(AuthException.class, action::run).code()); }
     private static AuthUser memberUser(int id, String userStatus, Integer memberId, String memberStatus, String role) {
-        return new AuthUser(id, memberId, "residente", VALID_HASH, userStatus, role, "Juan", "Pérez", memberStatus);
+        return new AuthUser(id, memberId, "residente", VALID_HASH, userStatus, false, role, "Juan", "Pérez", memberStatus);
     }
 
     private static final class SequentialTokens implements TokenGenerator {
@@ -81,6 +92,7 @@ class AuthServiceTest {
         public Optional<AuthUser> findByUsername(String username) { return values.values().stream().filter(u -> u.username().equals(username)).findFirst(); }
         public Optional<AuthUser> findById(int id) { return Optional.ofNullable(values.get(id)); }
         public void updateLastAccess(int id) { }
+        public void updatePassword(int id, String hash, boolean required) { AuthUser u=values.get(id); values.put(id, new AuthUser(u.id(),u.memberId(),u.username(),hash,u.userStatus(),required,u.role(),u.memberNames(),u.memberLastNames(),u.memberStatus())); }
     }
     private static final class FakeSessions implements SessionRepository {
         private long next = 1; private final Map<Long, SessionRecord> values = new HashMap<>();
@@ -94,5 +106,6 @@ class AuthServiceTest {
             values.put(id, new SessionRecord(id, old.userId(), access, refresh, old.createdAt(), accessExp, refreshExp, old.revokedAt())); return true;
         }
         public void revoke(long id, Instant at) { SessionRecord old = values.get(id); values.put(id, new SessionRecord(id, old.userId(), old.accessTokenHash(), old.refreshTokenHash(), old.createdAt(), old.accessExpiresAt(), old.refreshExpiresAt(), at)); }
+        public void revokeAllForUser(int userId, Instant at) { values.values().stream().filter(s -> s.userId()==userId && !s.revoked()).map(SessionRecord::id).toList().forEach(id -> revoke(id, at)); }
     }
 }

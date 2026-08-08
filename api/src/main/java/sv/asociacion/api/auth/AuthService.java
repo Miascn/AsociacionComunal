@@ -66,6 +66,22 @@ public final class AuthService {
         sessions.findByRefreshHash(hash(refreshToken)).ifPresent(session -> sessions.revoke(session.id(), clock.instant()));
     }
 
+    public LoginResult changePassword(String accessToken, String currentPassword, String newPassword) {
+        AuthPrincipal principal = authenticate(accessToken);
+        AuthUser user = users.findById(principal.userId()).orElseThrow(AuthService::invalidSession);
+        if (!passwords.verify(currentPassword, user.passwordHash())) throw invalidCredentials();
+        if (newPassword == null || newPassword.length() < 12)
+            throw new AuthException(400, "WEAK_PASSWORD", "La nueva contraseña debe tener al menos 12 caracteres.");
+        if (passwords.verify(newPassword, user.passwordHash()))
+            throw new AuthException(400, "PASSWORD_REUSED", "La nueva contraseña debe ser diferente.");
+        users.updatePassword(user.id(), passwords.hash(newPassword), false);
+        Instant now = clock.instant(); sessions.revokeAllForUser(user.id(), now);
+        AuthUser updated = users.findById(user.id()).orElseThrow(AuthService::invalidSession);
+        TokenPair pair = createTokens();
+        sessions.create(user.id(), hash(pair.accessToken()), hash(pair.refreshToken()), now, now.plus(accessLifetime), now.plus(refreshLifetime));
+        return new LoginResult(pair.accessToken(), pair.refreshToken(), accessLifetime.toSeconds(), toPrincipal(0, updated));
+    }
+
     public AuthPrincipal authenticate(String accessToken) {
         if (accessToken == null || accessToken.isBlank()) throw invalidSession();
         SessionRecord session = sessions.findByAccessHash(hash(accessToken)).orElseThrow(AuthService::invalidSession);
@@ -93,7 +109,7 @@ public final class AuthService {
     }
 
     private AuthPrincipal toPrincipal(long sessionId, AuthUser user) {
-        return new AuthPrincipal(sessionId, user.id(), user.memberId(), user.username(), user.role(),
+        return new AuthPrincipal(sessionId, user.id(), user.memberId(), user.username(), user.role(), user.passwordChangeRequired(),
             user.memberNames(), user.memberLastNames(), user.memberStatus());
     }
 

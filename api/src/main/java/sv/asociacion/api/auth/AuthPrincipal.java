@@ -6,6 +6,7 @@ public record AuthPrincipal(
     Integer memberId,
     String username,
     String role,
+    boolean passwordChangeRequired,
     String memberNames,
     String memberLastNames,
     String memberStatus

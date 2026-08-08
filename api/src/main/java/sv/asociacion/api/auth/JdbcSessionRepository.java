@@ -45,6 +45,10 @@ public final class JdbcSessionRepository implements SessionRepository {
         execute("UPDATE sesion_usuario SET revocada_en=? WHERE id_sesion=? AND revocada_en IS NULL", statement -> { statement.setTimestamp(1, Timestamp.from(revokedAt)); statement.setLong(2, sessionId); });
     }
 
+    @Override public void revokeAllForUser(int userId, Instant revokedAt) {
+        execute("UPDATE sesion_usuario SET revocada_en=? WHERE id_usuario=? AND revocada_en IS NULL", statement -> { statement.setTimestamp(1, Timestamp.from(revokedAt)); statement.setInt(2, userId); });
+    }
+
     private int execute(String sql, SqlBinder binder) {
         try (Connection connection = DBConnection.getInstance().getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             binder.bind(statement); return statement.executeUpdate();

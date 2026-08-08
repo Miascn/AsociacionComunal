@@ -45,7 +45,7 @@ public final class MiembroApiClient {
         return Arrays.stream(values).map(MiembroResponse::toEntity).toList();
     }
 
-    public Miembro create(CreateMemberRequest value) throws IOException, InterruptedException {
+    public CreateMemberResult create(CreateMemberRequest value) throws IOException, InterruptedException {
         HttpRequest request = authorizedRequest("/api/miembros")
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(value)))
@@ -56,7 +56,8 @@ public final class MiembroApiClient {
                 ? "Ya existe un miembro con ese DUI."
                 : "No fue posible registrar el miembro (HTTP " + response.statusCode() + ").");
         }
-        return objectMapper.readValue(response.body(), MiembroResponse.class).toEntity();
+        CreateMemberResponse created = objectMapper.readValue(response.body(), CreateMemberResponse.class);
+        return new CreateMemberResult(created.member().toEntity(), created.username(), created.temporaryPassword());
     }
 
     private HttpRequest.Builder authorizedRequest(String path) {
@@ -76,6 +77,8 @@ public final class MiembroApiClient {
         String correo,
         String direccion
     ) {}
+    public record CreateMemberResult(Miembro member, String username, String temporaryPassword) {}
+    private record CreateMemberResponse(MiembroResponse member, String username, String temporaryPassword) {}
 
     private record MiembroResponse(
         Integer id, String dui, String nombres, String apellidos, String telefono,

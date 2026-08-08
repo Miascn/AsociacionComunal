@@ -21,8 +21,8 @@ class AuthRoutesTest {
     @BeforeEach void startServer() {
         PasswordService passwords = new PasswordService();
         UserAuthRepository users = new MemoryUsers(List.of(
-            new AuthUser(1, 10, "residente", passwords.hash("Correcta2026!"), "ACTIVO", "MIEMBRO", "Juan", "Pérez", "ACTIVO"),
-            new AuthUser(2, null, "tesorero", passwords.hash("Correcta2026!"), "ACTIVO", "TESORERO", null, null, null)
+            new AuthUser(1, 10, "residente", passwords.hash("Correcta2026!"), "ACTIVO", false, "MIEMBRO", "Juan", "Pérez", "ACTIVO"),
+            new AuthUser(2, null, "tesorero", passwords.hash("Correcta2026!"), "ACTIVO", false, "TESORERO", null, null, null)
         ));
         service = new AuthService(users, new MemorySessions(), passwords, new RandomTokens(), Clock.systemUTC(), Duration.ofMinutes(15), Duration.ofDays(30));
         AuthRoutes routes = new AuthRoutes(service);
@@ -47,7 +47,8 @@ class AuthRoutesTest {
         assertEquals(200, response.statusCode());
         assertTrue(response.body().contains("\"username\":\"residente\""));
         assertTrue(response.body().contains("\"names\":\"Juan\""));
-        assertFalse(response.body().contains("password"));
+        assertFalse(response.body().contains("clave_hash"));
+        assertFalse(response.body().contains("passwordHash"));
     }
 
     @Test void endpointProtegidoRechazaRolIncorrecto() throws Exception {
@@ -69,6 +70,7 @@ class AuthRoutesTest {
         public Optional<AuthUser> findByUsername(String username) { return users.stream().filter(u -> u.username().equals(username)).findFirst(); }
         public Optional<AuthUser> findById(int id) { return users.stream().filter(u -> u.id() == id).findFirst(); }
         public void updateLastAccess(int id) { }
+        public void updatePassword(int id, String hash, boolean required) { }
     }
     private static final class MemorySessions implements SessionRepository {
         private long next = 1; private final Map<Long, SessionRecord> sessions = new HashMap<>();
@@ -82,5 +84,6 @@ class AuthRoutesTest {
             sessions.put(id, new SessionRecord(id, old.userId(), access, refresh, old.createdAt(), accessExp, refreshExp, old.revokedAt())); return true;
         }
         public void revoke(long id, Instant at) { SessionRecord old = sessions.get(id); sessions.put(id, new SessionRecord(id, old.userId(), old.accessTokenHash(), old.refreshTokenHash(), old.createdAt(), old.accessExpiresAt(), old.refreshExpiresAt(), at)); }
+        public void revokeAllForUser(int userId, Instant at) { sessions.values().stream().filter(s -> s.userId()==userId && !s.revoked()).map(SessionRecord::id).toList().forEach(id -> revoke(id, at)); }
     }
 }

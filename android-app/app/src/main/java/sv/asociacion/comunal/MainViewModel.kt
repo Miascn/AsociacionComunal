@@ -16,6 +16,7 @@ sealed interface SessionState {
     data object Loading : SessionState
     data object SignedOut : SessionState
     data class SignedIn(val profile: MeResponse) : SessionState
+    data class PasswordChange(val profile: MeResponse, val temporaryPassword: String? = null) : SessionState
     data class Error(val message: String) : SessionState
 }
 
@@ -25,16 +26,22 @@ class MainViewModel(private val repository: AuthRepository, private val updates:
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    init { viewModelScope.launch { _state.value = repository.restore()?.let(SessionState::SignedIn) ?: SessionState.SignedOut; checkUpdates() } }
+    init { viewModelScope.launch { val restored=repository.restore(); _state.value = restored?.let { if(it.user.passwordChangeRequired) SessionState.PasswordChange(it) else SessionState.SignedIn(it) } ?: SessionState.SignedOut; checkUpdates() } }
 
     fun login(username: String, password: String) = viewModelScope.launch {
         _state.value = SessionState.Loading
-        _state.value = runCatching { SessionState.SignedIn(repository.login(username, password)) }
+        _state.value = runCatching { val profile=repository.login(username, password); if(profile.user.passwordChangeRequired) SessionState.PasswordChange(profile, password) else SessionState.SignedIn(profile) }
             .getOrElse { SessionState.Error("No fue posible iniciar sesión. Verifica tus datos y conexión.") }
     }
 
     fun dismissError() { _state.value = SessionState.SignedOut }
     fun logout() = viewModelScope.launch { repository.logout(); _state.value = SessionState.SignedOut }
+    fun changePassword(current: String, next: String) = viewModelScope.launch {
+        val profile = (_state.value as? SessionState.PasswordChange)?.profile ?: return@launch
+        _state.value = SessionState.Loading
+        _state.value = runCatching { SessionState.SignedIn(repository.changePassword(current, next)) }
+            .getOrElse { SessionState.PasswordChange(profile) }
+    }
 
     fun checkUpdates() = viewModelScope.launch {
         if (_updateState.value is UpdateState.Downloading) return@launch

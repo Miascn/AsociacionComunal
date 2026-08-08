@@ -7,7 +7,7 @@ import java.util.Optional;
 public final class JdbcUserAuthRepository implements UserAuthRepository {
     private static final String SELECT_BASE = """
         SELECT u.id_usuario, u.id_miembro, u.nombre_usuario, u.clave_hash,
-               u.estado AS usuario_estado, r.nombre AS rol,
+               u.estado AS usuario_estado, u.requiere_cambio_clave, r.nombre AS rol,
                m.nombres, m.apellidos, m.estado AS miembro_estado
         FROM usuario u
         JOIN rol r ON r.id_rol = u.id_rol
@@ -36,6 +36,14 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
         }
     }
 
+    @Override public void updatePassword(int id, String passwordHash, boolean changeRequired) {
+        try (Connection connection = DBConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement("UPDATE usuario SET clave_hash=?, requiere_cambio_clave=? WHERE id_usuario=?")) {
+            statement.setString(1, passwordHash); statement.setBoolean(2, changeRequired); statement.setInt(3, id);
+            if (statement.executeUpdate() != 1) throw new SQLException("Usuario no encontrado.");
+        } catch (SQLException exception) { throw new IllegalStateException("No fue posible cambiar la contraseña.", exception); }
+    }
+
     private Optional<AuthUser> find(String sql, SqlBinder binder) {
         try (Connection connection = DBConnection.getInstance().getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -52,7 +60,7 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
         return new AuthUser(
             result.getInt("id_usuario"), result.getObject("id_miembro", Integer.class),
             result.getString("nombre_usuario"), result.getString("clave_hash"),
-            result.getString("usuario_estado"), result.getString("rol"),
+            result.getString("usuario_estado"), result.getBoolean("requiere_cambio_clave"), result.getString("rol"),
             result.getString("nombres"), result.getString("apellidos"),
             result.getString("miembro_estado")
         );

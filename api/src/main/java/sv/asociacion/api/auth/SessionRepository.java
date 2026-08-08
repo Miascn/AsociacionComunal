@@ -11,4 +11,5 @@ public interface SessionRepository {
     boolean rotate(long sessionId, String expectedRefreshHash, String accessHash, String refreshHash,
                    Instant accessExpiresAt, Instant refreshExpiresAt);
     void revoke(long sessionId, Instant revokedAt);
+    void revokeAllForUser(int userId, Instant revokedAt);
 }
