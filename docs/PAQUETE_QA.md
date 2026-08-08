@@ -109,6 +109,8 @@ El workflow `Compilar y publicar QA` funciona de dos maneras:
 
 - Un `push` a `develop` compila, prueba y publica automáticamente la nueva
   versión para QA. Si una prueba falla, la versión anterior permanece activa.
+- También crea una **GitHub Release** con el ZIP completo para que un QA nuevo
+  pueda descargar la aplicación directamente desde la sección Releases.
 - Desde **Actions > Compilar y publicar QA > Run workflow**, marca
   **Publicar esta compilación para los QA** para compilar y activarla en el
   servidor automáticamente.
