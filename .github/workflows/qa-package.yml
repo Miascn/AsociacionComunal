@@ -12,7 +12,7 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: qa-release
@@ -119,3 +119,32 @@ jobs:
             --form "checksum=@release/sha256.txt;type=text/plain" \
             "$QA_API_URL/api/updates/windows/publish"
           echo "Versión QA $version publicada correctamente."
+
+  release-github:
+    name: Publicar aplicación en GitHub
+    needs: build-windows
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar paquete aprobado
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-release-${{ env.RELEASE_VERSION }}
+          path: release
+
+      - name: Crear GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '\r\n' < release/version.txt)"
+          full="release/AsociacionComunalQA-${version}-win64.zip"
+          test -f "$full"
+          gh release create "qa-v${version}" \
+            "$full" \
+            "release/sha256.txt" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Asociación Comunal QA v${version}" \
+            --notes "Aplicación portátil para QA. Descarga el ZIP, extráelo y ejecuta AsociacionComunalQA.exe. Las siguientes versiones se actualizarán automáticamente."
