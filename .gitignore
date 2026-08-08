@@ -7,11 +7,15 @@ apache-maven-*/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
+.gradle/
+**/.gradle/
 .env
 *.log
 application-local.properties
 database-local.properties
 qa-local.properties
+local.properties
+**/local.properties
 qa-token.upload
 config.properties
 
