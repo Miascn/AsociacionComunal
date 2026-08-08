@@ -17,7 +17,7 @@ La URL debe terminar en `/`. En el emulador, el valor predeterminado `http://10.
 - autenticación contra `/api/auth/login`;
 - recuperación de identidad con `/api/me`;
 - renovación rotativa de sesión;
-- persistencia local con DataStore;
+- persistencia local cifrada con AES-GCM y Android Keystore sobre DataStore;
 - tema claro y oscuro según el sistema;
 - navegación Inicio, Pagos, Comunidad y Mi cuenta;
 - cierre de sesión con revocación en el servidor.
