@@ -19,6 +19,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import models.AuthUser;
 import security.SessionManager;
@@ -50,6 +52,19 @@ class FxmlNavigationTest {
     }
 
     @Test
+    void cargaFormularioRegistrarMiembro() throws Exception {
+        ejecutarEnJavaFx(() -> {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/views/registrar-miembro.fxml"));
+            Parent root = loader.load();
+            assertNotNull(loader.<RegistrarMiembroController>getController());
+            long campos = recorrer(root).stream().filter(TextField.class::isInstance).count();
+            assertEquals(6, campos);
+            return null;
+        });
+    }
+
+    @Test
     void cargaDashboardNavegaYCierraSesion() throws Exception {
         ejecutarEnJavaFx(() -> {
             SessionManager session = SessionManager.getInstance();
@@ -62,10 +77,35 @@ class FxmlNavigationTest {
             controller.setOnLogout(() -> logoutInvocado[0] = true);
 
             List<Button> botones = buscarBotones(root);
-            assertEquals(10, botones.size());
+            assertEquals(9, botones.size());
 
             for (Button boton : botones) {
-                if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
+                if ("Miembros".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Gestión de miembros"::equals));
+                    TextField busqueda = recorrer(root).stream()
+                            .filter(TextField.class::isInstance)
+                            .map(TextField.class::cast)
+                            .findFirst()
+                            .orElseThrow();
+                    TableView<?> tabla = recorrer(root).stream()
+                            .filter(TableView.class::isInstance)
+                            .map(TableView.class::cast)
+                            .findFirst()
+                            .orElseThrow();
+                    assertEquals(0, tabla.getItems().size());
+                    busqueda.setText("María");
+                    assertEquals(0, tabla.getItems().size());
+                    busqueda.clear();
+                } else if ("Proyectos".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Proyectos comunales"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
+                } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()
                             .map(Label::getText)
@@ -78,7 +118,7 @@ class FxmlNavigationTest {
                     .findFirst()
                     .orElseThrow()
                     .fire();
-            assertTrue(buscarEtiquetas(root).stream().anyMatch(label -> "Panel general".equals(label.getText())));
+            assertTrue(buscarEtiquetas(root).stream().anyMatch(label -> "Dashboard".equals(label.getText())));
 
             botones.stream()
                     .filter(boton -> "Cerrar sesión".equals(boton.getText()))
@@ -95,6 +135,8 @@ class FxmlNavigationTest {
         return recorrer(root).stream()
                 .filter(Button.class::isInstance)
                 .map(Button.class::cast)
+                .filter(button -> button.getStyleClass().contains("nav-button")
+                        || button.getStyleClass().contains("logout-button"))
                 .toList();
     }
 

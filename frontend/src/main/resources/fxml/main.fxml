@@ -23,12 +23,14 @@
                 <padding>
                     <Insets top="24" right="20" bottom="16" left="20"/>
                 </padding>
-                <ImageView fitWidth="150" fitHeight="150" preserveRatio="true" smooth="true"
+                <ImageView fitWidth="72" fitHeight="72" preserveRatio="true" smooth="true"
                            accessibleText="Logo de Asociación Comunal" styleClass="sidebar-logo">
                     <image>
                         <Image url="@../images/logo-asociacion-comunal.png"/>
                     </image>
                 </ImageView>
+                <Label text="Asociación Comunal" styleClass="sidebar-title"/>
+                <Label text="Sistema de Administración" styleClass="sidebar-caption"/>
                 <Label fx:id="lblNombreUsuario" styleClass="sidebar-username" wrapText="true"/>
                 <Label fx:id="lblRolUsuario" styleClass="sidebar-role"/>
             </VBox>
@@ -43,9 +45,6 @@
                         </padding>
                         <Button text="Dashboard" onAction="#mostrarDashboard" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-home"/></graphic>
-                        </Button>
-                        <Button text="Personas" onAction="#mostrarPersonas" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-user"/></graphic>
                         </Button>
                         <Button text="Miembros" onAction="#mostrarMiembros" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-users"/></graphic>
@@ -74,6 +73,16 @@
 
             <Region minHeight="8"/>
             <Separator/>
+
+            <Label fx:id="lblVersion" text="Versión DEV" styleClass="sidebar-version">
+                <VBox.margin><Insets top="8" right="14" bottom="0" left="14"/></VBox.margin>
+            </Label>
+
+            <Button fx:id="btnTema" text="Modo oscuro" onAction="#onAlternarTema"
+                    styleClass="theme-sidebar-button" maxWidth="Infinity">
+                <graphic><FontIcon iconLiteral="fth-moon"/></graphic>
+                <VBox.margin><Insets top="8" right="12" bottom="0" left="12"/></VBox.margin>
+            </Button>
 
             <Button text="Cerrar sesión" onAction="#onCerrarSesion"
                     styleClass="logout-button" maxWidth="Infinity">

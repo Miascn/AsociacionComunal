@@ -1,0 +1,16 @@
+[Unit]
+Description=Asociacion Comunal API
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/asociacion-comunal/api.env
+ExecStart=%h/.local/opt/temurin-21-jre/bin/java -jar %h/apps/asociacion-api/current/asociacion-api.jar
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

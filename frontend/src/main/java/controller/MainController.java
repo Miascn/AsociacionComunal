@@ -7,9 +7,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
 import models.AuthUser;
 import security.SessionManager;
+import service.ThemeService;
 
 public class MainController {
     @FXML
@@ -19,7 +21,13 @@ public class MainController {
     private Label lblRolUsuario;
 
     @FXML
+    private Label lblVersion;
+
+    @FXML
     private StackPane contentArea;
+
+    @FXML
+    private Button btnTema;
 
     private Runnable onLogout;
 
@@ -28,7 +36,19 @@ public class MainController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         lblNombreUsuario.setText(user.getDisplayName());
         lblRolUsuario.setText(user.getRole());
+        lblVersion.setText("Versión " + System.getProperty("jpackage.app-version", "DEV"));
+        actualizarBotonTema();
         mostrarDashboard();
+    }
+
+    @FXML
+    private void onAlternarTema() {
+        ThemeService.toggle(btnTema.getScene());
+        actualizarBotonTema();
+    }
+
+    private void actualizarBotonTema() {
+        btnTema.setText(ThemeService.isDark() ? "Modo claro" : "Modo oscuro");
     }
 
     public void setOnLogout(Runnable onLogout) {
@@ -41,13 +61,8 @@ public class MainController {
     }
 
     @FXML
-    private void mostrarPersonas() {
-        mostrarPlaceholder("Personas");
-    }
-
-    @FXML
     private void mostrarMiembros() {
-        mostrarPlaceholder("Miembros");
+        cargarVista("/fxml/views/miembros.fxml");
     }
 
     @FXML
@@ -62,7 +77,7 @@ public class MainController {
 
     @FXML
     private void mostrarProyectos() {
-        mostrarPlaceholder("Proyectos");
+        cargarVista("/fxml/views/proyectos.fxml");
     }
 
     @FXML

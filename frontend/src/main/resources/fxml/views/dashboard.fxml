@@ -1,44 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
-
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.DashboardController"
-      spacing="24" styleClass="dashboard-root">
-    <padding>
-        <Insets top="28" right="32" bottom="28" left="32"/>
-    </padding>
-
-    <VBox spacing="2">
-        <Label text="Panel general" styleClass="page-title"/>
-        <Label text="Resumen de la asociación (datos de prueba - Fase 1)" styleClass="page-subtitle"/>
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="controller.DashboardController" fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+ <VBox spacing="18" styleClass="dashboard-root">
+  <padding><Insets top="24" right="28" bottom="28" left="28"/></padding>
+  <HBox alignment="CENTER_LEFT" spacing="14"><VBox><Label text="Dashboard" styleClass="page-title"/><Label text="Resumen general de la asociación" styleClass="page-subtitle"/></VBox><Region HBox.hgrow="ALWAYS"/><TextField promptText="Buscar en el sistema..." prefWidth="300" styleClass="search-field"/><Button styleClass="icon-button"><graphic><FontIcon iconLiteral="fth-bell"/></graphic></Button></HBox>
+  <HBox spacing="14">
+   <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS"><FontIcon iconLiteral="fth-users" styleClass="stat-icon"/><VBox><Label text="Miembros activos" styleClass="stat-label"/><Label fx:id="lblMiembros" styleClass="stat-value"/><Label text="↑ Actualizado" styleClass="stat-trend"/></VBox></HBox>
+   <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS"><FontIcon iconLiteral="fth-home" styleClass="stat-icon stat-icon-cyan"/><VBox><Label text="Familias registradas" styleClass="stat-label"/><Label fx:id="lblFamilias" styleClass="stat-value"/><Label text="Censo comunal" styleClass="stat-trend"/></VBox></HBox>
+   <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS"><FontIcon iconLiteral="fth-dollar-sign" styleClass="stat-icon stat-icon-success"/><VBox><Label text="Aportaciones" styleClass="stat-label"/><Label fx:id="lblIngresos" styleClass="stat-value"/><Label text="↑ Período actual" styleClass="stat-trend"/></VBox></HBox>
+   <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS"><FontIcon iconLiteral="fth-briefcase" styleClass="stat-icon stat-icon-warning"/><VBox><Label text="Proyectos activos" styleClass="stat-label"/><Label fx:id="lblProyectos" styleClass="stat-value"/><Label text="En seguimiento" styleClass="stat-trend"/></VBox></HBox>
+  </HBox>
+  <HBox spacing="14" VBox.vgrow="ALWAYS">
+   <VBox spacing="14" HBox.hgrow="ALWAYS">
+    <VBox spacing="12" styleClass="dashboard-panel" VBox.vgrow="ALWAYS"><HBox><Label text="Aportaciones mensuales" styleClass="section-title"/><Region HBox.hgrow="ALWAYS"/><Label text="Últimos 6 meses" styleClass="panel-chip"/></HBox>
+     <HBox alignment="BOTTOM_CENTER" spacing="22" VBox.vgrow="ALWAYS" styleClass="bar-chart-mock">
+      <VBox alignment="BOTTOM_CENTER" spacing="6" HBox.hgrow="ALWAYS"><Region prefHeight="72" styleClass="chart-bar"/><Label text="Ene"/></VBox><VBox alignment="BOTTOM_CENTER" spacing="6" HBox.hgrow="ALWAYS"><Region prefHeight="105" styleClass="chart-bar"/><Label text="Feb"/></VBox><VBox alignment="BOTTOM_CENTER" spacing="6" HBox.hgrow="ALWAYS"><Region prefHeight="86" styleClass="chart-bar"/><Label text="Mar"/></VBox><VBox alignment="BOTTOM_CENTER" spacing="6" HBox.hgrow="ALWAYS"><Region prefHeight="128" styleClass="chart-bar"/><Label text="Abr"/></VBox><VBox alignment="BOTTOM_CENTER" spacing="6" HBox.hgrow="ALWAYS"><Region prefHeight="154" styleClass="chart-bar chart-bar-highlight"/><Label text="May"/></VBox><VBox alignment="BOTTOM_CENTER" spacing="6" HBox.hgrow="ALWAYS"><Region prefHeight="116" styleClass="chart-bar"/><Label text="Jun"/></VBox>
+     </HBox>
     </VBox>
-
-    <HBox spacing="20">
-        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <FontIcon iconLiteral="fth-users" styleClass="stat-icon"/>
-            <Label fx:id="lblMiembros" styleClass="stat-value"/>
-            <Label text="Miembros activos" styleClass="stat-label"/>
-        </VBox>
-        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <FontIcon iconLiteral="fth-home" styleClass="stat-icon"/>
-            <Label fx:id="lblFamilias" styleClass="stat-value"/>
-            <Label text="Familias registradas" styleClass="stat-label"/>
-        </VBox>
-        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <FontIcon iconLiteral="fth-dollar-sign" styleClass="stat-icon, stat-icon-success"/>
-            <Label fx:id="lblIngresos" styleClass="stat-value"/>
-            <Label text="Ingresos del período" styleClass="stat-label"/>
-        </VBox>
-        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <FontIcon iconLiteral="fth-briefcase" styleClass="stat-icon, stat-icon-warning"/>
-            <Label fx:id="lblProyectos" styleClass="stat-value"/>
-            <Label text="Proyectos activos" styleClass="stat-label"/>
-        </VBox>
-    </HBox>
-</VBox>
+    <VBox spacing="10" styleClass="dashboard-panel"><Label text="Actividad reciente" styleClass="section-title"/><HBox spacing="10"><FontIcon iconLiteral="fth-user-plus" styleClass="activity-icon"/><Label text="Nuevo miembro registrado"/><Region HBox.hgrow="ALWAYS"/><Label text="Hoy" styleClass="muted-label"/></HBox><HBox spacing="10"><FontIcon iconLiteral="fth-dollar-sign" styleClass="activity-icon"/><Label text="Aportación registrada"/><Region HBox.hgrow="ALWAYS"/><Label text="Hoy" styleClass="muted-label"/></HBox><HBox spacing="10"><FontIcon iconLiteral="fth-briefcase" styleClass="activity-icon"/><Label text="Proyecto actualizado"/><Region HBox.hgrow="ALWAYS"/><Label text="Ayer" styleClass="muted-label"/></HBox></VBox>
+   </VBox>
+   <VBox prefWidth="300" spacing="14"><VBox spacing="12" styleClass="dashboard-panel"><Label text="Próximas actividades" styleClass="section-title"/><VBox styleClass="activity-card"><Label text="Reunión de directiva" styleClass="feature-title"/><Label text="25 de mayo • 09:00 AM" styleClass="muted-label"/></VBox><VBox styleClass="activity-card"><Label text="Votación de proyecto" styleClass="feature-title"/><Label text="30 de mayo • 08:00 AM" styleClass="muted-label"/></VBox><VBox styleClass="activity-card"><Label text="Registro de aportaciones" styleClass="feature-title"/><Label text="01 de junio • Todo el día" styleClass="muted-label"/></VBox></VBox>
+    <VBox spacing="10" styleClass="dashboard-panel"><Label text="Acciones rápidas" styleClass="section-title"/><Button text="Registrar miembro" maxWidth="Infinity" styleClass="quick-action"><graphic><FontIcon iconLiteral="fth-user-plus"/></graphic></Button><Button text="Nuevo proyecto" maxWidth="Infinity" styleClass="quick-action"><graphic><FontIcon iconLiteral="fth-briefcase"/></graphic></Button><Button text="Programar reunión" maxWidth="Infinity" styleClass="quick-action"><graphic><FontIcon iconLiteral="fth-calendar"/></graphic></Button></VBox>
+   </VBox>
+  </HBox>
+ </VBox>
+</ScrollPane>
