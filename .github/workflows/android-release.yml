@@ -50,10 +50,12 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x gradlew
+          version_code=$((200000 + GITHUB_RUN_NUMBER))
+          api_base="${API_BASE_URL%/}/"
           ./gradlew testDebugUnitTest assembleRelease \
             -PAPP_VERSION_NAME="$ANDROID_VERSION" \
-            -PAPP_VERSION_CODE="${{ github.run_number }}" \
-            -PAPI_BASE_URL="$API_BASE_URL/" \
+            -PAPP_VERSION_CODE="$version_code" \
+            -PAPI_BASE_URL="$api_base" \
             -PANDROID_KEYSTORE_PATH="../release-signing.p12" \
             -PANDROID_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
             -PANDROID_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
