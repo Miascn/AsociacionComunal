@@ -23,3 +23,7 @@ La URL debe terminar en `/`. En el emulador, el valor predeterminado `http://10.
 - cierre de sesión con revocación en el servidor.
 
 Pagos, proyectos, reuniones y votaciones todavía no están implementados.
+
+## Actualizaciones
+
+La aplicación consulta las publicaciones `android-v*` de GitHub Releases. Cuando existe una versión superior muestra el cambio, descarga el APK con progreso y abre el instalador oficial de Android. La confirmación de instalación es obligatoria en aplicaciones distribuidas fuera de Google Play.

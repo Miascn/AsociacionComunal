@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -33,16 +34,51 @@ import sv.asociacion.comunal.MainViewModel
 import sv.asociacion.comunal.R
 import sv.asociacion.comunal.SessionState
 import sv.asociacion.comunal.data.MeResponse
+import sv.asociacion.comunal.update.UpdateInstaller
+import sv.asociacion.comunal.update.UpdateState
 
 private val BrandBlue = Color(0xFF0759C7)
 private val DeepBlue = Color(0xFF002D72)
 
 @Composable fun AsociacionRoot(viewModel: MainViewModel) {
-    when (val state = viewModel.state.collectAsStateWithLifecycle().value) {
-        SessionState.Loading -> LoadingScreen()
-        SessionState.SignedOut -> LoginScreen(onLogin = viewModel::login)
-        is SessionState.Error -> LoginScreen(state.message, viewModel::login, viewModel::dismissError)
-        is SessionState.SignedIn -> ResidentApp(state.profile, viewModel::logout)
+    Box {
+        when (val state = viewModel.state.collectAsStateWithLifecycle().value) {
+            SessionState.Loading -> LoadingScreen()
+            SessionState.SignedOut -> LoginScreen(onLogin = viewModel::login)
+            is SessionState.Error -> LoginScreen(state.message, viewModel::login, viewModel::dismissError)
+            is SessionState.SignedIn -> ResidentApp(state.profile, viewModel::logout)
+        }
+        UpdateOverlay(viewModel.updateState.collectAsStateWithLifecycle().value, viewModel::downloadUpdate, viewModel::dismissUpdate)
+    }
+}
+
+@Composable private fun UpdateOverlay(state: UpdateState, download: (sv.asociacion.comunal.update.AppUpdate) -> Unit, dismiss: () -> Unit) {
+    val context = LocalContext.current
+    when (state) {
+        is UpdateState.Available -> AlertDialog(
+            onDismissRequest = dismiss,
+            icon = { Icon(Icons.Default.SystemUpdate, null) },
+            title = { Text("Actualización ${state.update.version}") },
+            text = { Text(state.update.notes.ifBlank { "Hay una nueva versión disponible con mejoras y correcciones." }) },
+            confirmButton = { Button({ download(state.update) }) { Text("Actualizar") } },
+            dismissButton = { TextButton(dismiss) { Text("Más tarde") } }
+        )
+        is UpdateState.Downloading -> AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Actualizando…") },
+            text = { Column { Text("Descargando archivos. No cierres la aplicación."); Spacer(Modifier.height(18.dp)); LinearProgressIndicator(progress = { state.percent / 100f }, Modifier.fillMaxWidth()); Spacer(Modifier.height(8.dp)); Text("${state.percent}%", Modifier.fillMaxWidth(), textAlign = TextAlign.Center) } },
+            confirmButton = {}
+        )
+        is UpdateState.Ready -> AlertDialog(
+            onDismissRequest = dismiss,
+            icon = { Icon(Icons.Default.DownloadDone, null) },
+            title = { Text("Descarga completada") },
+            text = { Text("Android abrirá el instalador para actualizar la aplicación. Tus datos y sesión se conservarán.") },
+            confirmButton = { Button({ UpdateInstaller.install(context, state.file) }) { Text("Instalar") } },
+            dismissButton = { TextButton(dismiss) { Text("Después") } }
+        )
+        is UpdateState.Error -> AlertDialog(onDismissRequest = dismiss, title = { Text("Actualización") }, text = { Text(state.message) }, confirmButton = { TextButton(dismiss) { Text("Aceptar") } })
+        else -> Unit
     }
 }
 

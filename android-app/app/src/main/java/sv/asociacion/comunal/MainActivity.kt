@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         val repository = (application as AsociacionApp).container.authRepository
         setContent {
             AsociacionTheme {
-                val vm: MainViewModel = viewModel(factory = SimpleViewModelFactory { MainViewModel(repository) })
+                val vm: MainViewModel = viewModel(factory = SimpleViewModelFactory { MainViewModel(repository, (application as AsociacionApp).container.updateRepository) })
                 AsociacionRoot(vm)
             }
         }

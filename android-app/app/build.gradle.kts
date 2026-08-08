@@ -12,14 +12,31 @@ android {
         applicationId = "sv.asociacion.comunal"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = (project.findProperty("APP_VERSION_CODE") as String?)?.toInt() ?: 3
+        versionName = project.findProperty("APP_VERSION_NAME") as String? ?: "0.2.0"
         buildConfigField("String", "API_BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://10.0.2.2:8080/"}\"")
     }
 
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
+    signingConfigs {
+        create("release") {
+            val path = project.findProperty("ANDROID_KEYSTORE_PATH") as String?
+            if (path != null) {
+                storeFile = file(path)
+                storePassword = project.findProperty("ANDROID_KEYSTORE_PASSWORD") as String?
+                keyAlias = project.findProperty("ANDROID_KEY_ALIAS") as String?
+                keyPassword = project.findProperty("ANDROID_KEY_PASSWORD") as String?
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
 }
 
 dependencies {
@@ -33,6 +50,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.7")
     implementation("androidx.datastore:datastore-preferences:1.1.2")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")

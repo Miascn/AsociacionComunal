@@ -1,0 +1,80 @@
+name: Publicar Android QA
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-qa-release
+  cancel-in-progress: false
+
+env:
+  ANDROID_VERSION: 0.2.${{ github.run_number }}
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Restaurar firma Android
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android-app/release-signing.p12
+
+      - name: Probar y compilar APK firmado
+        working-directory: android-app
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          API_BASE_URL: ${{ secrets.QA_API_URL }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest assembleRelease \
+            -PAPP_VERSION_NAME="$ANDROID_VERSION" \
+            -PAPP_VERSION_CODE="${{ github.run_number }}" \
+            -PAPI_BASE_URL="$API_BASE_URL/" \
+            -PANDROID_KEYSTORE_PATH="../release-signing.p12" \
+            -PANDROID_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
+            -PANDROID_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
+            -PANDROID_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+          cp app/build/outputs/apk/release/app-release.apk "AsociacionComunalAndroid-${ANDROID_VERSION}.apk"
+
+      - name: Publicar artefacto verificable
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ env.ANDROID_VERSION }}
+          path: android-app/AsociacionComunalAndroid-${{ env.ANDROID_VERSION }}.apk
+          if-no-files-found: error
+
+      - name: Crear GitHub Release Android
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: android-app
+        run: |
+          gh release create "android-v${ANDROID_VERSION}" \
+            "AsociacionComunalAndroid-${ANDROID_VERSION}.apk" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Asociación Comunal Android v${ANDROID_VERSION}" \
+            --notes "Actualización QA de Android. La aplicación detectará esta versión y solicitará autorización para instalarla."
