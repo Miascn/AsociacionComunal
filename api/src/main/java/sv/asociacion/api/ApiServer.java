@@ -58,6 +58,9 @@ public final class ApiServer {
             config.routes.get("/api/updates/windows/package", ApiServer::legacyUpdatePackage);
             config.routes.get("/api/updates/windows/delta", ApiServer::updatePackage);
             config.routes.post("/api/updates/windows/publish", ApiServer::publishUpdate);
+            config.routes.get("/api/mobile/updates/android/manifest", ApiServer::androidUpdateManifest);
+            config.routes.get("/api/mobile/updates/android/package", ApiServer::androidUpdatePackage);
+            config.routes.post("/api/updates/android/publish", ApiServer::publishAndroidUpdate);
             new AuthRoutes(new AuthService(new JdbcUserAuthRepository(), new JdbcSessionRepository())).register(config.routes);
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
@@ -139,6 +142,77 @@ public final class ApiServer {
 
     private static Path updateDirectory() {
         return Path.of(System.getProperty("user.home"), "apps", "asociacion-api", "updates");
+    }
+
+    private static Path androidUpdateDirectory() {
+        return Path.of(System.getProperty("user.home"), "apps", "asociacion-api", "android-updates");
+    }
+
+    private static void androidUpdateManifest(Context context) throws Exception {
+        Path updates = androidUpdateDirectory();
+        Path version = updates.resolve("version.txt");
+        Path archive = updates.resolve("AsociacionComunalAndroid.apk");
+        Path checksum = updates.resolve("sha256.txt");
+        if (!Files.isRegularFile(version) || !Files.isRegularFile(archive) || !Files.isRegularFile(checksum)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualización Android publicada."));
+            return;
+        }
+        Path notes = updates.resolve("notes.txt");
+        context.json(Map.of(
+            "version", Files.readString(version).trim(),
+            "sha256", Files.readString(checksum).trim(),
+            "size", Files.size(archive),
+            "notes", Files.isRegularFile(notes) ? Files.readString(notes).trim() : "Mejoras y correcciones.",
+            "downloadPath", "/api/mobile/updates/android/package"
+        ));
+    }
+
+    private static void androidUpdatePackage(Context context) throws Exception {
+        Path archive = androidUpdateDirectory().resolve("AsociacionComunalAndroid.apk");
+        if (!Files.isRegularFile(archive)) { context.status(HttpStatus.NOT_FOUND); return; }
+        context.header("Content-Disposition", "attachment; filename=AsociacionComunalAndroid.apk");
+        context.contentType("application/vnd.android.package-archive").result(Files.newInputStream(archive));
+    }
+
+    private static void publishAndroidUpdate(Context context) throws Exception {
+        UploadedFile apk = requiredUpload(context, "apk");
+        String version = new String(requiredUpload(context, "version").content().readAllBytes(), StandardCharsets.UTF_8).trim();
+        String checksum = new String(requiredUpload(context, "checksum").content().readAllBytes(), StandardCharsets.UTF_8).trim().toLowerCase();
+        UploadedFile notesUpload = context.uploadedFile("notes");
+        if (!version.matches("\\d+\\.\\d+\\.\\d+") || !checksum.matches("[a-f0-9]{64}")) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "Versión o checksum inválido.")); return;
+        }
+        Path updates = androidUpdateDirectory();
+        Files.createDirectories(updates);
+        Path staging = Files.createTempDirectory(updates, ".publish-");
+        try {
+            Path stagedApk = staging.resolve("AsociacionComunalAndroid.apk");
+            Files.copy(apk.content(), stagedApk);
+            String actual = sha256(stagedApk);
+            if (!actual.equals(checksum)) {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "El checksum del APK no coincide.")); return;
+            }
+            Files.writeString(staging.resolve("version.txt"), version, StandardCharsets.UTF_8);
+            Files.writeString(staging.resolve("sha256.txt"), checksum, StandardCharsets.UTF_8);
+            Files.writeString(staging.resolve("notes.txt"), notesUpload == null ? "Mejoras y correcciones." : new String(notesUpload.content().readAllBytes(), StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            publishFile(stagedApk, updates.resolve("AsociacionComunalAndroid.apk"));
+            publishFile(staging.resolve("version.txt"), updates.resolve("version.txt"));
+            publishFile(staging.resolve("sha256.txt"), updates.resolve("sha256.txt"));
+            publishFile(staging.resolve("notes.txt"), updates.resolve("notes.txt"));
+        } finally {
+            try (var files = Files.list(staging)) { files.forEach(path -> { try { Files.deleteIfExists(path); } catch (Exception ignored) { } }); }
+            Files.deleteIfExists(staging);
+        }
+        context.status(HttpStatus.CREATED).json(Map.of("version", version, "published", true));
+    }
+
+    private static String sha256(Path file) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (var input = Files.newInputStream(file)) {
+            byte[] buffer = new byte[8192]; int read;
+            while ((read = input.read(buffer)) >= 0) digest.update(buffer, 0, read);
+        }
+        return java.util.HexFormat.of().formatHex(digest.digest());
     }
 
     private static void updateManifest(Context context) throws Exception {

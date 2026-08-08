@@ -69,6 +69,26 @@ jobs:
           path: android-app/AsociacionComunalAndroid-${{ env.ANDROID_VERSION }}.apk
           if-no-files-found: error
 
+      - name: Activar actualización Android en API
+        working-directory: android-app
+        env:
+          QA_API_URL: ${{ secrets.QA_API_URL }}
+          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          apk="AsociacionComunalAndroid-${ANDROID_VERSION}.apk"
+          printf '%s' "$ANDROID_VERSION" > version.txt
+          sha256sum "$apk" | cut -d' ' -f1 > sha256.txt
+          printf 'Actualización Android %s con mejoras y correcciones.' "$ANDROID_VERSION" > notes.txt
+          curl --fail --silent --show-error --location \
+            --header "Authorization: Bearer $QA_API_TOKEN" \
+            --header "ngrok-skip-browser-warning: 1" \
+            --form "apk=@$apk;type=application/vnd.android.package-archive" \
+            --form "version=@version.txt;type=text/plain" \
+            --form "checksum=@sha256.txt;type=text/plain" \
+            --form "notes=@notes.txt;type=text/plain" \
+            "${QA_API_URL%/}/api/updates/android/publish"
+
       - name: Crear GitHub Release Android
         env:
           GH_TOKEN: ${{ github.token }}

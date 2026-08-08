@@ -26,4 +26,4 @@ Pagos, proyectos, reuniones y votaciones todavía no están implementados.
 
 ## Actualizaciones
 
-La aplicación consulta las publicaciones `android-v*` de GitHub Releases. Cuando existe una versión superior muestra el cambio, descarga el APK con progreso y abre el instalador oficial de Android. La confirmación de instalación es obligatoria en aplicaciones distribuidas fuera de Google Play.
+La aplicación consulta el canal público de actualizaciones de la API. GitHub Actions compila y firma cada APK, y lo publica en ese canal usando credenciales que nunca llegan al teléfono. Cuando existe una versión superior muestra el cambio, descarga el APK con progreso y abre el instalador oficial de Android.

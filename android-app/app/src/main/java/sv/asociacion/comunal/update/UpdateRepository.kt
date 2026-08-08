@@ -11,21 +11,16 @@ import java.io.File
 
 class UpdateRepository(private val context: Context, private val client: OkHttpClient = OkHttpClient()) {
     suspend fun findUpdate(): AppUpdate? = withContext(Dispatchers.IO) {
-        val request = Request.Builder()
-            .url("https://api.github.com/repos/Miascn/AsociacionComunal/releases?per_page=20")
-            .header("Accept", "application/vnd.github+json")
-            .header("X-GitHub-Api-Version", "2022-11-28")
-            .build()
+        val base = BuildConfig.API_BASE_URL.trimEnd('/') + "/"
+        val request = Request.Builder().url(base + "api/mobile/updates/android/manifest")
+            .header("ngrok-skip-browser-warning", "asociacion-android").build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("GitHub respondió ${response.code}")
-            val releases = JsonParser.parseString(response.body?.string().orEmpty()).asJsonArray
-            val release = releases.firstOrNull { it.asJsonObject["tag_name"].asString.startsWith("android-v") }?.asJsonObject ?: return@withContext null
-            val version = release["tag_name"].asString.removePrefix("android-v")
+            if (response.code == 404) return@withContext null
+            if (!response.isSuccessful) error("Servidor respondió ${response.code}")
+            val manifest = JsonParser.parseString(response.body?.string().orEmpty()).asJsonObject
+            val version = manifest["version"].asString
             if (!VersionComparator.isNewer(version, BuildConfig.VERSION_NAME)) return@withContext null
-            val asset = release["assets"].asJsonArray.firstOrNull {
-                it.asJsonObject["name"].asString.endsWith(".apk")
-            }?.asJsonObject ?: return@withContext null
-            AppUpdate(version, asset["browser_download_url"].asString, release["body"]?.asString.orEmpty())
+            AppUpdate(version, base.trimEnd('/') + manifest["downloadPath"].asString, manifest["notes"]?.asString.orEmpty())
         }
     }
 
