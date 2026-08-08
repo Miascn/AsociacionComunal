@@ -107,7 +107,8 @@ Después de esta prueba ya puedes compartir el ZIP completo con QA.
 
 El workflow `Compilar y publicar QA` funciona de dos maneras:
 
-- Un `push` a `develop` compila, prueba y conserva el paquete durante 30 días.
+- Un `push` a `develop` compila, prueba y publica automáticamente la nueva
+  versión para QA. Si una prueba falla, la versión anterior permanece activa.
 - Desde **Actions > Compilar y publicar QA > Run workflow**, marca
   **Publicar esta compilación para los QA** para compilar y activarla en el
   servidor automáticamente.
