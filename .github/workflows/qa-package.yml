@@ -1,19 +1,32 @@
-name: Paquete QA para Windows
+name: Compilar y publicar QA
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - develop
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publicar esta compilación para los QA
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: qa-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_VERSION: 1.4.${{ github.run_number }}
+
 jobs:
   build-windows:
+    name: Probar y crear paquetes
     runs-on: windows-latest
     steps:
-      - name: Descargar codigo
+      - name: Descargar código
         uses: actions/checkout@v4
 
       - name: Configurar Java 21
@@ -23,22 +36,86 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Construir paquete QA
+      - name: Descargar base publicada
         shell: powershell
         env:
           QA_API_URL: ${{ secrets.QA_API_URL }}
           QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
-        run: .\scripts\build-qa-package.ps1 -Version "1.0.${{ github.run_number }}"
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path .ci\base | Out-Null
+          $auth = "Authorization: Bearer $env:QA_API_TOKEN"
+          curl.exe --fail --silent --show-error --location `
+            --header $auth --header "ngrok-skip-browser-warning: 1" `
+            "$env:QA_API_URL/api/updates/windows/package" `
+            --output .ci\base\current.zip
+          curl.exe --fail --silent --show-error --location `
+            --header $auth --header "ngrok-skip-browser-warning: 1" `
+            "$env:QA_API_URL/api/updates/windows/build-manifest" `
+            --output .ci\base\previous-manifest.json
+          Expand-Archive -LiteralPath .ci\base\current.zip -DestinationPath .ci\base\image
+          $legacy = Get-ChildItem .ci\base\image -Directory |
+            Where-Object Name -eq "AsociacionComunalQA" |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $legacy) { throw "El paquete publicado no contiene la imagen QA." }
+          "LEGACY_IMAGE=$legacy" >> $env:GITHUB_ENV
 
-      - name: Publicar artefacto
+      - name: Compilar, probar y empaquetar
+        shell: powershell
+        env:
+          QA_API_URL: ${{ secrets.QA_API_URL }}
+          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
+        run: |
+          .\scripts\build-qa-package.ps1 `
+            -Version $env:RELEASE_VERSION `
+            -PreviousManifest .ci\base\previous-manifest.json `
+            -LegacyImage $env:LEGACY_IMAGE
+
+      - name: Publicar artefacto interno
         uses: actions/upload-artifact@v4
         with:
-          name: AsociacionComunalQA-win64
+          name: qa-release-${{ env.RELEASE_VERSION }}
           path: |
-            dist/AsociacionComunalQA-*-win64.zip
-            dist/AsociacionComunalQA-*-delta.zip
+            dist/AsociacionComunalQA-${{ env.RELEASE_VERSION }}-win64.zip
+            dist/AsociacionComunalQA-${{ env.RELEASE_VERSION }}-delta.zip
             dist/update-manifest.json
             dist/version.txt
             dist/sha256.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
+
+  deploy-qa:
+    name: Activar actualización QA
+    needs: build-windows
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - name: Descargar paquete aprobado
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-release-${{ env.RELEASE_VERSION }}
+          path: release
+
+      - name: Publicar mediante la API segura
+        shell: bash
+        env:
+          QA_API_URL: ${{ secrets.QA_API_URL }}
+          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '\r\n' < release/version.txt)"
+          full="release/AsociacionComunalQA-${version}-win64.zip"
+          delta="release/AsociacionComunalQA-${version}-delta.zip"
+          test -f "$full"
+          test -f "$delta"
+          curl --fail --show-error --silent --location \
+            --header "Authorization: Bearer $QA_API_TOKEN" \
+            --header "ngrok-skip-browser-warning: 1" \
+            --form "full=@$full;type=application/zip" \
+            --form "delta=@$delta;type=application/zip" \
+            --form "manifest=@release/update-manifest.json;type=application/json" \
+            --form "version=@release/version.txt;type=text/plain" \
+            --form "checksum=@release/sha256.txt;type=text/plain" \
+            "$QA_API_URL/api/updates/windows/publish"
+          echo "Versión QA $version publicada correctamente."

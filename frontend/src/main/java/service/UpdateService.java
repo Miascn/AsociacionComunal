@@ -43,11 +43,11 @@ public final class UpdateService {
 
     private static void offerUpdate(Window owner, QaApiConfig config, HttpClient client, Manifest manifest) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "La versiÃ³n " + manifest.version() + " estÃ¡ lista. Solo se descargarÃ¡n los archivos modificados.",
+            "La versión " + manifest.version() + " está lista. Solo se descargarán los archivos modificados.",
             ButtonType.OK, ButtonType.CANCEL);
         alert.initOwner(owner);
-        alert.setHeaderText("ActualizaciÃ³n disponible");
-        alert.setTitle("AsociaciÃ³n Comunal QA");
+        alert.setHeaderText("Actualización disponible");
+        alert.setTitle("Asociación Comunal QA");
         if (alert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
         Stage progress = progressWindow(owner);
         progress.show();
@@ -59,8 +59,8 @@ public final class UpdateService {
         spinner.setPrefSize(48, 48);
         ProgressBar bar = new ProgressBar(ProgressBar.INDETERMINATE_PROGRESS);
         bar.setPrefWidth(320);
-        Label status = new Label("Preparando actualizaciÃ³n...");
-        VBox content = new VBox(14, new HBox(14, spinner, new Label("Actualizando AsociaciÃ³n Comunal")), bar, status);
+        Label status = new Label("Preparando actualización...");
+        VBox content = new VBox(14, new HBox(14, spinner, new Label("Actualizando Asociación Comunal")), bar, status);
         content.setPadding(new Insets(24));
         Stage stage = new Stage(StageStyle.UTILITY);
         stage.initOwner(owner);
@@ -81,16 +81,16 @@ public final class UpdateService {
             HttpResponse<InputStream> response = client.send(
                 request(config, "/api/updates/windows/delta").GET().build(),
                 HttpResponse.BodyHandlers.ofInputStream());
-            if (response.statusCode() != 200) throw new IllegalStateException("El servidor no entregÃ³ la actualizaciÃ³n.");
+            if (response.statusCode() != 200) throw new IllegalStateException("El servidor no entregó la actualización.");
             long total = response.headers().firstValueAsLong("Content-Length").orElse(manifest.size());
             download(response.body(), archive, total, window);
             if (!sha256(archive).equalsIgnoreCase(manifest.sha256())) {
-                throw new IllegalStateException("La descarga no superÃ³ la verificaciÃ³n de seguridad.");
+                throw new IllegalStateException("La descarga no superó la verificación de seguridad.");
             }
             setStatus(window, "Instalando cambios y reiniciando...");
             Path script = Files.createTempFile("asociacion-updater-", ".ps1");
             try (InputStream input = UpdateService.class.getResourceAsStream("/updater/update.ps1")) {
-                if (input == null) throw new IllegalStateException("No se encontrÃ³ el instalador interno.");
+                if (input == null) throw new IllegalStateException("No se encontró el instalador interno.");
                 Files.copy(input, script, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
             Path executable = Path.of(System.getProperty("jpackage.app-path")).toAbsolutePath();
@@ -103,7 +103,7 @@ public final class UpdateService {
             Platform.runLater(() -> {
                 window.close();
                 new Alert(Alert.AlertType.ERROR,
-                    "No fue posible instalar la actualizaciÃ³n: " + exception.getMessage(), ButtonType.OK).show();
+                    "No fue posible instalar la actualización: " + exception.getMessage(), ButtonType.OK).show();
             });
         }
     }

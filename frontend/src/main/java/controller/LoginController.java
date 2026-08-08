@@ -6,9 +6,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Button;
 import models.AuthResult;
 import services.auth.AuthService;
 import security.SessionManager;
+import service.ThemeService;
 
 public class LoginController {
     @FXML
@@ -20,12 +22,26 @@ public class LoginController {
     @FXML
     private Label mensajeError;
 
+    @FXML
+    private Button btnTema;
+
     private final AuthService authService = new AuthService();
     private Runnable onAuthenticated;
 
     @FXML
     private void initialize() {
         ocultarError();
+        actualizarBotonTema();
+    }
+
+    @FXML
+    private void onAlternarTema() {
+        ThemeService.toggle(btnTema.getScene());
+        actualizarBotonTema();
+    }
+
+    private void actualizarBotonTema() {
+        btnTema.setText(ThemeService.isDark() ? "Modo claro" : "Modo oscuro");
     }
 
     public void setOnAuthenticated(Runnable onAuthenticated) {

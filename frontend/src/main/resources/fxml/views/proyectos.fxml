@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.ProyectoController" spacing="22" styleClass="module-page">
+    <padding><Insets top="30" right="34" bottom="30" left="34"/></padding>
+    <HBox alignment="CENTER_LEFT" spacing="16">
+        <VBox spacing="4">
+            <Label text="Proyectos comunales" styleClass="page-title"/>
+            <Label text="Consulta las iniciativas y su avance en la comunidad" styleClass="page-subtitle"/>
+        </VBox>
+    </HBox>
+    <HBox spacing="14">
+        <VBox spacing="4" styleClass="summary-card" HBox.hgrow="ALWAYS">
+            <Label text="Total registrados" styleClass="summary-label"/>
+            <Label fx:id="lblTotalProyectos" text="0 proyectos registrados" styleClass="summary-value"/>
+        </VBox>
+        <VBox spacing="4" styleClass="summary-card" HBox.hgrow="ALWAYS">
+            <Label text="Estado del módulo" styleClass="summary-label"/>
+            <Label fx:id="lblEstadoModulo" text="Conectando al servidor..." styleClass="summary-value-success"/>
+        </VBox>
+    </HBox>
+    <VBox spacing="12" styleClass="table-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT">
+            <Label text="Listado de proyectos" styleClass="section-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="campoBusqueda" promptText="Buscar por nombre, descripción o estado"
+                       prefWidth="300" styleClass="search-field"/>
+        </HBox>
+        <TableView fx:id="tablaProyectos" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="columnaNombre" text="Proyecto" prefWidth="180"/>
+                <TableColumn fx:id="columnaDescripcion" text="Descripción" prefWidth="280"/>
+                <TableColumn fx:id="columnaPresupuesto" text="Presupuesto" prefWidth="120"/>
+                <TableColumn fx:id="columnaFecha" text="Creación" prefWidth="110"/>
+                <TableColumn fx:id="columnaEstado" text="Estado" prefWidth="125"/>
+            </columns>
+            <placeholder><Label text="No hay proyectos para mostrar" styleClass="page-subtitle"/></placeholder>
+        </TableView>
+    </VBox>
+</VBox>

@@ -1,15 +1,21 @@
 package sv.asociacion.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import io.javalin.http.UploadedFile;
 import sv.asociacion.backend.config.DBConnection;
 import sv.asociacion.backend.dao.MiembroDAO;
+import sv.asociacion.backend.dao.ProyectoDAO;
 import sv.asociacion.backend.entity.Miembro;
+import sv.asociacion.backend.entity.Proyecto;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,6 +26,7 @@ import java.util.Map;
 public final class ApiServer {
     private static final String HOST = "127.0.0.1";
     private static final int DEFAULT_PORT = 8080;
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private ApiServer() {
     }
@@ -28,19 +35,23 @@ public final class ApiServer {
         int port = readPort();
         String apiSecret = requiredSecret();
         MiembroDAO miembroDAO = new MiembroDAO();
+        ProyectoDAO proyectoDAO = new ProyectoDAO();
 
         Javalin.start(config -> {
             config.jetty.host = HOST;
             config.jetty.port = port;
-            config.http.maxRequestSize = 1_048_576L;
+            config.http.maxRequestSize = 268_435_456L;
             config.routes.before("/api/*", context -> authenticate(context, apiSecret));
             config.routes.get("/health", ApiServer::health);
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
             config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
+            config.routes.get("/api/proyectos", context -> context.json(toProjectResponse(proyectoDAO.findAll())));
             config.routes.get("/api/updates/windows/manifest", ApiServer::updateManifest);
             config.routes.get("/api/updates/windows/manifest-v2", ApiServer::updateManifestV2);
+            config.routes.get("/api/updates/windows/build-manifest", ApiServer::buildManifest);
             config.routes.get("/api/updates/windows/package", ApiServer::legacyUpdatePackage);
             config.routes.get("/api/updates/windows/delta", ApiServer::updatePackage);
+            config.routes.post("/api/updates/windows/publish", ApiServer::publishUpdate);
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
                 context.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -83,6 +94,10 @@ public final class ApiServer {
         return miembros.stream().map(MiembroResponse::from).toList();
     }
 
+    private static List<ProyectoResponse> toProjectResponse(List<Proyecto> proyectos) {
+        return proyectos.stream().map(ProyectoResponse::from).toList();
+    }
+
     private static void createMember(Context context, MiembroDAO miembroDAO) {
         CreateMemberRequest request = context.bodyAsClass(CreateMemberRequest.class);
         String validationError = request.validationError();
@@ -123,7 +138,7 @@ public final class ApiServer {
         Path archive = updateDirectory().resolve("AsociacionComunalQA-win64.zip");
         Path checksum = updateDirectory().resolve("sha256.txt");
         if (!Files.isRegularFile(version) || !Files.isRegularFile(archive) || !Files.isRegularFile(checksum)) {
-            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualizaciÃ³n publicada."));
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualización publicada."));
             return;
         }
         context.json(Map.of("version", Files.readString(version).trim(), "sha256", Files.readString(checksum).trim()));
@@ -136,7 +151,25 @@ public final class ApiServer {
             context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualización publicada."));
             return;
         }
-        context.contentType("application/json").result(Files.readString(manifest));
+        String manifestJson = Files.readString(manifest);
+        if (!manifestJson.isEmpty() && manifestJson.charAt(0) == '\uFEFF') {
+            manifestJson = manifestJson.substring(1);
+        }
+        JsonNode published = JSON.readTree(manifestJson);
+        context.json(Map.of(
+            "version", published.path("version").asText(),
+            "sha256", published.path("sha256").asText(),
+            "size", published.path("size").asLong()
+        ));
+    }
+
+    private static void buildManifest(Context context) throws Exception {
+        Path manifest = updateDirectory().resolve("update-manifest.json");
+        if (!Files.isRegularFile(manifest)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay manifiesto publicado."));
+            return;
+        }
+        context.contentType("application/json").result(Files.newInputStream(manifest));
     }
 
     private static void legacyUpdatePackage(Context context) throws Exception {
@@ -155,6 +188,61 @@ public final class ApiServer {
         }
         context.header("Content-Disposition", "attachment; filename=AsociacionComunalQA-delta.zip");
         context.contentType("application/zip").result(Files.newInputStream(archive));
+    }
+
+    private static void publishUpdate(Context context) throws Exception {
+        UploadedFile full = requiredUpload(context, "full");
+        UploadedFile delta = requiredUpload(context, "delta");
+        UploadedFile manifestUpload = requiredUpload(context, "manifest");
+        UploadedFile versionUpload = requiredUpload(context, "version");
+        UploadedFile checksumUpload = requiredUpload(context, "checksum");
+
+        byte[] manifestBytes = manifestUpload.content().readAllBytes();
+        byte[] versionBytes = versionUpload.content().readAllBytes();
+        byte[] checksumBytes = checksumUpload.content().readAllBytes();
+        JsonNode manifest = JSON.readTree(manifestBytes);
+        String version = new String(versionBytes, StandardCharsets.UTF_8).trim();
+        if (!version.matches("\\d+\\.\\d+\\.\\d+") || !version.equals(manifest.path("version").asText())) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "La versión y el manifiesto no coinciden."));
+            return;
+        }
+
+        Path updates = updateDirectory();
+        Files.createDirectories(updates);
+        Path staging = Files.createTempDirectory(updates, ".publish-");
+        try {
+            Path fullFile = staging.resolve("AsociacionComunalQA-" + version + "-win64.zip");
+            Path deltaFile = staging.resolve("AsociacionComunalQA-" + version + "-delta.zip");
+            Files.copy(full.content(), fullFile);
+            Files.copy(delta.content(), deltaFile);
+            Files.write(staging.resolve("update-manifest.json"), manifestBytes);
+            Files.write(staging.resolve("version.txt"), versionBytes);
+            Files.write(staging.resolve("sha256.txt"), checksumBytes);
+
+            publishFile(fullFile, updates.resolve(fullFile.getFileName()));
+            publishFile(deltaFile, updates.resolve(deltaFile.getFileName()));
+            Files.copy(updates.resolve(fullFile.getFileName()), updates.resolve("AsociacionComunalQA-win64.zip"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(updates.resolve(deltaFile.getFileName()), updates.resolve("AsociacionComunalQA-delta.zip"), StandardCopyOption.REPLACE_EXISTING);
+            publishFile(staging.resolve("update-manifest.json"), updates.resolve("update-manifest.json"));
+            publishFile(staging.resolve("version.txt"), updates.resolve("version.txt"));
+            publishFile(staging.resolve("sha256.txt"), updates.resolve("sha256.txt"));
+        } finally {
+            try (var files = Files.list(staging)) {
+                files.forEach(path -> { try { Files.deleteIfExists(path); } catch (Exception ignored) { } });
+            }
+            Files.deleteIfExists(staging);
+        }
+        context.status(HttpStatus.CREATED).json(Map.of("version", version, "published", true));
+    }
+
+    private static UploadedFile requiredUpload(Context context, String name) {
+        UploadedFile file = context.uploadedFile(name);
+        if (file == null) throw new IllegalArgumentException("Falta el archivo " + name + ".");
+        return file;
+    }
+
+    private static void publishFile(Path source, Path destination) throws Exception {
+        Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private record CreateMemberRequest(
@@ -232,6 +320,26 @@ public final class ApiServer {
                 miembro.getDireccion(),
                 miembro.getFechaIngreso() == null ? null : miembro.getFechaIngreso().toString(),
                 miembro.getEstado() == null ? null : miembro.getEstado().name()
+            );
+        }
+    }
+
+    private record ProyectoResponse(
+        Integer id,
+        String nombre,
+        String descripcion,
+        java.math.BigDecimal presupuesto,
+        String fechaCreacion,
+        String estado
+    ) {
+        private static ProyectoResponse from(Proyecto proyecto) {
+            return new ProyectoResponse(
+                proyecto.getIdProyecto(),
+                proyecto.getNombre(),
+                proyecto.getDescripcion(),
+                proyecto.getPresupuesto(),
+                proyecto.getFechaCreacion() == null ? null : proyecto.getFechaCreacion().toString(),
+                proyecto.getEstado() == null ? null : proyecto.getEstado().name()
             );
         }
     }

@@ -77,7 +77,7 @@ class FxmlNavigationTest {
             controller.setOnLogout(() -> logoutInvocado[0] = true);
 
             List<Button> botones = buscarBotones(root);
-            assertEquals(10, botones.size());
+            assertEquals(9, botones.size());
 
             for (Button boton : botones) {
                 if ("Miembros".equals(boton.getText())) {
@@ -99,6 +99,12 @@ class FxmlNavigationTest {
                     busqueda.setText("María");
                     assertEquals(0, tabla.getItems().size());
                     busqueda.clear();
+                } else if ("Proyectos".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Proyectos comunales"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()
@@ -112,7 +118,7 @@ class FxmlNavigationTest {
                     .findFirst()
                     .orElseThrow()
                     .fire();
-            assertTrue(buscarEtiquetas(root).stream().anyMatch(label -> "Panel general".equals(label.getText())));
+            assertTrue(buscarEtiquetas(root).stream().anyMatch(label -> "Dashboard".equals(label.getText())));
 
             botones.stream()
                     .filter(boton -> "Cerrar sesión".equals(boton.getText()))
@@ -129,6 +135,8 @@ class FxmlNavigationTest {
         return recorrer(root).stream()
                 .filter(Button.class::isInstance)
                 .map(Button.class::cast)
+                .filter(button -> button.getStyleClass().contains("nav-button")
+                        || button.getStyleClass().contains("logout-button"))
                 .toList();
     }
 

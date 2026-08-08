@@ -119,7 +119,9 @@ Get-ChildItem -LiteralPath (Join-Path $applicationImage "app") -File -Recurse | 
     $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     $files += [ordered]@{ path = $relative; sha256 = $hash; size = $_.Length }
     if (-not $previousHashes.ContainsKey($relative) -or $previousHashes[$relative] -ne $hash) {
-        $destination = Join-Path $deltaRoot $relative
+        # El actualizador extrae la carpeta exterior "app" como la raiz de instalacion.
+        # Conservamos aqui la ruta real app/... para no colocar JAR y CFG en la raiz.
+        $destination = Join-Path (Join-Path $deltaRoot "app") $relative
         New-Item -ItemType Directory -Path (Split-Path $destination) -Force | Out-Null
         Copy-Item -LiteralPath $_.FullName -Destination $destination
     }
@@ -141,7 +143,8 @@ $manifest = [ordered]@{
     size = (Get-Item -LiteralPath $deltaPath).Length
     files = $files
 }
-$manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+$manifestJson = $manifest | ConvertTo-Json -Depth 5
+[IO.File]::WriteAllText($manifestPath, $manifestJson, [Text.UTF8Encoding]::new($false))
 
 if (Test-Path $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
 Compress-Archive -Path $applicationImage -DestinationPath $zipPath -CompressionLevel Optimal

@@ -3,7 +3,6 @@ package app;
 import java.io.IOException;
 import java.util.List;
 
-import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,6 +14,7 @@ import controller.MainController;
 import security.SessionManager;
 import service.UpdateService;
 import service.DesktopShortcutService;
+import service.ThemeService;
 
 public class Main extends Application {
     private Stage stage;
@@ -22,7 +22,6 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         this.stage = stage;
-        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         stage.setTitle("Asociación Comunal ERP");
         stage.getIcons().addAll(List.of(
                 cargarIcono("/images/app-icon-32.png"),
@@ -72,6 +71,7 @@ public class Main extends Application {
     private void setScene(Parent root, double width, double height) {
         Scene scene = new Scene(root, width, height);
         scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+        ThemeService.apply(scene);
         stage.setScene(scene);
     }
 
