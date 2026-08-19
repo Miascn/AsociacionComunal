@@ -34,7 +34,7 @@ public class Main extends Application {
         stage.centerOnScreen();
         stage.show();
         DesktopShortcutService.ensureAsync();
-        UpdateService.checkAsync(stage);
+        UpdateService.startAutomatic(stage);
     }
 
     private void showLogin() throws IOException {
