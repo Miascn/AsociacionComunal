@@ -72,6 +72,7 @@ if (Test-Path $deltaPath) { Remove-Item -LiteralPath $deltaPath -Force }
     --input $stagingDirectory `
     --main-jar (Split-Path $applicationJar -Leaf) `
     --main-class app.Launcher `
+    --java-options "-Dasociacion.app.version=$Version" `
     --dest $OutputDirectory
 
 if ($LASTEXITCODE -ne 0) { throw "jpackage no pudo generar la aplicacion de Windows." }
@@ -119,8 +120,6 @@ Get-ChildItem -LiteralPath (Join-Path $applicationImage "app") -File -Recurse | 
     $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     $files += [ordered]@{ path = $relative; sha256 = $hash; size = $_.Length }
     if (-not $previousHashes.ContainsKey($relative) -or $previousHashes[$relative] -ne $hash) {
-        # El actualizador extrae la carpeta exterior "app" como la raiz de instalacion.
-        # Conservamos aqui la ruta real app/... para no colocar JAR y CFG en la raiz.
         $destination = Join-Path (Join-Path $deltaRoot "app") $relative
         New-Item -ItemType Directory -Path (Split-Path $destination) -Force | Out-Null
         Copy-Item -LiteralPath $_.FullName -Destination $destination
