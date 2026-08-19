@@ -12,6 +12,7 @@ import javafx.scene.layout.StackPane;
 import models.AuthUser;
 import security.SessionManager;
 import service.ThemeService;
+import service.UpdateService;
 
 public class MainController {
     @FXML
@@ -24,10 +25,16 @@ public class MainController {
     private Label lblVersion;
 
     @FXML
+    private Label lblEstadoActualizacion;
+
+    @FXML
     private StackPane contentArea;
 
     @FXML
     private Button btnTema;
+
+    @FXML
+    private Button btnBuscarActualizaciones;
 
     private Runnable onLogout;
 
@@ -36,9 +43,23 @@ public class MainController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         lblNombreUsuario.setText(user.getDisplayName());
         lblRolUsuario.setText(user.getRole());
-        lblVersion.setText("Versión " + System.getProperty("jpackage.app-version", "DEV"));
+        String version = System.getProperty("jpackage.app-version", "DEV");
+        lblVersion.setText("Versión " + version);
+        lblEstadoActualizacion.setText("DEV".equals(version)
+            ? "Actualizaciones disponibles en paquete QA"
+            : "Listo para comprobar actualizaciones");
         actualizarBotonTema();
         mostrarDashboard();
+    }
+
+    @FXML
+    private void onBuscarActualizaciones() {
+        btnBuscarActualizaciones.setDisable(true);
+        lblEstadoActualizacion.setText("Buscando actualizaciones...");
+        UpdateService.checkManually(btnBuscarActualizaciones.getScene().getWindow(), status -> {
+            lblEstadoActualizacion.setText(status);
+            btnBuscarActualizaciones.setDisable(false);
+        });
     }
 
     @FXML
