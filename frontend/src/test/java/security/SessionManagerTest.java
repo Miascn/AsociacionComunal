@@ -2,6 +2,7 @@ package security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
@@ -19,12 +20,13 @@ class SessionManagerTest {
 
     @Test
     void iniciaYFinalizaLaSesion() {
-        AuthUser user = new AuthUser("admin", "Administrador", "Administrador", "hash", "salt");
+        AuthUser user = new AuthUser("admin", "Administrador", "Administrador");
 
-        sessionManager.start(user);
+        sessionManager.start(user, "test-token");
 
         assertTrue(sessionManager.isAuthenticated());
         assertEquals(user, sessionManager.requireCurrentUser());
+        assertEquals("test-token", sessionManager.requireToken());
 
         sessionManager.clear();
 

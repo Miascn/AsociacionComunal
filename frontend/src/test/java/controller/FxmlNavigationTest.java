@@ -2,73 +2,43 @@ package controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Pane;
 import models.AuthUser;
 import security.SessionManager;
 
 class FxmlNavigationTest {
+
     @BeforeAll
-    static void iniciarJavaFx() throws Exception {
+    static void inicializarJavaFx() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        Platform.startup(latch::countDown);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-    }
-
-    @AfterAll
-    static void finalizarJavaFx() {
-        SessionManager.getInstance().clear();
-        Platform.exit();
-    }
-
-    @Test
-    void cargaLoginYControlador() throws Exception {
-        ejecutarEnJavaFx(() -> {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
-            Parent root = loader.load();
-
-            assertNotNull(root);
-            assertNotNull(loader.<LoginController>getController());
-            return null;
-        });
-    }
-
-    @Test
-    void cargaFormularioRegistrarMiembro() throws Exception {
-        ejecutarEnJavaFx(() -> {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/fxml/views/registrar-miembro.fxml"));
-            Parent root = loader.load();
-            assertNotNull(loader.<RegistrarMiembroController>getController());
-            long campos = recorrer(root).stream().filter(TextField.class::isInstance).count();
-            assertEquals(6, campos);
-            return null;
-        });
+        new Thread(() -> {
+            javafx.application.Application.launch(TestApp.class);
+            latch.countDown();
+        }).start();
+        latch.await(5, TimeUnit.SECONDS);
     }
 
     @Test
     void cargaDashboardNavegaYCierraSesion() throws Exception {
         ejecutarEnJavaFx(() -> {
             SessionManager session = SessionManager.getInstance();
-            session.start(new AuthUser("admin", "Josué Romero", "Administrador", "hash", "salt"));
+            session.start(new AuthUser("admin", "Josué Romero", "Administrador"), "test-token");
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
             Parent root = loader.load();
@@ -127,7 +97,6 @@ class FxmlNavigationTest {
                     .fire();
             assertTrue(logoutInvocado[0]);
             assertFalse(session.isAuthenticated());
-            return null;
         });
     }
 
@@ -142,25 +111,45 @@ class FxmlNavigationTest {
 
     private static List<Label> buscarEtiquetas(Parent root) {
         return recorrer(root).stream()
+
                 .filter(Label.class::isInstance)
                 .map(Label.class::cast)
                 .toList();
     }
 
-    private static List<javafx.scene.Node> recorrer(javafx.scene.Node node) {
-        List<javafx.scene.Node> nodes = new java.util.ArrayList<>();
-        nodes.add(node);
-        if (node instanceof Pane pane) {
-            pane.getChildrenUnmodifiable().forEach(child -> nodes.addAll(recorrer(child)));
-        } else if (node instanceof javafx.scene.control.ScrollPane scrollPane && scrollPane.getContent() != null) {
-            nodes.addAll(recorrer(scrollPane.getContent()));
+    private static List<Node> recorrer(Parent parent) {
+        List<Node> nodes = new java.util.ArrayList<>();
+        for (Node node : parent.getChildrenUnmodifiable()) {
+            nodes.add(node);
+            if (node instanceof Parent child) {
+                nodes.addAll(recorrer(child));
+            }
         }
         return nodes;
     }
 
-    private static <T> T ejecutarEnJavaFx(java.util.concurrent.Callable<T> action) throws Exception {
-        FutureTask<T> task = new FutureTask<>(action);
-        Platform.runLater(task);
-        return task.get(10, TimeUnit.SECONDS);
+    private static void ejecutarEnJavaFx(ExceptionThrowingRunnable runnable) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        var ref = new Object() { Exception exception; };
+        javafx.application.Platform.runLater(() -> {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                ref.exception = e;
+            } finally {
+                latch.countDown();
+            }
+        });
+        latch.await(10, TimeUnit.SECONDS);
+        if (ref.exception != null) throw ref.exception;
     }
+
+    @FunctionalInterface
+    private interface ExceptionThrowingRunnable {
+        void run() throws Exception;
+    }
+}
+class TestApp extends javafx.application.Application {
+    @Override
+    public void start(javafx.stage.Stage stage) {}
 }

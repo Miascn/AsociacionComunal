@@ -23,24 +23,24 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import models.MiembroModel;
 import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
-import sv.asociacion.backend.entity.Miembro;
 
 public class MiembroController {
-    @FXML private TableView<Miembro> tablaMiembros;
-    @FXML private TableColumn<Miembro, String> columnaDui;
-    @FXML private TableColumn<Miembro, String> columnaNombres;
-    @FXML private TableColumn<Miembro, String> columnaApellidos;
-    @FXML private TableColumn<Miembro, String> columnaTelefono;
-    @FXML private TableColumn<Miembro, String> columnaCorreo;
-    @FXML private TableColumn<Miembro, Miembro.Estado> columnaEstado;
+    @FXML private TableView<MiembroModel> tablaMiembros;
+    @FXML private TableColumn<MiembroModel, String> columnaDui;
+    @FXML private TableColumn<MiembroModel, String> columnaNombres;
+    @FXML private TableColumn<MiembroModel, String> columnaApellidos;
+    @FXML private TableColumn<MiembroModel, String> columnaTelefono;
+    @FXML private TableColumn<MiembroModel, String> columnaCorreo;
+    @FXML private TableColumn<MiembroModel, String> columnaEstado;
     @FXML private Label lblTotalMiembros;
     @FXML private Label lblEstadoModulo;
     @FXML private TextField campoBusqueda;
 
-    private final ObservableList<Miembro> miembros = FXCollections.observableArrayList();
-    private FilteredList<Miembro> miembrosFiltrados;
+    private final ObservableList<MiembroModel> miembros = FXCollections.observableArrayList();
+    private FilteredList<MiembroModel> miembrosFiltrados;
 
     @FXML
     private void initialize() {
@@ -59,7 +59,7 @@ public class MiembroController {
         cargarMiembros();
     }
 
-    public ObservableList<Miembro> getMiembros() {
+    public ObservableList<MiembroModel> getMiembros() {
         return miembros;
     }
 
@@ -99,9 +99,9 @@ public class MiembroController {
         Button guardar
     ) {
         lblEstadoModulo.setText("Guardando miembro...");
-        Task<Miembro> task = new Task<>() {
+        Task<MiembroModel> task = new Task<>() {
             @Override
-            protected Miembro call() throws Exception {
+            protected MiembroModel call() throws Exception {
                 return new MiembroApiClient().create(request);
             }
         };
@@ -132,9 +132,9 @@ public class MiembroController {
 
     private void cargarMiembros() {
         lblEstadoModulo.setText("Conectando al servidor...");
-        Task<List<Miembro>> task = new Task<>() {
+        Task<List<MiembroModel>> task = new Task<>() {
             @Override
-            protected List<Miembro> call() throws Exception {
+            protected List<MiembroModel> call() throws Exception {
                 return new MiembroApiClient().findAll();
             }
         };

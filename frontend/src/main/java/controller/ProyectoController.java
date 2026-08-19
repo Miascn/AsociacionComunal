@@ -10,26 +10,26 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import models.ProyectoModel;
 import service.ProyectoApiClient;
-import sv.asociacion.backend.entity.Proyecto;
 
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 
 public class ProyectoController {
-    @FXML private TableView<Proyecto> tablaProyectos;
-    @FXML private TableColumn<Proyecto, String> columnaNombre;
-    @FXML private TableColumn<Proyecto, String> columnaDescripcion;
-    @FXML private TableColumn<Proyecto, java.math.BigDecimal> columnaPresupuesto;
-    @FXML private TableColumn<Proyecto, java.time.LocalDate> columnaFecha;
-    @FXML private TableColumn<Proyecto, Proyecto.Estado> columnaEstado;
+    @FXML private TableView<ProyectoModel> tablaProyectos;
+    @FXML private TableColumn<ProyectoModel, String> columnaNombre;
+    @FXML private TableColumn<ProyectoModel, String> columnaDescripcion;
+    @FXML private TableColumn<ProyectoModel, java.math.BigDecimal> columnaPresupuesto;
+    @FXML private TableColumn<ProyectoModel, String> columnaFecha;
+    @FXML private TableColumn<ProyectoModel, String> columnaEstado;
     @FXML private Label lblTotalProyectos;
     @FXML private Label lblEstadoModulo;
     @FXML private TextField campoBusqueda;
 
-    private final ObservableList<Proyecto> proyectos = FXCollections.observableArrayList();
-    private FilteredList<Proyecto> proyectosFiltrados;
+    private final ObservableList<ProyectoModel> proyectos = FXCollections.observableArrayList();
+    private FilteredList<ProyectoModel> proyectosFiltrados;
 
     @FXML
     private void initialize() {
@@ -48,8 +48,8 @@ public class ProyectoController {
 
     private void cargarProyectos() {
         lblEstadoModulo.setText("Conectando al servidor...");
-        Task<List<Proyecto>> task = new Task<>() {
-            @Override protected List<Proyecto> call() throws Exception {
+        Task<List<ProyectoModel>> task = new Task<>() {
+            @Override protected List<ProyectoModel> call() throws Exception {
                 return new ProyectoApiClient().findAll();
             }
         };
@@ -73,7 +73,7 @@ public class ProyectoController {
         proyectosFiltrados.setPredicate(proyecto -> criterio.isBlank()
             || contiene(proyecto.getNombre(), criterio)
             || contiene(proyecto.getDescripcion(), criterio)
-            || (proyecto.getEstado() != null && contiene(proyecto.getEstado().name(), criterio)));
+            || contiene(proyecto.getEstado(), criterio));
         actualizarTotal();
     }
 

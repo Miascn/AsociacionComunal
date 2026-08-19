@@ -1,93 +1,133 @@
 # Asociación Comunal
 
-Sistema de escritorio para la administración de una asociación comunal, desarrollado con JavaFX y Maven.
+Sistema de administración para una asociación comunal con API REST (Javalin) y cliente de escritorio (JavaFX).
 
-## Estado actual
+## Arquitectura
 
-El frontend cuenta con un flujo base funcional compuesto por:
+```
+asociacion-api/          ← Servicio web (fat JAR autocontenido)
+  └── sv.asociacion/
+      ├── controller/    ← Controladores HTTP
+      ├── service/       ← Lógica de negocio
+      ├── dao/           ← Acceso a datos JDBC
+      ├── domain/
+      │   ├── entity/    ← Entidades de dominio
+      │   └── dto/       ← Objetos de transferencia
+      ├── config/        ← Conexión a base de datos
+      ├── middleware/     ← Autenticación JWT y shared secret
+      └── util/          ← PasswordHasher (PBKDF2), DateUtils
 
-- Inicio de sesión definido mediante FXML.
-- Autenticación temporal con usuarios simulados y contraseñas procesadas con PBKDF2.
-- Gestión de la sesión autenticada mediante `SessionManager`.
-- Dashboard con indicadores simulados.
-- Menú lateral y navegación entre módulos.
-- Cierre de sesión con retorno al login.
-- Vistas placeholder para los módulos que todavía no han sido implementados.
-
-Los controladores JavaFX contienen la interacción de la interfaz, mientras los datos del dashboard y la autenticación permanecen separados en servicios. La autenticación simulada deberá sustituirse posteriormente por un repositorio JDBC conectado a MySQL.
-
-## Interfaz
-
-Las pantallas activas se encuentran en `frontend/src/main/resources/fxml` y utilizan:
-
-- JavaFX 21.0.2.
-- AtlantaFX para el tema visual.
-- Ikonli Feather para los iconos.
-- CSS propio en `frontend/src/main/resources/css/app.css`.
-
-Las vistas construidas programáticamente que sirvieron como referencia durante la migración fueron retiradas después de comprobar el flujo FXML.
-
-## Credenciales de prueba
-
-La autenticación actual utiliza usuarios simulados. Para probar el inicio de sesión se puede usar cualquiera de estas cuentas:
-
-| Usuario | Contraseña | Rol |
-| --- | --- | --- |
-| `admin` | `Admin2026!` | Administrador |
-| `secretaria` | `Secretaria2026!` | Secretaria |
-| `tesorero` | `Tesorero2026!` | Tesorero |
-
-Estas credenciales son exclusivamente para desarrollo y pruebas. Después de cinco intentos fallidos, la cuenta queda bloqueada durante 30 segundos.
-
-## Verificación
-
-Desde la carpeta `frontend`:
-
-```bash
-mvn test
+frontend/                ← Cliente de escritorio JavaFX
+  └── src/main/java/
+      ├── controller/    ← Controladores JavaFX
+      ├── service/       ← Clientes HTTP hacia la API
+      ├── services/      ← AuthService (vía API, no mock)
+      ├── models/        ← Modelos propios (sin dependencia a entidades del backend)
+      ├── security/      ← SessionManager (guarda JWT)
+      └── app/           ← Punto de entrada
 ```
 
-Las pruebas cargan los FXML, verifican sus controladores, recorren los botones de navegación y comprueban el inicio y cierre de sesión.
+## Requisitos
 
-Para ejecutar la aplicación:
+- Java 21 (Temurin JDK recomendado)
+- Docker + Docker Compose (para MySQL)
+- Apache Maven 3.9+
+
+## Inicio rápido
 
 ```bash
+# 1. Levantar MySQL con el esquema y datos iniciales
+docker-compose up -d
+
+# 2. Configurar variables de entorno
+export API_SHARED_SECRET="clave-secreta-de-al-menos-32-caracteres"
+export JWT_SECRET="otra-clave-secreta-de-al-menos-32-caracteres"
+
+# 3. Iniciar la API
+cd api
+mvn package -DskipTests
+java -jar target/asociacion-api.jar
+
+# 4. En otra terminal, iniciar el cliente de escritorio
+cd frontend
 mvn javafx:run
 ```
 
-## Nota sobre Maven
+## Credenciales por defecto (desarrollo)
 
-La carpeta local `apache-maven-3.9.16/` no forma parte del proyecto y está excluida mediante `.gitignore`. Cada integrante debe utilizar una instalación local de Maven o el Maven Wrapper cuando este sea incorporado al repositorio.
+La base de datos se inicializa con un usuario administrador:
 
-## Backend y persistencia
+| Usuario | Contraseña  | Rol   |
+|---------|-------------|-------|
+| `admin` | `Admin2026!`| ADMIN |
 
-El módulo `backend` contiene las entidades del dominio y una capa DAO basada en JDBC para MySQL. El frontend declara una dependencia Maven hacia este módulo, por lo que primero debe instalarse localmente:
+La contraseña está hasheada con PBKDF2WithHmacSHA256 (120.000 iteraciones, salt de 16 bytes)
+directamente en `schema.sql`. No hay usuarios simulados en el frontend.
 
-La estructura del esquema, sus relaciones y la configuración segura de acceso se
-documentan en [`backend/README.md`](backend/README.md).
+## Pruebas
 
-```bash
-cd backend
-mvn clean install
-```
-
-La conexión no contiene credenciales dentro del repositorio. Para configurarla:
-
-1. Copiar `database-example.properties` como `database-local.properties`.
-2. Completar en el archivo local el servidor, usuario y contraseña de MySQL.
-3. Ejecutar el backend desde la raíz del repositorio o desde la carpeta `backend`.
-
-`database-local.properties` está ignorado por Git y nunca debe subirse. También se
-pueden utilizar las variables de entorno `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
-`DB_PASSWORD` y `DB_PARAMETERS`; estas tienen prioridad sobre el archivo local.
-Si el archivo se encuentra en otra ubicación, `DB_CONFIG_FILE` permite indicar su
-ruta completa.
-
-Para verificar la conexión:
+### Frontend (unitarias, sin base de datos)
 
 ```bash
-cd backend
-mvn test-compile exec:java \
-  -Dexec.mainClass=sv.asociacion.backend.DatabaseConnectionTest \
-  -Dexec.classpathScope=test
+cd frontend
+mvn test
 ```
+
+### API (integración, requiere MySQL corriendo)
+
+```bash
+docker-compose up -d
+
+cd api
+mvn test
+```
+
+Las pruebas de integración verifican:
+- Conexión a la base de datos
+- Inicio de sesión con credenciales válidas (retorna JWT)
+- Rechazo de credenciales inválidas (HTTP 401)
+
+## Endpoints de la API
+
+| Método | Path                    | Autenticación     | Descripción                |
+|--------|-------------------------|-------------------|----------------------------|
+| GET    | `/health`               | Pública           | Estado del servicio        |
+| POST   | `/api/auth/login`       | Pública           | Iniciar sesión, retorna JWT|
+| GET    | `/api/miembros`         | JWT               | Listar miembros            |
+| POST   | `/api/miembros`         | JWT               | Registrar miembro          |
+| GET    | `/api/proyectos`        | JWT               | Listar proyectos           |
+| GET    | `/api/usuarios`         | JWT               | Listar usuarios            |
+| GET    | `/api/usuarios/{id}`    | JWT               | Obtener usuario            |
+| POST   | `/api/usuarios`         | JWT               | Crear usuario              |
+| PUT    | `/api/usuarios/{id}`    | JWT               | Actualizar usuario         |
+| DELETE | `/api/usuarios/{id}`    | JWT               | Eliminar usuario           |
+| GET    | `/api/updates/windows/*`| Shared Secret     | Actualizaciones QA         |
+
+## Variables de entorno
+
+La API lee la configuración en este orden de prioridad:
+
+1. Variables de entorno del sistema (`export VAR=valor`)
+2. Archivo `.env` en la raíz del proyecto (cargado automáticamente si existe)
+3. Valores por defecto documentados abajo
+
+| Variable           | Obligatoria | Default | Descripción                              |
+|--------------------|-------------|---------|------------------------------------------|
+| `API_PORT`         | No          | `8080`  | Puerto del servidor                      |
+| `API_SHARED_SECRET`| Sí          | —       | Token compartido para endpoints de update|
+| `JWT_SECRET`       | No          | fallback a `API_SHARED_SECRET` | Clave para firmar JWT |
+| `DB_HOST`          | No          | `localhost` | Host de MySQL                        |
+| `DB_PORT`          | No          | `3306`  | Puerto de MySQL                          |
+| `DB_NAME`          | No          | `asociacion_comunal` | Base de datos                  |
+| `DB_USER`          | Sí          | —       | Usuario de MySQL                         |
+| `DB_PASSWORD`      | Sí          | —       | Contraseña de MySQL                      |
+| `DB_PARAMETERS`    | No          | `serverTimezone=America/El_Salvador&useUnicode=true&characterEncoding=UTF-8` | Parámetros JDBC |
+
+El archivo `.env` de ejemplo se encuentra en `.env.example`. Copie y complete:
+
+```bash
+cp .env.example .env
+# edite .env con sus valores locales
+```
+
+`.env` está en `.gitignore` y nunca debe subirse al repositorio.

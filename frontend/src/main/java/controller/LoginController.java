@@ -65,7 +65,7 @@ public class LoginController {
             return;
         }
 
-        SessionManager.getInstance().start(result.user());
+        SessionManager.getInstance().start(result.user(), result.token());
         campoContrasena.clear();
         ocultarError();
         if (onAuthenticated != null) {
