@@ -1,5 +1,5 @@
 param(
-    [string]$ApiUrl = "https://myesha-peroneal-unimpulsively.ngrok-free.dev"
+    [string]$ApiUrl = "https://asociacion-comunal.miascn.org"
 )
 
 $ErrorActionPreference = "Stop"
