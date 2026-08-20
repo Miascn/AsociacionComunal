@@ -1,5 +1,13 @@
 # Asociación Comunal
 
+## Arquitectura del backend y crédito
+
+La API unificada sigue la arquitectura propuesta por Gerson Bermúdez en el PR #24:
+`controller -> service -> dao -> domain`, con `config`, `middleware` y `util` como capas transversales.
+La integración conserva esa separación y elimina la dependencia del módulo backend anterior.
+Los clientes JavaFX usan JWT para las funciones administrativas; Android mantiene sesiones opacas
+compatibles; y los canales de publicación de actualizaciones usan un secreto técnico independiente.
+
 Sistema multiplataforma para administrar una asociación comunal. El repositorio contiene una aplicación de escritorio para el personal administrativo, una API HTTP, una biblioteca de persistencia JDBC y una aplicación Android para residentes.
 
 > [!IMPORTANT]
@@ -300,13 +308,10 @@ Repetir el comando para `V003`, `V004` y `V005`. No se utiliza Flyway ni Liquiba
 
 ### 4. Verificar la conexión
 
-Primero instalar el módulo `backend` y luego ejecutar la herramienta de diagnóstico:
+Ejecutar la prueba de diagnóstico del módulo unificado `api`:
 
 ```powershell
-mvn -f .\backend\pom.xml test-compile
-mvn -f .\backend\pom.xml org.codehaus.mojo:exec-maven-plugin:3.5.0:java `
-  "-Dexec.mainClass=sv.asociacion.backend.DatabaseConnectionTest" `
-  "-Dexec.classpathScope=test"
+mvn -f .\api\pom.xml -Dtest=DatabaseConnectionTest test
 ```
 
 La herramienta abre una conexión, muestra la base activa, enumera las tablas y consulta los roles. No inserta, modifica ni elimina datos.

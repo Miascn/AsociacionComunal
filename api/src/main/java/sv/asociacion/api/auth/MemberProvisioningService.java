@@ -1,6 +1,6 @@
 package sv.asociacion.api.auth;
 
-import sv.asociacion.backend.config.DBConnection;
+import sv.asociacion.config.DBConnection;
 import java.security.SecureRandom;
 import java.sql.*;
 import java.time.LocalDate;
@@ -19,7 +19,8 @@ public final class MemberProvisioningService {
                 String memberSql = "INSERT INTO miembro (dui,tipo_documento,pais_origen,id_vivienda,nombres,apellidos,telefono,correo,direccion,fecha_ingreso,estado) VALUES (?,?,?,?,?,?,?,?,NULL,?, 'ACTIVO')";
                 try (PreparedStatement statement = connection.prepareStatement(memberSql, Statement.RETURN_GENERATED_KEYS)) {
                     statement.setString(1, document); statement.setString(2, documentType); statement.setString(3, country);
-                    statement.setInt(4, houseId); statement.setString(5, names); statement.setString(6, lastNames);
+                    if (houseId == null) statement.setNull(4, Types.INTEGER); else statement.setInt(4, houseId);
+                    statement.setString(5, names); statement.setString(6, lastNames);
                     statement.setString(7, phone); statement.setString(8, email);
                     statement.setDate(9, Date.valueOf(LocalDate.now())); statement.executeUpdate();
                     try (ResultSet keys = statement.getGeneratedKeys()) { if (!keys.next()) throw new SQLException("Sin identificador de miembro."); memberId = keys.getInt(1); }

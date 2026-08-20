@@ -3,7 +3,7 @@ package controller;
 import java.time.format.DateTimeFormatter;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import sv.asociacion.backend.entity.Miembro;
+import models.MiembroModel;
 
 public class DetalleMiembroController {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -19,7 +19,7 @@ public class DetalleMiembroController {
     @FXML private Label lblFechaIngreso;
     @FXML private Label lblEstado;
 
-    public void setMiembro(Miembro miembro) {
+    public void setMiembro(MiembroModel miembro) {
         String nombres = value(miembro.getNombres());
         String apellidos = value(miembro.getApellidos());
         lblNombreCompleto.setText((nombres + " " + apellidos).trim());
@@ -30,12 +30,11 @@ public class DetalleMiembroController {
         lblTelefono.setText(valueOrDefault(miembro.getTelefono(), "No registrado"));
         lblCorreo.setText(valueOrDefault(miembro.getCorreo(), "No registrado"));
         lblDireccion.setText(valueOrDefault(miembro.getDireccion(), "No registrada"));
-        lblFechaIngreso.setText(miembro.getFechaIngreso() == null
-            ? "No registrada" : miembro.getFechaIngreso().format(DATE_FORMAT));
-        lblEstado.setText(miembro.getEstado() == null ? "Sin estado" : miembro.getEstado().name());
+        lblFechaIngreso.setText(formatDate(miembro.getFechaIngreso()));
+        lblEstado.setText(miembro.getEstado() == null ? "Sin estado" : miembro.getEstado());
     }
 
-    private String formatearDocumento(Miembro miembro) {
+    private String formatearDocumento(MiembroModel miembro) {
         String value = value(miembro.getDui());
         if ((miembro.getTipoDocumento() == null || "DUI".equals(miembro.getTipoDocumento()))
             && value.matches("\\d{9}")) {
@@ -48,6 +47,12 @@ public class DetalleMiembroController {
         if ("PASAPORTE".equals(tipo)) return "Pasaporte";
         if ("CARNET_RESIDENTE".equals(tipo)) return "Carnet de residente";
         return "DUI";
+    }
+
+    private String formatDate(String value) {
+        if (value == null || value.isBlank()) return "No registrada";
+        try { return java.time.LocalDate.parse(value).format(DATE_FORMAT); }
+        catch (Exception ignored) { return value; }
     }
 
     private String inicial(String value) { return value.isBlank() ? "" : value.substring(0, 1).toUpperCase(); }

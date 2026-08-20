@@ -6,7 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import service.MiembroApiClient.CreateMemberRequest;
-import sv.asociacion.backend.entity.Vivienda;
+import models.ViviendaModel;
 import java.util.List;
 
 public class RegistrarMiembroController {
@@ -24,22 +24,22 @@ public class RegistrarMiembroController {
     @FXML private TextField campoApellidos;
     @FXML private TextField campoTelefono;
     @FXML private TextField campoCorreo;
-    @FXML private ComboBox<Vivienda> selectorVivienda;
+    @FXML private ComboBox<ViviendaModel> selectorVivienda;
     @FXML private Label lblErrorRegistro;
 
     private boolean actualizandoDocumento;
     private boolean actualizandoTelefono;
 
-    public void setViviendas(List<Vivienda> viviendas) {
+    public void setViviendas(List<ViviendaModel> viviendas) {
         selectorVivienda.getItems().setAll(viviendas);
         selectorVivienda.setCellFactory(list -> viviendaCell());
         selectorVivienda.setButtonCell(viviendaCell());
         if (viviendas.size() == 1) selectorVivienda.getSelectionModel().selectFirst();
     }
 
-    private javafx.scene.control.ListCell<Vivienda> viviendaCell() {
+    private javafx.scene.control.ListCell<ViviendaModel> viviendaCell() {
         return new javafx.scene.control.ListCell<>() {
-            @Override protected void updateItem(Vivienda value, boolean empty) {
+            @Override protected void updateItem(ViviendaModel value, boolean empty) {
                 super.updateItem(value, empty);
                 setText(empty || value == null ? null : value.getCodigo() + " - " + value.getDireccion());
             }
@@ -122,7 +122,7 @@ public class RegistrarMiembroController {
         String apellidos = campoApellidos.getText().trim();
         String telefonoLocal = campoTelefono.getText().trim();
         String correo = campoCorreo.getText().trim();
-        Vivienda vivienda = selectorVivienda.getValue();
+        ViviendaModel vivienda = selectorVivienda.getValue();
 
         if (DUI.equals(tipo) && !documento.matches("\\d{9}")) return invalid("El DUI debe contener 9 dígitos.");
         if (extranjero && !documento.matches("[A-Z0-9]{5,30}")) return invalid("Ingresa un documento válido de 5 a 30 letras o números.");

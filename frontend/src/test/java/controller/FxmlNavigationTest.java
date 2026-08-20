@@ -73,7 +73,7 @@ class FxmlNavigationTest {
     void cargaDashboardNavegaYCierraSesion() throws Exception {
         ejecutarEnJavaFx(() -> {
             SessionManager session = SessionManager.getInstance();
-            session.start(new AuthUser("admin", "Josué Romero", "Administrador", "hash", "salt"));
+            session.start(new AuthUser("admin", "Josué Romero", "Administrador"), "test-token");
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
             Parent root = loader.load();

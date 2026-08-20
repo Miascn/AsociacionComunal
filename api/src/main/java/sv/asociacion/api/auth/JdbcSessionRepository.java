@@ -1,6 +1,6 @@
 package sv.asociacion.api.auth;
 
-import sv.asociacion.backend.config.DBConnection;
+import sv.asociacion.config.DBConnection;
 import java.sql.*;
 import java.time.Instant;
 import java.util.Optional;

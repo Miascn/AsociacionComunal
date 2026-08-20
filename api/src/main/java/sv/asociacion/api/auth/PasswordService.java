@@ -5,6 +5,7 @@ import javax.crypto.spec.PBEKeySpec;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import sv.asociacion.util.PasswordHasher;
 
 public final class PasswordService {
     private static final String PREFIX = "pbkdf2_sha256";
@@ -21,17 +22,7 @@ public final class PasswordService {
     }
 
     public boolean verify(String password, String encoded) {
-        if (password == null || encoded == null) return false;
-        try {
-            String[] parts = encoded.split("\\$");
-            if (parts.length != 4 || !PREFIX.equals(parts[0])) return false;
-            int iterations = Integer.parseInt(parts[1]);
-            byte[] salt = Base64.getDecoder().decode(parts[2]);
-            byte[] expected = Base64.getDecoder().decode(parts[3]);
-            return MessageDigest.isEqual(expected, derive(password, salt, iterations));
-        } catch (RuntimeException exception) {
-            return false;
-        }
+        return PasswordHasher.verify(password, encoded);
     }
 
     private byte[] derive(String password, byte[] salt, int iterations) {

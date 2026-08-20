@@ -4,8 +4,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import service.ViviendaApiClient.HouseRequest;
 import service.ViviendaApiClient.Resident;
-import sv.asociacion.backend.entity.Miembro;
-import sv.asociacion.backend.entity.Vivienda;
+import models.MiembroModel;
+import models.ViviendaModel;
 import java.util.*;
 
 public class ViviendaFormController {
@@ -16,8 +16,8 @@ public class ViviendaFormController {
     @FXML private Label lblError;
 
     @FXML private void initialize(){selectorEstado.getItems().addAll("ACTIVA","DESHABITADA","INACTIVA");selectorEstado.setValue("ACTIVA");}
-    public void setMembers(List<Miembro> members){selectorRepresentante.getItems().setAll(members.stream().filter(m->m.getEstado()==Miembro.Estado.ACTIVO).map(m->new MemberOption(m.getIdMiembro(),m.getNombres()+" "+m.getApellidos())).toList());}
-    public void setHouse(Vivienda house,List<Resident> residents){
+    public void setMembers(List<MiembroModel> members){selectorRepresentante.getItems().setAll(members.stream().filter(m->"ACTIVO".equals(m.getEstado())).map(m->new MemberOption(m.getIdMiembro(),m.getNombres()+" "+m.getApellidos())).toList());}
+    public void setHouse(ViviendaModel house,List<Resident> residents){
         campoCodigo.setText(house.getCodigo());campoSector.setText(house.getSector());campoDireccion.setText(house.getDireccion());campoReferencia.setText(house.getReferencia());selectorEstado.setValue(house.getEstado());
         selectorRepresentante.getItems().stream().filter(m->Objects.equals(m.id(),house.getIdRepresentante())).findFirst().ifPresent(selectorRepresentante::setValue);
         campoAdultos.setText(residents.stream().filter(r->"ADULTO".equals(r.type())&&!r.representative()).map(Resident::name).reduce((a,b)->a+"\n"+b).orElse(""));

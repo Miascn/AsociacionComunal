@@ -9,7 +9,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>backend</module>
         <module>api</module>
         <module>frontend</module>
     </modules>

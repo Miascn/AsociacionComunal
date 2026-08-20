@@ -3,26 +3,18 @@ package services.auth;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 import models.AuthResult;
 import models.AuthUser;
+import service.AuthApiClient;
+import service.AuthApiClient.LoginResponse;
 
 public class AuthService {
     private static final int MAX_ATTEMPTS = 5;
     private static final long LOCKOUT_MILLIS = 30_000L;
 
-    private final MockAuthRepository repository;
     private final Map<String, Integer> failedAttempts = new HashMap<>();
     private final Map<String, Long> lockedUntil = new HashMap<>();
-
-    public AuthService() {
-        this(new MockAuthRepository());
-    }
-
-    public AuthService(MockAuthRepository repository) {
-        this.repository = repository;
-    }
 
     public AuthResult authenticate(String username, String password) {
         String normalizedUsername = normalize(username);
@@ -31,22 +23,17 @@ public class AuthService {
             return AuthResult.failure("Cuenta temporalmente bloqueada por demasiados intentos. Intenta de nuevo en unos segundos.");
         }
 
-        Optional<AuthUser> userOpt = repository.findByUsername(normalizedUsername);
-        if (userOpt.isEmpty()) {
+        try {
+            AuthApiClient client = new AuthApiClient();
+            LoginResponse response = client.login(normalizedUsername, password);
+            failedAttempts.remove(normalizedUsername);
+            lockedUntil.remove(normalizedUsername);
+            AuthUser user = new AuthUser(normalizedUsername, response.displayName(), response.role());
+            return AuthResult.success(user, response.token());
+        } catch (Exception e) {
             registerFailure(normalizedUsername);
-            return AuthResult.failure("Usuario o contraseña incorrectos.");
+            return AuthResult.failure(e.getMessage());
         }
-
-        AuthUser user = userOpt.get();
-        boolean validPassword = PasswordHasher.verifyPassword(password, user.getPasswordHash(), user.getSaltHex());
-        if (!validPassword) {
-            registerFailure(normalizedUsername);
-            return AuthResult.failure("Usuario o contraseña incorrectos.");
-        }
-
-        failedAttempts.remove(normalizedUsername);
-        lockedUntil.remove(normalizedUsername);
-        return AuthResult.success(user);
     }
 
     private boolean isLocked(String username) {

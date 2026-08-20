@@ -11,7 +11,7 @@ import java.util.Set;
 
 public final class AuthService {
     public static final Set<String> SYSTEM_ROLES = Set.of(
-        "MIEMBRO", "ADMINISTRADOR", "PRESIDENTE", "SECRETARIO", "TESORERO", "SINDICO"
+        "MIEMBRO", "ADMIN", "ADMINISTRADOR", "DIRECTIVO", "PRESIDENTE", "SECRETARIO", "TESORERO", "SINDICO"
     );
     private final UserAuthRepository users;
     private final SessionRepository sessions;

@@ -34,23 +34,23 @@ import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
 import service.MiembroApiClient.CreateMemberResult;
 import service.ViviendaApiClient;
-import sv.asociacion.backend.entity.Miembro;
+import models.MiembroModel;
 
 public class MiembroController {
-    @FXML private TableView<Miembro> tablaMiembros;
-    @FXML private TableColumn<Miembro, String> columnaDui;
-    @FXML private TableColumn<Miembro, String> columnaNombres;
-    @FXML private TableColumn<Miembro, String> columnaApellidos;
-    @FXML private TableColumn<Miembro, String> columnaTelefono;
-    @FXML private TableColumn<Miembro, String> columnaCorreo;
-    @FXML private TableColumn<Miembro, Miembro.Estado> columnaEstado;
+    @FXML private TableView<MiembroModel> tablaMiembros;
+    @FXML private TableColumn<MiembroModel, String> columnaDui;
+    @FXML private TableColumn<MiembroModel, String> columnaNombres;
+    @FXML private TableColumn<MiembroModel, String> columnaApellidos;
+    @FXML private TableColumn<MiembroModel, String> columnaTelefono;
+    @FXML private TableColumn<MiembroModel, String> columnaCorreo;
+    @FXML private TableColumn<MiembroModel, String> columnaEstado;
     @FXML private Label lblTotalMiembros;
     @FXML private Label lblEstadoModulo;
     @FXML private TextField campoBusqueda;
     @FXML private Button btnVerDetalle;
 
-    private final ObservableList<Miembro> miembros = FXCollections.observableArrayList();
-    private FilteredList<Miembro> miembrosFiltrados;
+    private final ObservableList<MiembroModel> miembros = FXCollections.observableArrayList();
+    private FilteredList<MiembroModel> miembrosFiltrados;
 
     @FXML
     private void initialize() {
@@ -67,7 +67,7 @@ public class MiembroController {
         campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
         btnVerDetalle.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
         tablaMiembros.setRowFactory(table -> {
-            TableRow<Miembro> row = new TableRow<>();
+            TableRow<MiembroModel> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
                     mostrarDetalle(row.getItem());
@@ -79,7 +79,7 @@ public class MiembroController {
         cargarMiembros();
     }
 
-    public ObservableList<Miembro> getMiembros() {
+    public ObservableList<MiembroModel> getMiembros() {
         return miembros;
     }
 
@@ -137,11 +137,11 @@ public class MiembroController {
 
     @FXML
     private void verDetalle() {
-        Miembro seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        MiembroModel seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
         if (seleccionado != null) mostrarDetalle(seleccionado);
     }
 
-    private void mostrarDetalle(Miembro miembro) {
+    private void mostrarDetalle(MiembroModel miembro) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/detalle-miembro.fxml"));
             Parent content = loader.load();
@@ -228,9 +228,9 @@ public class MiembroController {
 
     private void cargarMiembros() {
         lblEstadoModulo.setText("Conectando al servidor...");
-        Task<List<Miembro>> task = new Task<>() {
+        Task<List<MiembroModel>> task = new Task<>() {
             @Override
-            protected List<Miembro> call() throws Exception {
+            protected List<MiembroModel> call() throws Exception {
                 return new MiembroApiClient().findAll();
             }
         };
@@ -276,7 +276,7 @@ public class MiembroController {
         return valor != null && normalizar(valor).contains(criterio);
     }
 
-    private String formatearDocumento(Miembro miembro) {
+    private String formatearDocumento(MiembroModel miembro) {
         String documento = miembro.getDui();
         if (documento == null) return "";
         if ((miembro.getTipoDocumento() == null || "DUI".equals(miembro.getTipoDocumento()))
