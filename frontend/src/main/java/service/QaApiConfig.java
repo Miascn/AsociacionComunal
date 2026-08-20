@@ -58,7 +58,11 @@ public record QaApiConfig(String baseUrl, String token) {
                 candidates.add(parent.resolve("config").resolve("qa.properties"));
             }
         }
-        candidates.add(Path.of("qa-local.properties"));
+        Path directory = Path.of("").toAbsolutePath();
+        for (int level = 0; directory != null && level < 4; level++) {
+            candidates.add(directory.resolve("qa-local.properties"));
+            directory = directory.getParent();
+        }
         return candidates;
     }
 

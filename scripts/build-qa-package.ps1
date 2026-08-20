@@ -48,8 +48,12 @@ if (-not (Test-Path $jpackage)) {
     throw "El JDK activo no incluye jpackage: $jdkHome"
 }
 
-& $mavenPath "-Dmaven.repo.local=$mavenRepository" -f $backendPom clean install -DskipTests
-if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion del backend." }
+if (Test-Path -LiteralPath $backendPom) {
+    & $mavenPath "-Dmaven.repo.local=$mavenRepository" -f $backendPom clean install -DskipTests
+    if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion del backend." }
+} else {
+    Write-Host "Modulo backend independiente no presente; se usara la API unificada."
+}
 
 & $mavenPath "-Dmaven.repo.local=$mavenRepository" -f $apiPom clean package
 if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion o las pruebas de la API." }

@@ -1,6 +1,7 @@
 package service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import sv.asociacion.backend.entity.Miembro;
 
 import java.io.IOException;
@@ -25,7 +26,8 @@ public final class MiembroApiClient {
     MiembroApiClient(QaApiConfig config) {
         this.config = config;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     public List<Miembro> findAll() throws IOException, InterruptedException {
@@ -53,7 +55,7 @@ public final class MiembroApiClient {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 201) {
             throw new IOException(response.statusCode() == 409
-                ? "Ya existe un miembro con ese DUI."
+                ? "Ya existe un miembro con ese documento."
                 : "No fue posible registrar el miembro (HTTP " + response.statusCode() + ").");
         }
         CreateMemberResponse created = objectMapper.readValue(response.body(), CreateMemberResponse.class);
@@ -70,23 +72,27 @@ public final class MiembroApiClient {
     }
 
     public record CreateMemberRequest(
-        String dui,
+        String documento,
+        String tipoDocumento,
+        String paisOrigen,
         String nombres,
         String apellidos,
         String telefono,
         String correo,
-        String direccion
+        Integer idVivienda
     ) {}
     public record CreateMemberResult(Miembro member, String username, String temporaryPassword) {}
     private record CreateMemberResponse(MiembroResponse member, String username, String temporaryPassword) {}
 
     private record MiembroResponse(
-        Integer id, String dui, String nombres, String apellidos, String telefono,
+        Integer id, String dui, String tipoDocumento, String paisOrigen, Integer idVivienda, String nombres, String apellidos, String telefono,
         String correo, String direccion, String fechaIngreso, String estado
     ) {
         private Miembro toEntity() {
             return new Miembro(
-                id, dui, nombres, apellidos, telefono, correo, direccion,
+                id, dui,
+                tipoDocumento == null ? "DUI" : tipoDocumento,
+                paisOrigen, idVivienda, nombres, apellidos, telefono, correo, direccion,
                 fechaIngreso == null ? null : LocalDate.parse(fechaIngreso),
                 estado == null ? null : Miembro.Estado.valueOf(estado)
             );

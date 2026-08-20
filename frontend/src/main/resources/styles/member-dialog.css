@@ -1,0 +1,147 @@
+.member-dialog {
+    -fx-background-color: -color-bg-default;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    -fx-pref-width: 720px;
+    -fx-min-width: 720px;
+    -fx-border-color: -color-border-default;
+    -fx-border-width: 1px;
+}
+
+.member-dialog > .button-bar > .container {
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-muted transparent transparent transparent;
+    -fx-padding: 18px 28px 22px 28px;
+}
+
+.member-dialog > .content.label { -fx-padding: 0; }
+.member-dialog .dialog-pane,
+.member-dialog .content { -fx-background-color: -color-bg-default; }
+.member-dialog .label { -fx-text-fill: -color-fg-default; }
+.member-form-scroll,
+.member-form-scroll > .viewport { -fx-background-color: -color-bg-default; }
+.member-form-scroll { -fx-border-color: transparent; -fx-padding: 0; }
+
+.member-form { -fx-background-color: -color-bg-default; }
+.member-form-hero {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: transparent transparent -color-border-default transparent;
+    -fx-padding: 24px 28px 22px 28px;
+}
+.member-form-body { -fx-padding: 24px 28px 10px 28px; }
+.member-form-icon {
+    -fx-min-width: 48px; -fx-min-height: 48px;
+    -fx-background-color: -color-accent-subtle;
+    -fx-background-radius: 8px;
+}
+.member-form-icon .font-icon { -fx-icon-color: -color-accent-fg; -fx-icon-size: 23px; }
+.member-form-eyebrow, .form-section-tag {
+    -fx-text-fill: -color-accent-fg;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}
+.member-form-description { -fx-text-fill: -color-fg-muted !important; -fx-font-size: 12px; }
+.dialog-title { -fx-font-size: 23px; -fx-font-weight: 800; }
+.form-section-heading {
+    -fx-border-color: transparent transparent -color-border-muted transparent;
+    -fx-padding: 0 0 9px 0;
+}
+.form-section-heading .font-icon { -fx-icon-color: -color-accent-fg; -fx-icon-size: 15px; }
+.form-section-title { -fx-font-size: 14px; -fx-font-weight: 700; }
+.field-caption { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -color-fg-muted !important; }
+
+.member-dialog .member-field {
+    -fx-background-color: -color-bg-inset;
+    -fx-background-radius: 6px;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    -fx-padding: 11px 12px;
+    -fx-pref-height: 44px;
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-fg-default;
+    -fx-prompt-text-fill: -color-fg-muted;
+}
+.member-dialog .member-field:focused {
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-accent-emphasis;
+    -fx-border-width: 1.5px;
+    -fx-effect: dropshadow(gaussian, -color-accent-muted, 9, 0.15, 0, 0);
+}
+.member-dialog .member-combo { -fx-padding: 0 8px; }
+.member-dialog .member-combo .list-cell { -fx-text-fill: -color-fg-default; -fx-padding: 8px 6px; }
+.privacy-note {
+    -fx-background-color: -color-accent-subtle;
+    -fx-background-radius: 6px;
+    -fx-padding: 11px 13px;
+}
+.privacy-note .font-icon { -fx-icon-color: -color-accent-fg; -fx-icon-size: 14px; }
+.privacy-note-text { -fx-text-fill: -color-fg-muted !important; -fx-font-size: 11px; }
+
+.member-dialog .button {
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+    -fx-min-height: 42px;
+    -fx-padding: 10px 24px;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-cursor: hand;
+}
+.member-dialog .button:default {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-fg-on-emphasis;
+}
+.member-dialog .button:default:hover { -fx-opacity: .88; }
+.member-dialog .button:cancel {
+    -fx-background-color: transparent;
+    -fx-border-color: -color-border-default;
+    -fx-text-fill: -color-fg-default;
+}
+.member-dialog .button:cancel:hover { -fx-background-color: -color-bg-subtle; }
+.member-dialog .form-error { -fx-text-fill: -color-danger-fg; -fx-font-size: 12px; -fx-font-weight: 600; }
+
+.credentials-dialog { -fx-pref-width: 520px; -fx-min-width: 520px; }
+.credentials-dialog > .header-panel {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-padding: 20px 24px;
+}
+.credentials-dialog > .header-panel .label { -fx-text-fill: -color-fg-on-emphasis; -fx-font-size: 16px; -fx-font-weight: 700; }
+.credentials-dialog .credentials-box {
+    -fx-control-inner-background: -color-bg-inset;
+    -fx-background-color: -color-bg-inset;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-padding: 12px;
+}
+
+.member-detail-dialog { -fx-pref-width: 660px; -fx-min-width: 0; }
+.member-detail-dialog > .button-bar > .container { -fx-padding: 16px 24px 20px 24px; }
+.member-detail { -fx-background-color: -color-bg-default; }
+.member-detail-hero {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: transparent transparent -color-border-default transparent;
+    -fx-padding: 24px 28px;
+}
+.member-avatar {
+    -fx-min-width: 58px; -fx-min-height: 58px;
+    -fx-background-color: -color-accent-emphasis;
+    -fx-background-radius: 29px;
+    -fx-text-fill: -color-fg-on-emphasis !important;
+    -fx-font-size: 18px; -fx-font-weight: 800;
+}
+.detail-name { -fx-font-size: 21px; -fx-font-weight: 800; }
+.detail-status-icon { -fx-icon-color: -color-success-fg; -fx-icon-size: 13px; }
+.detail-status { -fx-text-fill: -color-success-fg !important; -fx-font-size: 10px; -fx-font-weight: 800; }
+.member-detail-body { -fx-padding: 24px 28px 12px 28px; }
+.detail-section-title {
+    -fx-text-fill: -color-accent-fg !important;
+    -fx-font-size: 10px; -fx-font-weight: 800;
+    -fx-padding: 0 0 8px 0;
+    -fx-border-color: transparent transparent -color-border-muted transparent;
+}
+.detail-grid { -fx-min-width: 540px; }
+.detail-label { -fx-text-fill: -color-fg-muted !important; -fx-font-size: 10px; -fx-font-weight: 700; }
+.detail-value { -fx-text-fill: -color-fg-default !important; -fx-font-size: 13px; -fx-font-weight: 600; }

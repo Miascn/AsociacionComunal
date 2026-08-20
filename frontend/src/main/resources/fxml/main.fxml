@@ -18,7 +18,7 @@
             fx:controller="controller.MainController"
             styleClass="app-root">
     <left>
-        <VBox prefWidth="240" styleClass="sidebar" BorderPane.alignment="CENTER">
+        <VBox fx:id="sidebar" prefWidth="240" styleClass="sidebar" BorderPane.alignment="CENTER">
             <VBox spacing="4" styleClass="sidebar-header">
                 <padding>
                     <Insets top="24" right="20" bottom="16" left="20"/>

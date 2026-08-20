@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="controller.ViviendaFormController" prefWidth="680" styleClass="member-form">
+ <VBox spacing="8" styleClass="member-form-hero"><HBox alignment="CENTER_LEFT" spacing="12"><HBox alignment="CENTER" styleClass="member-form-icon"><FontIcon iconLiteral="fth-home"/></HBox><VBox><Label text="CENSO HABITACIONAL" styleClass="member-form-eyebrow"/><Label text="Datos de la vivienda" styleClass="dialog-title"/></VBox></HBox><Label text="Registra la ubicación, el miembro representante y las personas que habitan en el hogar." wrapText="true" styleClass="member-form-description"/></VBox>
+ <VBox spacing="18" styleClass="member-form-body">
+  <GridPane hgap="14" vgap="8">
+   <Label text="Código *" styleClass="field-caption" GridPane.rowIndex="0" GridPane.columnIndex="0"/><Label text="Sector *" styleClass="field-caption" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+   <TextField fx:id="campoCodigo" promptText="VIV-0001" prefWidth="310" styleClass="member-field" GridPane.rowIndex="1" GridPane.columnIndex="0"/><TextField fx:id="campoSector" promptText="Sector o colonia" prefWidth="310" styleClass="member-field" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+   <Label text="Dirección *" styleClass="field-caption" GridPane.rowIndex="2" GridPane.columnIndex="0"><GridPane.margin><Insets top="7"/></GridPane.margin></Label><TextField fx:id="campoDireccion" promptText="Calle, pasaje y número" styleClass="member-field" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+   <Label text="Punto de referencia" styleClass="field-caption" GridPane.rowIndex="4" GridPane.columnIndex="0"><GridPane.margin><Insets top="7"/></GridPane.margin></Label><TextField fx:id="campoReferencia" promptText="Referencia para ubicar la vivienda" styleClass="member-field" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+   <Label text="Miembro representante *" styleClass="field-caption" GridPane.rowIndex="6" GridPane.columnIndex="0"><GridPane.margin><Insets top="7"/></GridPane.margin></Label><Label text="Estado" styleClass="field-caption" GridPane.rowIndex="6" GridPane.columnIndex="1"><GridPane.margin><Insets top="7"/></GridPane.margin></Label>
+   <ComboBox fx:id="selectorRepresentante" promptText="Seleccionar miembro" maxWidth="Infinity" styleClass="member-field,member-combo" GridPane.rowIndex="7" GridPane.columnIndex="0"/><ComboBox fx:id="selectorEstado" maxWidth="Infinity" styleClass="member-field,member-combo" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+  </GridPane>
+  <VBox spacing="9"><Label text="COMPOSICIÓN DEL HOGAR" styleClass="detail-section-title"/><HBox spacing="14"><VBox spacing="6" HBox.hgrow="ALWAYS"><Label text="Adultos adicionales (uno por línea)" styleClass="field-caption"/><TextArea fx:id="campoAdultos" promptText="Nombre completo" prefRowCount="4" wrapText="true"/></VBox><VBox spacing="6" HBox.hgrow="ALWAYS"><Label text="Niños y menores (uno por línea)" styleClass="field-caption"/><TextArea fx:id="campoMenores" promptText="Nombre completo" prefRowCount="4" wrapText="true"/></VBox></HBox></VBox>
+  <Label fx:id="lblError" wrapText="true" styleClass="form-error"/>
+ </VBox>
+</VBox>

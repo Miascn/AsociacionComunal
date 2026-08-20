@@ -23,10 +23,17 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Rectangle2D;
+import javafx.stage.Screen;
+import javafx.scene.input.MouseButton;
 import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
 import service.MiembroApiClient.CreateMemberResult;
+import service.ViviendaApiClient;
 import sv.asociacion.backend.entity.Miembro;
 
 public class MiembroController {
@@ -40,6 +47,7 @@ public class MiembroController {
     @FXML private Label lblTotalMiembros;
     @FXML private Label lblEstadoModulo;
     @FXML private TextField campoBusqueda;
+    @FXML private Button btnVerDetalle;
 
     private final ObservableList<Miembro> miembros = FXCollections.observableArrayList();
     private FilteredList<Miembro> miembrosFiltrados;
@@ -47,7 +55,7 @@ public class MiembroController {
     @FXML
     private void initialize() {
         tablaMiembros.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        columnaDui.setCellValueFactory(new PropertyValueFactory<>("dui"));
+        columnaDui.setCellValueFactory(cell -> new SimpleStringProperty(formatearDocumento(cell.getValue())));
         columnaNombres.setCellValueFactory(new PropertyValueFactory<>("nombres"));
         columnaApellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
         columnaTelefono.setCellValueFactory(new PropertyValueFactory<>("telefono"));
@@ -57,6 +65,16 @@ public class MiembroController {
         miembrosFiltrados = new FilteredList<>(miembros, miembro -> true);
         tablaMiembros.setItems(miembrosFiltrados);
         campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
+        btnVerDetalle.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
+        tablaMiembros.setRowFactory(table -> {
+            TableRow<Miembro> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                    mostrarDetalle(row.getItem());
+                }
+            });
+            return row;
+        });
         actualizarTotal();
         cargarMiembros();
     }
@@ -73,11 +91,28 @@ public class MiembroController {
             );
             Parent content = loader.load();
             RegistrarMiembroController controller = loader.getController();
+            var viviendas = new ViviendaApiClient().findAll().stream()
+                .filter(vivienda -> "ACTIVA".equals(vivienda.getEstado()))
+                .toList();
+            if (viviendas.isEmpty()) {
+                mostrarError("Primero registra una vivienda activa para poder agregar miembros.");
+                return;
+            }
+            controller.setViviendas(viviendas);
             ButtonType guardarType = new ButtonType("Guardar miembro", ButtonBar.ButtonData.OK_DONE);
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Registrar miembro");
             dialog.initOwner(tablaMiembros.getScene().getWindow());
-            dialog.getDialogPane().setContent(content);
+            Rectangle2D screen = Screen.getScreensForRectangle(
+                tablaMiembros.getScene().getWindow().getX(), tablaMiembros.getScene().getWindow().getY(),
+                tablaMiembros.getScene().getWindow().getWidth(), tablaMiembros.getScene().getWindow().getHeight()
+            ).stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
+            ScrollPane formScroll = new ScrollPane(content);
+            formScroll.setFitToWidth(true);
+            formScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            formScroll.setMaxHeight(Math.max(360, screen.getHeight() - 180));
+            formScroll.getStyleClass().add("member-form-scroll");
+            dialog.getDialogPane().setContent(formScroll);
             dialog.getDialogPane().getButtonTypes().addAll(guardarType, ButtonType.CANCEL);
             Button guardar = (Button) dialog.getDialogPane().lookupButton(guardarType);
             guardar.addEventFilter(ActionEvent.ACTION, event -> {
@@ -88,9 +123,47 @@ public class MiembroController {
                     registrarMiembro(request, controller, dialog, guardar);
                 }
             });
+            dialog.getDialogPane().getStyleClass().add("member-dialog");
+            java.net.URL memberDialogCss = MiembroController.class.getResource("/styles/member-dialog.css");
+            if (memberDialogCss != null) {
+                dialog.getDialogPane().getStylesheets().add(memberDialogCss.toExternalForm());
+            }
+            dialog.getDialogPane().setPrefWidth(Math.min(720, screen.getWidth() - 40));
             dialog.show();
+        } catch (Exception exception) {
+            mostrarError("No fue posible abrir el formulario de registro: " + exception.getMessage());
+        }
+    }
+
+    @FXML
+    private void verDetalle() {
+        Miembro seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        if (seleccionado != null) mostrarDetalle(seleccionado);
+    }
+
+    private void mostrarDetalle(Miembro miembro) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/detalle-miembro.fxml"));
+            Parent content = loader.load();
+            DetalleMiembroController controller = loader.getController();
+            controller.setMiembro(miembro);
+
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle("Detalle del miembro");
+            dialog.initOwner(tablaMiembros.getScene().getWindow());
+            dialog.getDialogPane().setContent(content);
+            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+            dialog.getDialogPane().getStyleClass().addAll("member-dialog", "member-detail-dialog");
+            java.net.URL css = MiembroController.class.getResource("/styles/member-dialog.css");
+            if (css != null) dialog.getDialogPane().getStylesheets().add(css.toExternalForm());
+            double available = Screen.getScreensForRectangle(
+                tablaMiembros.getScene().getWindow().getX(), tablaMiembros.getScene().getWindow().getY(),
+                tablaMiembros.getScene().getWindow().getWidth(), tablaMiembros.getScene().getWindow().getHeight()
+            ).stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds().getWidth();
+            dialog.getDialogPane().setPrefWidth(Math.min(660, available - 40));
+            dialog.showAndWait();
         } catch (IOException exception) {
-            mostrarError("No fue posible abrir el formulario de registro.");
+            mostrarError("No fue posible abrir el detalle del miembro.");
         }
     }
 
@@ -131,13 +204,19 @@ public class MiembroController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Cuenta del miembro creada");
         alert.setHeaderText("Entregue estas credenciales una sola vez al miembro");
-        TextArea credentials = new TextArea("Usuario (DUI): " + result.username()
+        TextArea credentials = new TextArea("Usuario (documento): " + result.username()
             + "\nContraseña temporal: " + result.temporaryPassword());
         credentials.setEditable(false);
         credentials.setWrapText(true);
         credentials.setPrefRowCount(3);
+        credentials.getStyleClass().add("credentials-box");
         alert.getDialogPane().setContent(credentials);
         alert.setContentText(null);
+        alert.getDialogPane().getStyleClass().addAll("member-dialog", "credentials-dialog");
+        java.net.URL memberDialogCss = MiembroController.class.getResource("/styles/member-dialog.css");
+        if (memberDialogCss != null) {
+            alert.getDialogPane().getStylesheets().add(memberDialogCss.toExternalForm());
+        }
         alert.showAndWait();
     }
 
@@ -161,9 +240,13 @@ public class MiembroController {
             actualizarTotal();
         });
         task.setOnFailed(event -> {
-            lblEstadoModulo.setText("Sin conexion al servidor");
+            Throwable error = task.getException();
+            String detail = error == null || error.getMessage() == null
+                ? "Error desconocido"
+                : error.getMessage();
+            lblEstadoModulo.setText("Sin conexión al servidor");
             tablaMiembros.setPlaceholder(new Label(
-                "No fue posible obtener los miembros. Verifique Internet e intente nuevamente."
+                "No fue posible obtener los miembros. " + detail
             ));
             actualizarTotal();
         });
@@ -191,6 +274,16 @@ public class MiembroController {
 
     private boolean contiene(String valor, String criterio) {
         return valor != null && normalizar(valor).contains(criterio);
+    }
+
+    private String formatearDocumento(Miembro miembro) {
+        String documento = miembro.getDui();
+        if (documento == null) return "";
+        if ((miembro.getTipoDocumento() == null || "DUI".equals(miembro.getTipoDocumento()))
+            && documento.matches("\\d{9}")) {
+            return documento.substring(0, 8) + "-" + documento.substring(8);
+        }
+        return documento;
     }
 
     private String normalizar(String valor) {
