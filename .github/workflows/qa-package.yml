@@ -5,6 +5,11 @@ on:
     branches: [develop]
   workflow_dispatch:
     inputs:
+      release_version:
+        description: Versión semántica que se publicará (por ejemplo, 1.4.9)
+        type: string
+        required: false
+        default: ""
       publish:
         description: Publicar esta compilación para los QA
         type: boolean
@@ -19,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASE_VERSION: 1.4.${{ github.run_number }}
+  RELEASE_VERSION: ${{ inputs.release_version || format('1.4.{0}', github.run_number) }}
 
 jobs:
   build-windows:
@@ -29,6 +34,13 @@ jobs:
       - name: Descargar código
         uses: actions/checkout@v4
 
+      - name: Validar versión de entrega
+        shell: powershell
+        run: |
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') {
+            throw "La versión '$env:RELEASE_VERSION' no usa el formato X.Y.Z."
+          }
+
       - name: Configurar Java 21
         uses: actions/setup-java@v4
         with:
@@ -36,7 +48,24 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Descargar base publicada
+      - name: Validar configuración QA
+        shell: powershell
+        env:
+          QA_API_URL: ${{ secrets.QA_API_URL }}
+          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ([string]::IsNullOrWhiteSpace($env:QA_API_URL)) {
+            throw "Falta configurar el secreto QA_API_URL en GitHub."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:QA_API_TOKEN)) {
+            throw "Falta configurar el secreto QA_API_TOKEN en GitHub."
+          }
+          if (-not $env:QA_API_URL.StartsWith("https://")) {
+            throw "QA_API_URL debe usar HTTPS."
+          }
+
+      - name: Intentar descargar base publicada
         shell: powershell
         env:
           QA_API_URL: ${{ secrets.QA_API_URL }}
@@ -45,20 +74,43 @@ jobs:
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path .ci\base | Out-Null
           $auth = "Authorization: Bearer $env:QA_API_TOKEN"
-          curl.exe --fail --silent --show-error --location `
+
+          $packageOk = $false
+          $manifestOk = $false
+
+          & curl.exe --fail --silent --show-error --location `
             --header $auth --header "ngrok-skip-browser-warning: 1" `
             "$env:QA_API_URL/api/updates/windows/package" `
             --output .ci\base\current.zip
-          curl.exe --fail --silent --show-error --location `
+          if ($LASTEXITCODE -eq 0) { $packageOk = $true }
+
+          & curl.exe --fail --silent --show-error --location `
             --header $auth --header "ngrok-skip-browser-warning: 1" `
             "$env:QA_API_URL/api/updates/windows/build-manifest" `
             --output .ci\base\previous-manifest.json
-          Expand-Archive -LiteralPath .ci\base\current.zip -DestinationPath .ci\base\image
-          $legacy = Get-ChildItem .ci\base\image -Directory |
-            Where-Object Name -eq "AsociacionComunalQA" |
-            Select-Object -First 1 -ExpandProperty FullName
-          if (-not $legacy) { throw "El paquete publicado no contiene la imagen QA." }
-          "LEGACY_IMAGE=$legacy" >> $env:GITHUB_ENV
+          if ($LASTEXITCODE -eq 0) { $manifestOk = $true }
+
+          if ($packageOk -and $manifestOk) {
+            try {
+              Expand-Archive -LiteralPath .ci\base\current.zip -DestinationPath .ci\base\image -Force
+              $legacy = Get-ChildItem .ci\base\image -Directory |
+                Where-Object Name -eq "AsociacionComunalQA" |
+                Select-Object -First 1 -ExpandProperty FullName
+              if ($legacy) {
+                "HAS_QA_BASE=true" >> $env:GITHUB_ENV
+                "LEGACY_IMAGE=$legacy" >> $env:GITHUB_ENV
+                Write-Host "Se reutilizará la versión QA publicada como base incremental."
+                exit 0
+              }
+            } catch {
+              Write-Warning "La base publicada no pudo reutilizarse: $($_.Exception.Message)"
+            }
+          }
+
+          Remove-Item .ci\base\current.zip -Force -ErrorAction SilentlyContinue
+          Remove-Item .ci\base\previous-manifest.json -Force -ErrorAction SilentlyContinue
+          "HAS_QA_BASE=false" >> $env:GITHUB_ENV
+          Write-Host "No existe una base QA utilizable. Se generará una primera instalación completa."
 
       - name: Compilar, probar y empaquetar
         shell: powershell
@@ -66,10 +118,15 @@ jobs:
           QA_API_URL: ${{ secrets.QA_API_URL }}
           QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
         run: |
-          .\scripts\build-qa-package.ps1 `
-            -Version $env:RELEASE_VERSION `
-            -PreviousManifest .ci\base\previous-manifest.json `
-            -LegacyImage $env:LEGACY_IMAGE
+          $ErrorActionPreference = "Stop"
+          if ($env:HAS_QA_BASE -eq "true") {
+            .\scripts\build-qa-package.ps1 `
+              -Version $env:RELEASE_VERSION `
+              -PreviousManifest .ci\base\previous-manifest.json `
+              -LegacyImage $env:LEGACY_IMAGE
+          } else {
+            .\scripts\build-qa-package.ps1 -Version $env:RELEASE_VERSION
+          }
 
       - name: Publicar artefacto interno
         uses: actions/upload-artifact@v4
@@ -87,7 +144,7 @@ jobs:
   deploy-qa:
     name: Activar actualización QA
     needs: build-windows
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: ubuntu-latest
     environment: qa
     steps:
@@ -123,7 +180,7 @@ jobs:
   release-github:
     name: Publicar aplicación en GitHub
     needs: build-windows
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: ubuntu-latest
     steps:
       - name: Descargar paquete aprobado
@@ -147,4 +204,4 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "Asociación Comunal QA v${version}" \
-            --notes "Aplicación portátil para QA. Descarga el ZIP, extráelo y ejecuta AsociacionComunalQA.exe. Las siguientes versiones se actualizarán automáticamente."
+            --notes "Primera instalación: descarga el ZIP, extráelo y abre AsociacionComunalQA.exe. Después, las versiones nuevas se detectan automáticamente al iniciar y mientras la aplicación permanece abierta."

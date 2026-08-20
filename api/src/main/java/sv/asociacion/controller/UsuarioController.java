@@ -15,10 +15,12 @@ public class UsuarioController {
     }
 
     public void getAll(Context context) {
+        if (!requireAdministrator(context)) return;
         context.json(usuarioService.findAll());
     }
 
     public void getById(Context context) {
+        if (!requireAdministrator(context)) return;
         Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -33,6 +35,7 @@ public class UsuarioController {
     }
 
     public void create(Context context) {
+        if (!requireAdministrator(context)) return;
         CreateUsuarioRequest request = context.bodyAsClass(CreateUsuarioRequest.class);
         if (request.nombreUsuario() == null || request.nombreUsuario().isBlank()
             || request.clave() == null || request.clave().isBlank()) {
@@ -48,6 +51,7 @@ public class UsuarioController {
     }
 
     public void update(Context context) {
+        if (!requireAdministrator(context)) return;
         Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -63,6 +67,7 @@ public class UsuarioController {
     }
 
     public void delete(Context context) {
+        if (!requireAdministrator(context)) return;
         Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -74,5 +79,12 @@ public class UsuarioController {
             return;
         }
         context.status(HttpStatus.NO_CONTENT);
+    }
+
+    private static boolean requireAdministrator(Context context) {
+        String role = context.attribute("role");
+        if ("ADMIN".equals(role) || "ADMINISTRADOR".equals(role)) return true;
+        context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Se requiere rol de administrador."));
+        return false;
     }
 }

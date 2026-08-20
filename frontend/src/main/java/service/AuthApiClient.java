@@ -26,7 +26,7 @@ public final class AuthApiClient {
     public LoginResponse login(String username, String password) throws IOException, InterruptedException {
         String body = objectMapper.writeValueAsString(new LoginRequest(username, password));
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(config.baseUrl() + "/api/auth/login"))
+            .uri(URI.create(config.baseUrl() + "/api/admin/auth/login"))
             .timeout(Duration.ofSeconds(20))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")

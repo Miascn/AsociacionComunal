@@ -1,11 +1,11 @@
 -- =====================================================
--- BASE DE DATOS: asociacion_db
+-- BASE DE DATOS: asociacion_comunal
 -- Sistema de Gestion Comunitaria
 -- =====================================================
 
-DROP DATABASE IF EXISTS asociacion_db;
-CREATE DATABASE asociacion_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE asociacion_db;
+-- Este script es solo para instalaciones nuevas. Nunca elimina una base existente.
+CREATE DATABASE IF NOT EXISTS asociacion_comunal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE asociacion_comunal;
 
 -- =====================================================
 -- TABLA: rol
@@ -232,8 +232,5 @@ INSERT INTO cargo (nombre, descripcion) VALUES
 INSERT INTO periodo_directiva (nombre, fecha_inicio, fecha_fin, estado) VALUES
 ('Directiva 2024-2026', '2024-01-01', '2026-12-31', 'ACTIVO');
 
--- Default admin user (clave: Admin2026!)
--- Hash generado con PBKDF2WithHmacSHA256, 120K iteraciones, formato salt:hash
-INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado)
-SELECT r.id_rol, NULL, 'admin', '259651ecc405b79594ac02c201f4f7d0:ab27e036ebe266f5cd569b1213792a39170f0cdf2f1485b59c9ad57b3acdb716', 'ACTIVO'
-FROM rol r WHERE r.nombre = 'ADMIN';
+-- Cree la primera cuenta administrativa con una contraseña aleatoria mediante
+-- una herramienta operativa segura. El repositorio no contiene credenciales predeterminadas.

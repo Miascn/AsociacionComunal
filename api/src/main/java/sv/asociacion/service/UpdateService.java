@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.Map;
 
 public class UpdateService {
@@ -85,8 +87,18 @@ public class UpdateService {
         byte[] checksumBytes = checksumUpload.content().readAllBytes();
         JsonNode manifest = JSON.readTree(manifestBytes);
         String version = new String(versionBytes, StandardCharsets.UTF_8).trim();
+        String fullChecksum = new String(checksumBytes, StandardCharsets.UTF_8).trim().toLowerCase();
         if (!version.matches("\\d+\\.\\d+\\.\\d+") || !version.equals(manifest.path("version").asText())) {
             throw new IllegalArgumentException("La versión y el manifiesto no coinciden.");
+        }
+        String deltaChecksum = manifest.path("sha256").asText().toLowerCase();
+        if (!fullChecksum.matches("[a-f0-9]{64}") || !deltaChecksum.matches("[a-f0-9]{64}")) {
+            throw new IllegalArgumentException("Los checksums publicados no son válidos.");
+        }
+        Path currentVersion = updatesDir.resolve("version.txt");
+        if (Files.isRegularFile(currentVersion)
+            && compareVersions(version, Files.readString(currentVersion).trim()) < 0) {
+            throw new IllegalArgumentException("No se puede publicar una versión anterior a la instalada.");
         }
 
         Files.createDirectories(updatesDir);
@@ -96,6 +108,13 @@ public class UpdateService {
             Path deltaFile = staging.resolve("AsociacionComunalQA-" + version + "-delta.zip");
             Files.copy(full.content(), fullFile);
             Files.copy(delta.content(), deltaFile);
+            if (!sha256(fullFile).equals(fullChecksum)) {
+                throw new IllegalArgumentException("El checksum del paquete completo no coincide.");
+            }
+            if (!sha256(deltaFile).equals(deltaChecksum)
+                || Files.size(deltaFile) != manifest.path("size").asLong()) {
+                throw new IllegalArgumentException("El paquete incremental no coincide con su manifiesto.");
+            }
             Files.write(staging.resolve("update-manifest.json"), manifestBytes);
             Files.write(staging.resolve("version.txt"), versionBytes);
             Files.write(staging.resolve("sha256.txt"), checksumBytes);
@@ -118,5 +137,25 @@ public class UpdateService {
 
     private static void publishFile(Path source, Path destination) throws Exception {
         Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private static String sha256(Path file) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (InputStream input = Files.newInputStream(file)) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) >= 0) digest.update(buffer, 0, read);
+        }
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private static int compareVersions(String left, String right) {
+        String[] a = left.split("\\.");
+        String[] b = right.split("\\.");
+        for (int index = 0; index < 3; index++) {
+            int comparison = Integer.compare(Integer.parseInt(a[index]), Integer.parseInt(b[index]));
+            if (comparison != 0) return comparison;
+        }
+        return 0;
     }
 }

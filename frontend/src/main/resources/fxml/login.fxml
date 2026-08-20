@@ -9,10 +9,9 @@
  <Button fx:id="btnTema" text="Modo oscuro" onAction="#onAlternarTema" StackPane.alignment="TOP_LEFT" styleClass="theme-button">
   <graphic><FontIcon iconLiteral="fth-moon"/></graphic><StackPane.margin><Insets top="22" left="24"/></StackPane.margin>
  </Button>
- <HBox maxWidth="1120" maxHeight="620" styleClass="login-shell">
+ <HBox fx:id="loginShell" maxWidth="1120" maxHeight="620" styleClass="login-shell">
   <StackPane.margin><Insets top="72" right="40" bottom="40" left="40"/></StackPane.margin>
-  <VBox prefWidth="540" spacing="16" styleClass="login-brand-panel">
-   <padding><Insets top="38" right="42" bottom="34" left="42"/></padding>
+  <VBox fx:id="loginBrandPanel" prefWidth="540" spacing="16" styleClass="login-brand-panel">
    <HBox alignment="CENTER_LEFT" spacing="14">
     <ImageView fitWidth="58" fitHeight="58" preserveRatio="true"><image><Image url="@../images/logo-asociacion-comunal.png"/></image></ImageView>
     <VBox spacing="2"><Label text="Asociación Comunal" styleClass="brand-name"/><Label text="Sistema de Administración" styleClass="brand-caption"/></VBox>
@@ -29,7 +28,6 @@
    </HBox>
   </VBox>
   <VBox prefWidth="540" spacing="14" styleClass="login-card">
-   <padding><Insets top="56" right="58" bottom="44" left="58"/></padding>
    <Label text="ACCESO SEGURO" styleClass="login-eyebrow"/><Label text="Bienvenido de nuevo" styleClass="login-title"/>
    <Label text="Ingresa tus datos para continuar al sistema de la asociación." styleClass="login-subtitle" wrapText="true"/><Region prefHeight="8"/>
    <Label text="Usuario o correo electrónico" styleClass="field-label"/><TextField fx:id="campoUsuario" promptText="usuario@asociacion.com" styleClass="login-field"/>

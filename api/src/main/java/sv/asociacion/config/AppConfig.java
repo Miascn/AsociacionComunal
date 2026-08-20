@@ -24,7 +24,7 @@ public final class AppConfig {
         instance = new AppConfig(
             readPort(),
             requiredSecret("API_SHARED_SECRET"),
-            resolveJwtSecret()
+            requiredSecret("JWT_SECRET")
         );
         return instance;
     }
@@ -62,12 +62,6 @@ public final class AppConfig {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("API_PORT debe ser un numero valido.", e);
         }
-    }
-
-    private static String resolveJwtSecret() {
-        String value = setting("JWT_SECRET");
-        if (value != null && value.length() >= 32) return value;
-        return requiredSecret("API_SHARED_SECRET");
     }
 
     public static String setting(String key) {

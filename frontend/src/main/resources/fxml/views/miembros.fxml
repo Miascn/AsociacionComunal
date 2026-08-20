@@ -12,51 +12,68 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.MiembroController" spacing="22" styleClass="module-page">
+      fx:controller="controller.MiembroController" spacing="22" styleClass="module-page, members-page">
     <padding><Insets top="30" right="34" bottom="30" left="34"/></padding>
 
-    <HBox alignment="CENTER_LEFT" spacing="16">
-        <VBox spacing="4">
-            <Label text="Gestión de miembros" styleClass="page-title"/>
-            <Label text="Administra el censo y la información de la comunidad" styleClass="page-subtitle"/>
+    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
+        <VBox spacing="7">
+            <Label text="COMUNIDAD / DIRECTORIO" styleClass="page-eyebrow"/>
+            <Label text="Gestión de miembros" styleClass="page-title, members-title"/>
+            <Label text="Gestiona el censo, los datos de contacto y el estado de cada integrante."
+                   styleClass="page-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Nuevo miembro" styleClass="primary-action" onAction="#abrirRegistro">
-            <graphic><FontIcon iconLiteral="fth-user-plus"/></graphic>
+        <Button text="NUEVO MIEMBRO" styleClass="primary-action, members-primary-action" onAction="#abrirRegistro">
+            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
         </Button>
     </HBox>
 
     <HBox spacing="14">
-        <VBox spacing="4" styleClass="summary-card" HBox.hgrow="ALWAYS">
-            <Label text="Total registrados" styleClass="summary-label"/>
-            <Label fx:id="lblTotalMiembros" text="0 miembros registrados" styleClass="summary-value"/>
-        </VBox>
-        <VBox spacing="4" styleClass="summary-card" HBox.hgrow="ALWAYS">
-            <Label text="Estado del módulo" styleClass="summary-label"/>
-            <Label fx:id="lblEstadoModulo" text="Conectando al servidor..." styleClass="summary-value-success"/>
-        </VBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-users"/></HBox>
+            <VBox spacing="3">
+                <Label text="MIEMBROS REGISTRADOS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalMiembros" text="0 miembros registrados" styleClass="summary-value"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-activity"/></HBox>
+            <VBox spacing="3">
+                <Label text="ESTADO DEL SISTEMA" styleClass="summary-label"/>
+                <Label fx:id="lblEstadoModulo" text="Conectando al servidor..." styleClass="summary-value-success"/>
+            </VBox>
+        </HBox>
     </HBox>
 
-    <VBox spacing="12" styleClass="table-card" VBox.vgrow="ALWAYS">
-        <HBox alignment="CENTER_LEFT">
-            <Label text="Miembros registrados" styleClass="section-title"/>
+    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="members-toolbar">
+            <VBox spacing="2">
+                <Label text="Directorio de miembros" styleClass="section-title"/>
+                <Label text="Consulta y administra los registros de la comunidad" styleClass="toolbar-caption"/>
+            </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <TextField fx:id="campoBusqueda" promptText="Buscar por DUI, nombre o correo"
-                       prefWidth="280" styleClass="search-field"/>
+            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="search-box">
+                <FontIcon iconLiteral="fth-search"/>
+                <TextField fx:id="campoBusqueda" promptText="Buscar por documento, nombre o correo"
+                           prefWidth="250" styleClass="search-field"/>
+            </HBox>
+            <Button fx:id="btnVerDetalle" text="Ver detalle" styleClass="secondary-action" onAction="#verDetalle">
+                <graphic><FontIcon iconLiteral="fth-eye"/></graphic>
+            </Button>
             <Button text="Exportar" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-download"/></graphic>
             </Button>
         </HBox>
-        <TableView fx:id="tablaMiembros" VBox.vgrow="ALWAYS">
+        <TableView fx:id="tablaMiembros" VBox.vgrow="ALWAYS" styleClass="members-table">
             <columns>
-                <TableColumn fx:id="columnaDui" text="DUI" prefWidth="115"/>
-                <TableColumn fx:id="columnaNombres" text="Nombres" prefWidth="145"/>
-                <TableColumn fx:id="columnaApellidos" text="Apellidos" prefWidth="145"/>
-                <TableColumn fx:id="columnaTelefono" text="Teléfono" prefWidth="105"/>
-                <TableColumn fx:id="columnaCorreo" text="Correo" prefWidth="210"/>
-                <TableColumn fx:id="columnaEstado" text="Estado" prefWidth="90"/>
+                <TableColumn fx:id="columnaDui" text="DOCUMENTO" prefWidth="135"/>
+                <TableColumn fx:id="columnaNombres" text="NOMBRES" prefWidth="145"/>
+                <TableColumn fx:id="columnaApellidos" text="APELLIDOS" prefWidth="145"/>
+                <TableColumn fx:id="columnaTelefono" text="TELÉFONO" prefWidth="105"/>
+                <TableColumn fx:id="columnaCorreo" text="CORREO ELECTRÓNICO" prefWidth="210"/>
+                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="90"/>
             </columns>
-            <placeholder><Label text="No hay miembros para mostrar" styleClass="page-subtitle"/></placeholder>
+            <placeholder><Label text="Aún no hay miembros para mostrar" styleClass="page-subtitle"/></placeholder>
         </TableView>
     </VBox>
 </VBox>

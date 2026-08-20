@@ -1,30 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.RegistrarMiembroController" spacing="16" prefWidth="560">
-    <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
-    <VBox spacing="4">
-        <Label text="Nuevo miembro" styleClass="dialog-title"/>
-        <Label text="Completa la información del integrante de la comunidad" styleClass="page-subtitle"/>
+      fx:controller="controller.RegistrarMiembroController" styleClass="member-form" prefWidth="680">
+    <VBox spacing="10" styleClass="member-form-hero">
+        <HBox alignment="CENTER_LEFT" spacing="14">
+            <HBox alignment="CENTER" styleClass="member-form-icon">
+                <FontIcon iconLiteral="fth-user-plus"/>
+            </HBox>
+            <VBox spacing="3">
+                <Label text="NUEVO REGISTRO" styleClass="member-form-eyebrow"/>
+                <Label text="Agregar miembro" styleClass="dialog-title"/>
+            </VBox>
+        </HBox>
+        <Label text="Incorpora una persona al censo de la comunidad. Los campos marcados con * son obligatorios."
+               wrapText="true" styleClass="member-form-description"/>
     </VBox>
-    <GridPane hgap="14" vgap="12">
-        <Label text="DUI *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-        <TextField fx:id="campoDui" promptText="00000000-0" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-        <Label text="Teléfono" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-        <TextField fx:id="campoTelefono" promptText="0000-0000" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-        <Label text="Nombres *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-        <TextField fx:id="campoNombres" promptText="Nombres" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-        <Label text="Apellidos *" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-        <TextField fx:id="campoApellidos" promptText="Apellidos" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-        <Label text="Correo electrónico" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-        <TextField fx:id="campoCorreo" promptText="persona@correo.com" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
-        <Label text="Dirección *" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-        <TextField fx:id="campoDireccion" promptText="Dirección dentro de la comunidad" GridPane.rowIndex="7" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
-    </GridPane>
-    <Label fx:id="lblErrorRegistro" wrapText="true" styleClass="form-error"/>
+
+    <VBox spacing="22" styleClass="member-form-body">
+        <VBox spacing="12">
+            <HBox alignment="CENTER_LEFT" spacing="9" styleClass="form-section-heading">
+                <FontIcon iconLiteral="fth-credit-card"/>
+                <Label text="Identidad" styleClass="form-section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="DATOS PERSONALES" styleClass="form-section-tag"/>
+            </HBox>
+            <GridPane hgap="16" vgap="8">
+                <Label text="Tipo de documento *" styleClass="field-caption" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label fx:id="lblNumeroDocumento" text="Número de DUI *" styleClass="field-caption" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <ComboBox fx:id="selectorTipoDocumento" styleClass="member-field, member-combo"
+                          prefWidth="310" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="campoDui" promptText="00000000-0" styleClass="member-field"
+                           prefWidth="310" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                <VBox fx:id="contenedorPais" spacing="8" visible="false" managed="false"
+                      GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2">
+                    <VBox.margin><Insets top="8"/></VBox.margin>
+                    <Label text="País de origen *" styleClass="field-caption"/>
+                    <ComboBox fx:id="selectorPais" promptText="Selecciona el país de origen"
+                              maxWidth="Infinity" styleClass="member-field, member-combo"/>
+                </VBox>
+                <Label text="Nombres *" styleClass="field-caption" GridPane.rowIndex="3" GridPane.columnIndex="0">
+                    <GridPane.margin><Insets top="8"/></GridPane.margin>
+                </Label>
+                <Label text="Apellidos *" styleClass="field-caption" GridPane.rowIndex="3" GridPane.columnIndex="1">
+                    <GridPane.margin><Insets top="8"/></GridPane.margin>
+                </Label>
+                <TextField fx:id="campoNombres" promptText="Nombres del miembro" styleClass="member-field"
+                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                <TextField fx:id="campoApellidos" promptText="Apellidos del miembro" styleClass="member-field"
+                           GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+            </GridPane>
+        </VBox>
+
+        <VBox spacing="12">
+            <HBox alignment="CENTER_LEFT" spacing="9" styleClass="form-section-heading">
+                <FontIcon iconLiteral="fth-map-pin"/>
+                <Label text="Contacto y residencia" styleClass="form-section-title"/>
+            </HBox>
+            <GridPane hgap="16" vgap="8">
+                <Label text="Teléfono" styleClass="field-caption" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label text="Correo electrónico" styleClass="field-caption" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <HBox spacing="8" GridPane.rowIndex="1" GridPane.columnIndex="0">
+                    <ComboBox fx:id="selectorCodigoTelefono" prefWidth="105" visible="false" managed="false"
+                              styleClass="member-field, member-combo"/>
+                    <TextField fx:id="campoTelefono" promptText="0000-0000" prefWidth="197"
+                               HBox.hgrow="ALWAYS" styleClass="member-field"/>
+                </HBox>
+                <TextField fx:id="campoCorreo" promptText="persona@correo.com" styleClass="member-field"
+                           GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                <Label text="Vivienda donde reside *" styleClass="field-caption"
+                       GridPane.rowIndex="2" GridPane.columnIndex="0">
+                    <GridPane.margin><Insets top="8"/></GridPane.margin>
+                </Label>
+                <ComboBox fx:id="selectorVivienda" promptText="Selecciona una vivienda registrada"
+                          maxWidth="Infinity" styleClass="member-field, member-combo" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+            </GridPane>
+        </VBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="9" styleClass="privacy-note">
+            <FontIcon iconLiteral="fth-shield"/>
+            <Label text="La información será utilizada únicamente para la gestión de la asociación."
+                   wrapText="true" styleClass="privacy-note-text"/>
+        </HBox>
+        <Label fx:id="lblErrorRegistro" wrapText="true" styleClass="form-error"/>
+    </VBox>
 </VBox>

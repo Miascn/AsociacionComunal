@@ -7,6 +7,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
+import javafx.geometry.Insets;
 import models.AuthResult;
 import services.auth.AuthService;
 import security.SessionManager;
@@ -24,6 +28,8 @@ public class LoginController {
 
     @FXML
     private Button btnTema;
+    @FXML private HBox loginShell;
+    @FXML private VBox loginBrandPanel;
 
     private final AuthService authService = new AuthService();
     private Runnable onAuthenticated;
@@ -32,6 +38,26 @@ public class LoginController {
     private void initialize() {
         ocultarError();
         actualizarBotonTema();
+        loginShell.sceneProperty().addListener((observable, previous, scene) -> {
+            if (scene == null) return;
+            scene.widthProperty().addListener((obs, oldWidth, width) -> adaptar(width.doubleValue(), scene.getHeight()));
+            scene.heightProperty().addListener((obs, oldHeight, height) -> adaptar(scene.getWidth(), height.doubleValue()));
+            adaptar(scene.getWidth(), scene.getHeight());
+        });
+    }
+
+    private void adaptar(double width, double height) {
+        boolean compacto = width > 0 && width < 980;
+        loginBrandPanel.setVisible(!compacto);
+        loginBrandPanel.setManaged(!compacto);
+        var root = loginShell.getScene().getRoot();
+        root.getStyleClass().removeAll("login-compact", "login-low-height");
+        if (compacto) root.getStyleClass().add("login-compact");
+        boolean pocaAltura = height > 0 && height < 680;
+        if (pocaAltura) root.getStyleClass().add("login-low-height");
+        StackPane.setMargin(loginShell, pocaAltura
+            ? new Insets(58, 24, 20, 24)
+            : new Insets(72, 40, 40, 40));
     }
 
     @FXML

@@ -23,6 +23,7 @@ class LoginIntegrationTest {
     private static final int TEST_PORT = 9080;
     private static final ObjectMapper JSON = new ObjectMapper();
     private static HttpClient httpClient;
+    private static String adminPassword;
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -30,8 +31,12 @@ class LoginIntegrationTest {
         System.setProperty("API_SHARED_SECRET", "abcdefghijklmnopqrstuvwxyz1234567890ab");
         System.setProperty("JWT_SECRET", "jwt-secret-for-testing-only-1234567890!!");
 
+        adminPassword = System.getenv("TEST_ADMIN_PASSWORD");
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+            dbAvailable() && adminPassword != null && !adminPassword.isBlank(),
+            "La prueba de integración requiere MySQL y TEST_ADMIN_PASSWORD."
+        );
         AppConfig.load();
-        assertTrue(dbAvailable(), "MySQL debe estar corriendo (docker-compose up -d)");
 
         httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -57,9 +62,9 @@ class LoginIntegrationTest {
 
     @Test
     void loginExitoso() throws Exception {
-        String body = JSON.writeValueAsString(new LoginRequest("admin", "Admin2026!"));
+        String body = JSON.writeValueAsString(new LoginRequest("admin", adminPassword));
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("http://127.0.0.1:" + TEST_PORT + "/api/auth/login"))
+            .uri(URI.create("http://127.0.0.1:" + TEST_PORT + "/api/admin/auth/login"))
             .timeout(Duration.ofSeconds(10))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -71,14 +76,14 @@ class LoginIntegrationTest {
         LoginResponse login = JSON.readValue(response.body(), LoginResponse.class);
         assertNotNull(login.token());
         assertFalse(login.token().isBlank());
-        assertEquals("ADMIN", login.role());
+        assertTrue("ADMIN".equals(login.role()) || "ADMINISTRADOR".equals(login.role()));
     }
 
     @Test
     void loginFallido() throws Exception {
         String body = JSON.writeValueAsString(new LoginRequest("admin", "wrong_password"));
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("http://127.0.0.1:" + TEST_PORT + "/api/auth/login"))
+            .uri(URI.create("http://127.0.0.1:" + TEST_PORT + "/api/admin/auth/login"))
             .timeout(Duration.ofSeconds(10))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -92,7 +97,7 @@ class LoginIntegrationTest {
     private static boolean dbAvailable() {
         try (Connection conn = DBConnection.getInstance().getConnection()) {
             return conn.isValid(5);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
     }

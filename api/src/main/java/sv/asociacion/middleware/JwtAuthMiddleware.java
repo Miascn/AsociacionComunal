@@ -13,7 +13,12 @@ public class JwtAuthMiddleware {
     }
 
     public void authenticate(Context context) {
-        if (context.path().equals("/api/auth/login")) {
+        String path = context.path();
+        if (path.equals("/api/admin/auth/login")
+            || path.equals("/api/me")
+            || path.startsWith("/api/auth/")
+            || path.startsWith("/api/updates/")
+            || path.startsWith("/api/mobile/updates/")) {
             return;
         }
 

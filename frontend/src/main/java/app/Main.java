@@ -15,6 +15,7 @@ import security.SessionManager;
 import service.UpdateService;
 import service.DesktopShortcutService;
 import service.ThemeService;
+import service.ResponsiveWindowService;
 
 public class Main extends Application {
     private Stage stage;
@@ -28,13 +29,10 @@ public class Main extends Application {
                 cargarIcono("/images/app-icon-48.png"),
                 cargarIcono("/images/app-icon-256.png"),
                 cargarIcono("/images/logo-asociacion-comunal.png")));
-        stage.setMinWidth(820);
-        stage.setMinHeight(580);
         showLogin();
-        stage.centerOnScreen();
         stage.show();
         DesktopShortcutService.ensureAsync();
-        UpdateService.checkAsync(stage);
+        UpdateService.startAutomatic(stage);
     }
 
     private void showLogin() throws IOException {
@@ -45,7 +43,7 @@ public class Main extends Application {
         LoginController controller = loader.getController();
         controller.setOnAuthenticated(this::showDashboard);
 
-        setScene(root, 1280, 760);
+        setScene(root, 1280, 760, false);
     }
 
     private void showDashboard() {
@@ -54,7 +52,7 @@ public class Main extends Application {
             Parent root = loader.load();
             MainController controller = loader.getController();
             controller.setOnLogout(this::returnToLogin);
-            setScene(root, 1400, 820);
+            setScene(root, 1400, 820, true);
         } catch (IOException exception) {
             throw new IllegalStateException("No fue posible abrir el panel principal.", exception);
         }
@@ -68,11 +66,12 @@ public class Main extends Application {
         }
     }
 
-    private void setScene(Parent root, double width, double height) {
-        Scene scene = new Scene(root, width, height);
+    private void setScene(Parent root, double width, double height, boolean dashboard) {
+        Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
         ThemeService.apply(scene);
         stage.setScene(scene);
+        ResponsiveWindowService.fit(stage, width, height, dashboard);
     }
 
     private Image cargarIcono(String ruta) {
