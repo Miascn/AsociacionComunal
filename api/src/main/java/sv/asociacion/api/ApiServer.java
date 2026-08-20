@@ -9,8 +9,15 @@ import io.javalin.http.UploadedFile;
 import sv.asociacion.backend.config.DBConnection;
 import sv.asociacion.backend.dao.MiembroDAO;
 import sv.asociacion.backend.dao.ProyectoDAO;
+import sv.asociacion.backend.dao.ViviendaDAO;
 import sv.asociacion.backend.entity.Miembro;
 import sv.asociacion.backend.entity.Proyecto;
+import sv.asociacion.backend.entity.Vivienda;
+import sv.asociacion.api.auth.AuthRoutes;
+import sv.asociacion.api.auth.AuthService;
+import sv.asociacion.api.auth.JdbcSessionRepository;
+import sv.asociacion.api.auth.JdbcUserAuthRepository;
+import sv.asociacion.api.auth.MemberProvisioningService;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -36,28 +43,48 @@ public final class ApiServer {
         String apiSecret = requiredSecret();
         MiembroDAO miembroDAO = new MiembroDAO();
         ProyectoDAO proyectoDAO = new ProyectoDAO();
+        ViviendaDAO viviendaDAO = new ViviendaDAO();
 
-        Javalin.start(config -> {
+        Javalin app = Javalin.create(config -> {
             config.jetty.host = HOST;
             config.jetty.port = port;
             config.http.maxRequestSize = 268_435_456L;
-            config.routes.before("/api/*", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/miembros", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/proyectos", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/viviendas", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/viviendas/*", context -> authenticate(context, apiSecret));
+            config.routes.before("/api/updates/*", context -> authenticate(context, apiSecret));
             config.routes.get("/health", ApiServer::health);
             config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
-            config.routes.post("/api/miembros", context -> createMember(context, miembroDAO));
+            config.routes.post("/api/miembros", ApiServer::createMember);
             config.routes.get("/api/proyectos", context -> context.json(toProjectResponse(proyectoDAO.findAll())));
+            config.routes.get("/api/viviendas", context -> context.json(viviendaDAO.findAll().stream().map(ViviendaResponse::from).toList()));
+            config.routes.get("/api/viviendas/{id}", context -> {
+                int id=Integer.parseInt(context.pathParam("id"));
+                var house=viviendaDAO.findById(id);
+                if(house.isEmpty()){context.status(HttpStatus.NOT_FOUND);return;}
+                context.json(new ViviendaDetailResponse(ViviendaResponse.from(house.get()),viviendaDAO.residents(id)));
+            });
+            config.routes.post("/api/viviendas", context -> saveHouse(context,viviendaDAO,false));
+            config.routes.put("/api/viviendas/{id}", context -> saveHouse(context,viviendaDAO,true));
+            config.routes.delete("/api/viviendas/{id}", context -> {viviendaDAO.deactivate(Integer.parseInt(context.pathParam("id")));context.status(HttpStatus.NO_CONTENT);});
             config.routes.get("/api/updates/windows/manifest", ApiServer::updateManifest);
             config.routes.get("/api/updates/windows/manifest-v2", ApiServer::updateManifestV2);
             config.routes.get("/api/updates/windows/build-manifest", ApiServer::buildManifest);
             config.routes.get("/api/updates/windows/package", ApiServer::legacyUpdatePackage);
             config.routes.get("/api/updates/windows/delta", ApiServer::updatePackage);
             config.routes.post("/api/updates/windows/publish", ApiServer::publishUpdate);
+            config.routes.get("/api/mobile/updates/android/manifest", ApiServer::androidUpdateManifest);
+            config.routes.get("/api/mobile/updates/android/package", ApiServer::androidUpdatePackage);
+            config.routes.post("/api/updates/android/publish", ApiServer::publishAndroidUpdate);
+            new AuthRoutes(new AuthService(new JdbcUserAuthRepository(), new JdbcSessionRepository())).register(config.routes);
             config.routes.exception(Exception.class, (exception, context) -> {
                 exception.printStackTrace(System.err);
                 context.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .json(Map.of("error", "No fue posible procesar la solicitud."));
             });
         });
+        app.start(HOST, port);
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, port);
     }
 
@@ -98,39 +125,111 @@ public final class ApiServer {
         return proyectos.stream().map(ProyectoResponse::from).toList();
     }
 
-    private static void createMember(Context context, MiembroDAO miembroDAO) {
+    private static void createMember(Context context) {
         CreateMemberRequest request = context.bodyAsClass(CreateMemberRequest.class);
         String validationError = request.validationError();
         if (validationError != null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", validationError));
             return;
         }
-        if (miembroDAO.existsByDui(request.dui().trim())) {
-            context.status(HttpStatus.CONFLICT)
-                .json(Map.of("error", "Ya existe un miembro con ese DUI."));
-            return;
+        try {
+            String document = request.documento().trim();
+            var created = new MemberProvisioningService().create(document, request.tipoDocumento().trim(), clean(request.paisOrigen()), request.idVivienda(), request.nombres().trim(), request.apellidos().trim(), clean(request.telefono()), clean(request.correo()));
+            Miembro miembro = new Miembro(created.memberId(), document, request.tipoDocumento().trim(), clean(request.paisOrigen()), request.idVivienda(), request.nombres().trim(), request.apellidos().trim(), clean(request.telefono()), clean(request.correo()), null, LocalDate.now(), Miembro.Estado.ACTIVO);
+            context.status(HttpStatus.CREATED).json(new CreateMemberResponse(MiembroResponse.from(miembro), document, created.temporaryPassword()));
+        } catch (IllegalStateException exception) {
+            if (exception.getCause() instanceof SQLException sql && "23000".equals(sql.getSQLState())) context.status(HttpStatus.CONFLICT).json(Map.of("error", "Ya existe un miembro o usuario con ese DUI."));
+            else throw exception;
         }
-        Miembro miembro = new Miembro(
-            null,
-            request.dui().trim(),
-            request.nombres().trim(),
-            request.apellidos().trim(),
-            clean(request.telefono()),
-            clean(request.correo()),
-            request.direccion().trim(),
-            LocalDate.now(),
-            Miembro.Estado.ACTIVO
-        );
-        miembroDAO.save(miembro);
-        context.status(HttpStatus.CREATED).json(MiembroResponse.from(miembro));
     }
 
     private static String clean(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    private static void saveHouse(Context context,ViviendaDAO dao,boolean update){
+        ViviendaRequest request=context.bodyAsClass(ViviendaRequest.class);
+        String error=request.validationError();
+        if(error!=null){context.status(HttpStatus.BAD_REQUEST).json(Map.of("error",error));return;}
+        Integer id=update?Integer.parseInt(context.pathParam("id")):null;
+        Vivienda value=new Vivienda(id,request.codigo().trim().toUpperCase(),request.sector().trim(),request.direccion().trim(),clean(request.referencia()),request.idRepresentante(),null,LocalDate.now(),request.estado(),0,0);
+        Vivienda saved=update?dao.update(value,request.adultos(),request.menores()):dao.create(value,request.adultos(),request.menores());
+        context.status(update?HttpStatus.OK:HttpStatus.CREATED).json(ViviendaResponse.from(saved));
+    }
+
     private static Path updateDirectory() {
         return Path.of(System.getProperty("user.home"), "apps", "asociacion-api", "updates");
+    }
+
+    private static Path androidUpdateDirectory() {
+        return Path.of(System.getProperty("user.home"), "apps", "asociacion-api", "android-updates");
+    }
+
+    private static void androidUpdateManifest(Context context) throws Exception {
+        Path updates = androidUpdateDirectory();
+        Path version = updates.resolve("version.txt");
+        Path archive = updates.resolve("AsociacionComunalAndroid.apk");
+        Path checksum = updates.resolve("sha256.txt");
+        if (!Files.isRegularFile(version) || !Files.isRegularFile(archive) || !Files.isRegularFile(checksum)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No hay actualización Android publicada."));
+            return;
+        }
+        Path notes = updates.resolve("notes.txt");
+        context.json(Map.of(
+            "version", Files.readString(version).trim(),
+            "sha256", Files.readString(checksum).trim(),
+            "size", Files.size(archive),
+            "notes", Files.isRegularFile(notes) ? Files.readString(notes).trim() : "Mejoras y correcciones.",
+            "downloadPath", "/api/mobile/updates/android/package"
+        ));
+    }
+
+    private static void androidUpdatePackage(Context context) throws Exception {
+        Path archive = androidUpdateDirectory().resolve("AsociacionComunalAndroid.apk");
+        if (!Files.isRegularFile(archive)) { context.status(HttpStatus.NOT_FOUND); return; }
+        context.header("Content-Disposition", "attachment; filename=AsociacionComunalAndroid.apk");
+        context.contentType("application/vnd.android.package-archive").result(Files.newInputStream(archive));
+    }
+
+    private static void publishAndroidUpdate(Context context) throws Exception {
+        UploadedFile apk = requiredUpload(context, "apk");
+        String version = new String(requiredUpload(context, "version").content().readAllBytes(), StandardCharsets.UTF_8).trim();
+        String checksum = new String(requiredUpload(context, "checksum").content().readAllBytes(), StandardCharsets.UTF_8).trim().toLowerCase();
+        UploadedFile notesUpload = context.uploadedFile("notes");
+        if (!version.matches("\\d+\\.\\d+\\.\\d+") || !checksum.matches("[a-f0-9]{64}")) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "Versión o checksum inválido.")); return;
+        }
+        Path updates = androidUpdateDirectory();
+        Files.createDirectories(updates);
+        Path staging = Files.createTempDirectory(updates, ".publish-");
+        try {
+            Path stagedApk = staging.resolve("AsociacionComunalAndroid.apk");
+            Files.copy(apk.content(), stagedApk);
+            String actual = sha256(stagedApk);
+            if (!actual.equals(checksum)) {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "El checksum del APK no coincide.")); return;
+            }
+            Files.writeString(staging.resolve("version.txt"), version, StandardCharsets.UTF_8);
+            Files.writeString(staging.resolve("sha256.txt"), checksum, StandardCharsets.UTF_8);
+            Files.writeString(staging.resolve("notes.txt"), notesUpload == null ? "Mejoras y correcciones." : new String(notesUpload.content().readAllBytes(), StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            publishFile(stagedApk, updates.resolve("AsociacionComunalAndroid.apk"));
+            publishFile(staging.resolve("version.txt"), updates.resolve("version.txt"));
+            publishFile(staging.resolve("sha256.txt"), updates.resolve("sha256.txt"));
+            publishFile(staging.resolve("notes.txt"), updates.resolve("notes.txt"));
+        } finally {
+            try (var files = Files.list(staging)) { files.forEach(path -> { try { Files.deleteIfExists(path); } catch (Exception ignored) { } }); }
+            Files.deleteIfExists(staging);
+        }
+        context.status(HttpStatus.CREATED).json(Map.of("version", version, "published", true));
+    }
+
+    private static String sha256(Path file) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (var input = Files.newInputStream(file)) {
+            byte[] buffer = new byte[8192]; int read;
+            while ((read = input.read(buffer)) >= 0) digest.update(buffer, 0, read);
+        }
+        return java.util.HexFormat.of().formatHex(digest.digest());
     }
 
     private static void updateManifest(Context context) throws Exception {
@@ -246,25 +345,39 @@ public final class ApiServer {
     }
 
     private record CreateMemberRequest(
-        String dui,
+        String documento,
+        String tipoDocumento,
+        String paisOrigen,
         String nombres,
         String apellidos,
         String telefono,
         String correo,
-        String direccion
+        Integer idVivienda
     ) {
         private String validationError() {
-            if (dui == null || !dui.trim().matches("\\d{8}-\\d")) {
-                return "El DUI debe tener el formato 00000000-0.";
+            if (tipoDocumento == null || !tipoDocumento.matches("DUI|PASAPORTE|CARNET_RESIDENTE")) {
+                return "El tipo de documento no es válido.";
+            }
+            if (documento == null || documento.isBlank()) {
+                return "El número de documento es obligatorio.";
+            }
+            if ("DUI".equals(tipoDocumento) && !documento.trim().matches("\\d{9}")) {
+                return "El DUI debe contener 9 dígitos.";
+            }
+            if (!"DUI".equals(tipoDocumento) && !documento.trim().matches("[A-Za-z0-9]{5,30}")) {
+                return "El documento debe contener entre 5 y 30 letras o números.";
+            }
+            if (!"DUI".equals(tipoDocumento) && (paisOrigen == null || paisOrigen.isBlank())) {
+                return "El país de origen es obligatorio.";
             }
             if (nombres == null || nombres.isBlank() || apellidos == null || apellidos.isBlank()) {
                 return "Los nombres y apellidos son obligatorios.";
             }
-            if (direccion == null || direccion.isBlank()) {
-                return "La direccion es obligatoria.";
+            if (idVivienda == null || idVivienda <= 0) {
+                return "La vivienda es obligatoria.";
             }
-            if (telefono != null && !telefono.isBlank() && !telefono.trim().matches("\\d{4}-\\d{4}")) {
-                return "El telefono debe tener el formato 0000-0000.";
+            if (telefono != null && !telefono.isBlank() && !telefono.trim().matches("(?:\\+\\d{1,4} )?\\d{4}-\\d{4}")) {
+                return "El teléfono no tiene un formato válido.";
             }
             if (correo != null && !correo.isBlank()
                 && !correo.trim().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
@@ -301,6 +414,9 @@ public final class ApiServer {
     private record MiembroResponse(
         Integer id,
         String dui,
+        String tipoDocumento,
+        String paisOrigen,
+        Integer idVivienda,
         String nombres,
         String apellidos,
         String telefono,
@@ -313,6 +429,9 @@ public final class ApiServer {
             return new MiembroResponse(
                 miembro.getIdMiembro(),
                 miembro.getDui(),
+                miembro.getTipoDocumento() == null ? "DUI" : miembro.getTipoDocumento(),
+                miembro.getPaisOrigen(),
+                miembro.getIdVivienda(),
                 miembro.getNombres(),
                 miembro.getApellidos(),
                 miembro.getTelefono(),
@@ -343,4 +462,20 @@ public final class ApiServer {
             );
         }
     }
+    private record CreateMemberResponse(MiembroResponse member, String username, String temporaryPassword) { }
+
+    private record ViviendaRequest(String codigo,String sector,String direccion,String referencia,Integer idRepresentante,String estado,List<String> adultos,List<String> menores){
+        private ViviendaRequest { adultos=adultos==null?List.of():adultos; menores=menores==null?List.of():menores; estado=estado==null?"ACTIVA":estado; }
+        private String validationError(){
+            if(codigo==null||!codigo.trim().matches("[A-Za-z0-9-]{3,20}"))return "El código de vivienda no es válido.";
+            if(sector==null||sector.isBlank()||direccion==null||direccion.isBlank())return "Sector y dirección son obligatorios.";
+            if(idRepresentante==null)return "Debe seleccionar un representante.";
+            if(!estado.matches("ACTIVA|DESHABITADA|INACTIVA"))return "Estado de vivienda inválido.";
+            return null;
+        }
+    }
+    private record ViviendaResponse(Integer id,String codigo,String sector,String direccion,String referencia,Integer idRepresentante,String representante,String fechaRegistro,String estado,int adultos,int menores){
+        static ViviendaResponse from(Vivienda v){return new ViviendaResponse(v.getIdVivienda(),v.getCodigo(),v.getSector(),v.getDireccion(),v.getReferencia(),v.getIdRepresentante(),v.getRepresentante(),v.getFechaRegistro()==null?null:v.getFechaRegistro().toString(),v.getEstado(),v.getAdultos(),v.getMenores());}
+    }
+    private record ViviendaDetailResponse(ViviendaResponse vivienda,List<ViviendaDAO.Resident> residentes){}
 }

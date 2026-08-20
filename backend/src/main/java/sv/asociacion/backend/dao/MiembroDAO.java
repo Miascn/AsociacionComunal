@@ -43,17 +43,19 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
 
     @Override
     public Miembro save(Miembro entity) {
-        String sql = "INSERT INTO miembro (dui, nombres, apellidos, telefono, correo, direccion, fecha_ingreso, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO miembro (dui, tipo_documento, pais_origen, nombres, apellidos, telefono, correo, direccion, fecha_ingreso, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, entity.getDui());
-            ps.setString(2, entity.getNombres());
-            ps.setString(3, entity.getApellidos());
-            ps.setString(4, entity.getTelefono());
-            ps.setString(5, entity.getCorreo());
-            ps.setString(6, entity.getDireccion());
-            ps.setString(7, DateUtils.formatDate(entity.getFechaIngreso()));
-            ps.setString(8, entity.getEstado().name());
+            ps.setString(2, entity.getTipoDocumento());
+            ps.setString(3, entity.getPaisOrigen());
+            ps.setString(4, entity.getNombres());
+            ps.setString(5, entity.getApellidos());
+            ps.setString(6, entity.getTelefono());
+            ps.setString(7, entity.getCorreo());
+            ps.setString(8, entity.getDireccion());
+            ps.setString(9, DateUtils.formatDate(entity.getFechaIngreso()));
+            ps.setString(10, entity.getEstado().name());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -81,18 +83,20 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
 
     @Override
     public Miembro update(Miembro entity) {
-        String sql = "UPDATE miembro SET dui = ?, nombres = ?, apellidos = ?, telefono = ?, correo = ?, direccion = ?, fecha_ingreso = ?, estado = ? WHERE id_miembro = ?";
+        String sql = "UPDATE miembro SET dui = ?, tipo_documento = ?, pais_origen = ?, nombres = ?, apellidos = ?, telefono = ?, correo = ?, direccion = ?, fecha_ingreso = ?, estado = ? WHERE id_miembro = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, entity.getDui());
-            ps.setString(2, entity.getNombres());
-            ps.setString(3, entity.getApellidos());
-            ps.setString(4, entity.getTelefono());
-            ps.setString(5, entity.getCorreo());
-            ps.setString(6, entity.getDireccion());
-            ps.setString(7, DateUtils.formatDate(entity.getFechaIngreso()));
-            ps.setString(8, entity.getEstado().name());
-            ps.setInt(9, entity.getIdMiembro());
+            ps.setString(2, entity.getTipoDocumento());
+            ps.setString(3, entity.getPaisOrigen());
+            ps.setString(4, entity.getNombres());
+            ps.setString(5, entity.getApellidos());
+            ps.setString(6, entity.getTelefono());
+            ps.setString(7, entity.getCorreo());
+            ps.setString(8, entity.getDireccion());
+            ps.setString(9, DateUtils.formatDate(entity.getFechaIngreso()));
+            ps.setString(10, entity.getEstado().name());
+            ps.setInt(11, entity.getIdMiembro());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -134,6 +138,9 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
         return new Miembro(
             rs.getInt("id_miembro"),
             rs.getString("dui"),
+            rs.getString("tipo_documento"),
+            rs.getString("pais_origen"),
+            (Integer) rs.getObject("id_vivienda"),
             rs.getString("nombres"),
             rs.getString("apellidos"),
             rs.getString("telefono"),

@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import models.AuthUser;
 import security.SessionManager;
 import service.ThemeService;
@@ -29,6 +30,7 @@ public class MainController {
 
     @FXML
     private Button btnTema;
+    @FXML private VBox sidebar;
 
     private Runnable onLogout;
 
@@ -40,6 +42,17 @@ public class MainController {
         lblVersion.setText("Versión " + UpdateService.currentVersion());
         actualizarBotonTema();
         mostrarDashboard();
+        sidebar.sceneProperty().addListener((observable, previous, scene) -> {
+            if (scene == null) return;
+            scene.widthProperty().addListener((obs, oldWidth, width) -> adaptarBarra(width.doubleValue()));
+            adaptarBarra(scene.getWidth());
+        });
+    }
+
+    private void adaptarBarra(double width) {
+        if (width > 0 && width < 1000) sidebar.setPrefWidth(185);
+        else if (width > 0 && width < 1200) sidebar.setPrefWidth(210);
+        else sidebar.setPrefWidth(240);
     }
 
     @FXML
@@ -68,7 +81,7 @@ public class MainController {
 
     @FXML
     private void mostrarViviendas() {
-        mostrarPlaceholder("Viviendas");
+        cargarVista("/fxml/views/viviendas.fxml");
     }
 
     @FXML

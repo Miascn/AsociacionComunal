@@ -18,6 +18,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -59,7 +60,11 @@ class FxmlNavigationTest {
             Parent root = loader.load();
             assertNotNull(loader.<RegistrarMiembroController>getController());
             long campos = recorrer(root).stream().filter(TextField.class::isInstance).count();
-            assertEquals(6, campos);
+            assertEquals(5, campos);
+            assertTrue(recorrer(root).stream()
+                    .filter(ComboBox.class::isInstance)
+                    .map(ComboBox.class::cast)
+                    .anyMatch(combo -> "selectorVivienda".equals(combo.getId())));
             return null;
         });
     }
@@ -104,6 +109,12 @@ class FxmlNavigationTest {
                     assertTrue(buscarEtiquetas(root).stream()
                             .map(Label::getText)
                             .anyMatch("Proyectos comunales"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
+                } else if ("Viviendas".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream()
+                            .map(Label::getText)
+                            .anyMatch("Gestión de viviendas"::equals));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();

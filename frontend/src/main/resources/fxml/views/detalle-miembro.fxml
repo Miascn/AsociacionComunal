@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.DetalleMiembroController" styleClass="member-detail" prefWidth="620">
+    <HBox alignment="CENTER_LEFT" spacing="16" styleClass="member-detail-hero">
+        <Label fx:id="lblIniciales" text="--" alignment="CENTER" styleClass="member-avatar"/>
+        <VBox spacing="4">
+            <Label text="PERFIL DEL MIEMBRO" styleClass="member-form-eyebrow"/>
+            <Label fx:id="lblNombreCompleto" text="Nombre del miembro" styleClass="detail-name"/>
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <FontIcon iconLiteral="fth-check-circle" styleClass="detail-status-icon"/>
+                <Label fx:id="lblEstado" text="ACTIVO" styleClass="detail-status"/>
+            </HBox>
+        </VBox>
+    </HBox>
+
+    <VBox spacing="20" styleClass="member-detail-body">
+        <VBox spacing="11">
+            <Label text="IDENTIFICACIÓN" styleClass="detail-section-title"/>
+            <GridPane hgap="18" vgap="6" styleClass="detail-grid">
+                <Label text="Documento" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label text="Tipo" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label fx:id="lblDocumento" styleClass="detail-value" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <Label fx:id="lblTipoDocumento" styleClass="detail-value" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                <Label text="País de origen" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0">
+                    <GridPane.margin><Insets top="9"/></GridPane.margin>
+                </Label>
+                <Label text="Fecha de ingreso" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                    <GridPane.margin><Insets top="9"/></GridPane.margin>
+                </Label>
+                <Label fx:id="lblPais" styleClass="detail-value" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <Label fx:id="lblFechaIngreso" styleClass="detail-value" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+            </GridPane>
+        </VBox>
+        <VBox spacing="11">
+            <Label text="CONTACTO Y RESIDENCIA" styleClass="detail-section-title"/>
+            <GridPane hgap="18" vgap="6" styleClass="detail-grid">
+                <Label text="Teléfono" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label text="Correo electrónico" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label fx:id="lblTelefono" styleClass="detail-value" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <Label fx:id="lblCorreo" styleClass="detail-value" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                <Label text="Dirección" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0">
+                    <GridPane.margin><Insets top="9"/></GridPane.margin>
+                </Label>
+                <Label fx:id="lblDireccion" wrapText="true" maxWidth="560" styleClass="detail-value"
+                       GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+            </GridPane>
+        </VBox>
+    </VBox>
+</VBox>
