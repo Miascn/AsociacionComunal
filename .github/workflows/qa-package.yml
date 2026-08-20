@@ -144,7 +144,7 @@ jobs:
   deploy-qa:
     name: Activar actualización QA
     needs: build-windows
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: ubuntu-latest
     environment: qa
     steps:
@@ -180,7 +180,7 @@ jobs:
   release-github:
     name: Publicar aplicación en GitHub
     needs: build-windows
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: ubuntu-latest
     steps:
       - name: Descargar paquete aprobado
