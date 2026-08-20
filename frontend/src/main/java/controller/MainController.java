@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox;
 import models.AuthUser;
 import security.SessionManager;
 import service.ThemeService;
+import service.UpdateService;
 
 public class MainController {
     @FXML
@@ -38,7 +39,7 @@ public class MainController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         lblNombreUsuario.setText(user.getDisplayName());
         lblRolUsuario.setText(user.getRole());
-        lblVersion.setText("Versión " + System.getProperty("jpackage.app-version", "DEV"));
+        lblVersion.setText("Versión " + UpdateService.currentVersion());
         actualizarBotonTema();
         mostrarDashboard();
         sidebar.sceneProperty().addListener((observable, previous, scene) -> {

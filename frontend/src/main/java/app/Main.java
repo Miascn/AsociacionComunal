@@ -32,7 +32,7 @@ public class Main extends Application {
         showLogin();
         stage.show();
         DesktopShortcutService.ensureAsync();
-        UpdateService.checkAsync(stage);
+        UpdateService.startAutomatic(stage);
     }
 
     private void showLogin() throws IOException {
