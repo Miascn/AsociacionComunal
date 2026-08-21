@@ -23,7 +23,7 @@
                    styleClass="page-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="NUEVO MIEMBRO" styleClass="primary-action, members-primary-action" onAction="#abrirRegistro">
+        <Button fx:id="btnNuevoMiembro" text="NUEVO MIEMBRO" styleClass="primary-action, members-primary-action" onAction="#abrirRegistro">
             <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
         </Button>
     </HBox>
@@ -59,6 +59,12 @@
             </HBox>
             <Button fx:id="btnVerDetalle" text="Ver detalle" styleClass="secondary-action" onAction="#verDetalle">
                 <graphic><FontIcon iconLiteral="fth-eye"/></graphic>
+            </Button>
+            <Button fx:id="btnEditar" text="Editar" styleClass="secondary-action" onAction="#editar">
+                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
+            </Button>
+            <Button fx:id="btnCambiarEstado" text="Desactivar" styleClass="secondary-action" onAction="#cambiarEstado">
+                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
             </Button>
             <Button text="Exportar" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-download"/></graphic>

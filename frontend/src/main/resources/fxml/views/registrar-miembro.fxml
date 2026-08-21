@@ -18,11 +18,11 @@
                 <FontIcon iconLiteral="fth-user-plus"/>
             </HBox>
             <VBox spacing="3">
-                <Label text="NUEVO REGISTRO" styleClass="member-form-eyebrow"/>
-                <Label text="Agregar miembro" styleClass="dialog-title"/>
+                <Label fx:id="lblModoFormulario" text="NUEVO REGISTRO" styleClass="member-form-eyebrow"/>
+                <Label fx:id="lblTituloFormulario" text="Agregar miembro" styleClass="dialog-title"/>
             </VBox>
         </HBox>
-        <Label text="Incorpora una persona al censo de la comunidad. Los campos marcados con * son obligatorios."
+        <Label fx:id="lblDescripcionFormulario" text="Incorpora una persona al censo de la comunidad. Los campos marcados con * son obligatorios."
                wrapText="true" styleClass="member-form-description"/>
     </VBox>
 

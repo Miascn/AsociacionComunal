@@ -6,6 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import service.MiembroApiClient.CreateMemberRequest;
+import models.MiembroModel;
 import models.ViviendaModel;
 import java.util.List;
 
@@ -19,6 +20,9 @@ public class RegistrarMiembroController {
     @FXML private ComboBox<String> selectorCodigoTelefono;
     @FXML private VBox contenedorPais;
     @FXML private Label lblNumeroDocumento;
+    @FXML private Label lblModoFormulario;
+    @FXML private Label lblTituloFormulario;
+    @FXML private Label lblDescripcionFormulario;
     @FXML private TextField campoDui;
     @FXML private TextField campoNombres;
     @FXML private TextField campoApellidos;
@@ -35,6 +39,35 @@ public class RegistrarMiembroController {
         selectorVivienda.setCellFactory(list -> viviendaCell());
         selectorVivienda.setButtonCell(viviendaCell());
         if (viviendas.size() == 1) selectorVivienda.getSelectionModel().selectFirst();
+    }
+
+    public void setMiembro(MiembroModel miembro) {
+        String tipo = switch (miembro.getTipoDocumento() == null ? "DUI" : miembro.getTipoDocumento()) {
+            case "PASAPORTE" -> PASAPORTE;
+            case "CARNET_RESIDENTE" -> RESIDENTE;
+            default -> DUI;
+        };
+        selectorTipoDocumento.setValue(tipo);
+        campoDui.setText(miembro.getDui() == null ? "" : miembro.getDui());
+        selectorPais.setValue(miembro.getPaisOrigen());
+        campoNombres.setText(miembro.getNombres());
+        campoApellidos.setText(miembro.getApellidos());
+        campoCorreo.setText(miembro.getCorreo());
+        String telefono = miembro.getTelefono() == null ? "" : miembro.getTelefono().trim();
+        if (!DUI.equals(tipo) && telefono.startsWith("+") && telefono.contains(" ")) {
+            int separator = telefono.indexOf(' ');
+            selectorCodigoTelefono.setValue(telefono.substring(0, separator));
+            campoTelefono.setText(telefono.substring(separator + 1));
+        } else {
+            campoTelefono.setText(telefono);
+        }
+        selectorVivienda.getItems().stream()
+            .filter(value -> value.getIdVivienda().equals(miembro.getIdVivienda()))
+            .findFirst()
+            .ifPresent(selectorVivienda::setValue);
+        lblModoFormulario.setText("ACTUALIZAR REGISTRO");
+        lblTituloFormulario.setText("Editar miembro");
+        lblDescripcionFormulario.setText("Actualiza la información del miembro. El identificador interno y su historial se conservarán.");
     }
 
     private javafx.scene.control.ListCell<ViviendaModel> viviendaCell() {

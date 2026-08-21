@@ -61,7 +61,10 @@ public final class ApiServer {
             cfg.routes.get("/health", health::health);
             cfg.routes.post("/api/admin/auth/login", adminAuth::login);
             cfg.routes.get("/api/miembros", miembros::getAll);
+            cfg.routes.get("/api/miembros/{id}", miembros::getById);
             cfg.routes.post("/api/miembros", miembros::create);
+            cfg.routes.put("/api/miembros/{id}", miembros::update);
+            cfg.routes.patch("/api/miembros/{id}/estado", miembros::changeState);
             cfg.routes.get("/api/proyectos", proyectos::getAll);
 
             cfg.routes.get("/api/viviendas", viviendas::getAll);

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +19,7 @@ public final class MiembroApiClient {
     private final ObjectMapper json;
 
     public MiembroApiClient() { this(QaApiConfig.load()); }
+
     MiembroApiClient(QaApiConfig config) {
         this.config = config;
         client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -24,18 +27,46 @@ public final class MiembroApiClient {
     }
 
     public List<MiembroModel> findAll() throws IOException, InterruptedException {
-        HttpResponse<String> response = client.send(request("/api/miembros").GET().build(), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = send(request("/api/miembros").GET().build());
         ensure(response, 200);
-        return Arrays.stream(json.readValue(response.body(), MiembroResponse[].class)).map(MiembroResponse::toModel).toList();
+        return Arrays.stream(json.readValue(response.body(), MiembroResponse[].class))
+            .map(MiembroResponse::toModel).toList();
+    }
+
+    public MiembroModel findById(int id) throws IOException, InterruptedException {
+        HttpResponse<String> response = send(request("/api/miembros/" + id).GET().build());
+        ensure(response, 200);
+        return json.readValue(response.body(), MiembroResponse.class).toModel();
     }
 
     public CreateMemberResult create(CreateMemberRequest value) throws IOException, InterruptedException {
         HttpRequest request = request("/api/miembros").header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(value))).build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = send(request);
         ensure(response, 201);
         CreateMemberResponse created = json.readValue(response.body(), CreateMemberResponse.class);
         return new CreateMemberResult(created.member().toModel(), created.username(), created.temporaryPassword());
+    }
+
+    public MiembroModel update(int id, CreateMemberRequest value) throws IOException, InterruptedException {
+        HttpRequest request = request("/api/miembros/" + id).header("Content-Type", "application/json")
+            .PUT(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(value))).build();
+        HttpResponse<String> response = send(request);
+        ensure(response, 200);
+        return json.readValue(response.body(), MiembroResponse.class).toModel();
+    }
+
+    public MiembroModel changeState(int id, String estado) throws IOException, InterruptedException {
+        HttpRequest request = request("/api/miembros/" + id + "/estado").header("Content-Type", "application/json")
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(json.writeValueAsString(new MemberStateRequest(estado))))
+            .build();
+        HttpResponse<String> response = send(request);
+        ensure(response, 200);
+        return json.readValue(response.body(), MiembroResponse.class).toModel();
+    }
+
+    private HttpResponse<String> send(HttpRequest request) throws IOException, InterruptedException {
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpRequest.Builder request(String path) {
@@ -43,6 +74,7 @@ public final class MiembroApiClient {
             .header("Authorization", "Bearer " + SessionManager.getInstance().requireToken())
             .header("Accept", "application/json").header("ngrok-skip-browser-warning", "1");
     }
+
     private void ensure(HttpResponse<String> response, int expected) throws IOException {
         if (response.statusCode() == expected) return;
         String message = "HTTP " + response.statusCode();
@@ -54,6 +86,7 @@ public final class MiembroApiClient {
         String nombres, String apellidos, String telefono, String correo, Integer idVivienda) { }
     public record CreateMemberResult(MiembroModel member, String username, String temporaryPassword) { }
     private record CreateMemberResponse(MiembroResponse member, String username, String temporaryPassword) { }
+    private record MemberStateRequest(String estado) { }
     private record MiembroResponse(Integer id, String dui, String tipoDocumento, String paisOrigen,
         Integer idVivienda, String nombres, String apellidos, String telefono, String correo,
         String direccion, String fechaIngreso, String estado) {
