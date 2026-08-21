@@ -32,7 +32,8 @@ public final class ApiServer {
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
         MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
         ProyectoService proyectoService = new ProyectoService(proyectoDAO);
-        UsuarioService usuarioService = new UsuarioService(usuarioDAO);
+        UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
+        RolService rolService = new RolService(rolDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
@@ -40,6 +41,7 @@ public final class ApiServer {
         MiembroController miembros = new MiembroController(miembroService);
         ProyectoController proyectos = new ProyectoController(proyectoService);
         UsuarioController usuarios = new UsuarioController(usuarioService);
+        RolController roles = new RolController(rolService);
         ViviendaController viviendas = new ViviendaController(viviendaService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
@@ -74,9 +76,11 @@ public final class ApiServer {
             cfg.routes.delete("/api/viviendas/{id}", viviendas::deactivate);
 
             cfg.routes.get("/api/usuarios", usuarios::getAll);
+            cfg.routes.get("/api/roles", roles::getAll);
             cfg.routes.get("/api/usuarios/{id}", usuarios::getById);
             cfg.routes.post("/api/usuarios", usuarios::create);
             cfg.routes.put("/api/usuarios/{id}", usuarios::update);
+            cfg.routes.patch("/api/usuarios/{id}/estado", usuarios::changeState);
             cfg.routes.delete("/api/usuarios/{id}", usuarios::delete);
 
             cfg.routes.get("/api/updates/windows/manifest", updates::manifestV1);

@@ -20,7 +20,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No fue posible crear el usuario.", e);
         }
         return Optional.empty();
     }
@@ -84,24 +84,23 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             ps.setString(5, entity.getEstado().name());
             ps.setString(6, DateUtils.formatDateTime(entity.getUltimoAcceso()));
             ps.setInt(7, entity.getIdUsuario());
-            ps.executeUpdate();
+            if (ps.executeUpdate() == 0) return null;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No fue posible actualizar el usuario.", e);
         }
         return entity;
     }
 
     @Override
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM usuario WHERE id_usuario = ?";
+        String sql = "UPDATE usuario SET estado = 'INACTIVO' WHERE id_usuario = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No fue posible desactivar el usuario.", e);
         }
-        return false;
     }
 
     public Usuario findByNombreUsuario(String nombreUsuario) {

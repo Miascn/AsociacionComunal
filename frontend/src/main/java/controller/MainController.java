@@ -31,6 +31,7 @@ public class MainController {
     @FXML
     private Button btnTema;
     @FXML private VBox sidebar;
+    @FXML private Button btnUsuarios;
 
     private Runnable onLogout;
 
@@ -40,6 +41,9 @@ public class MainController {
         lblNombreUsuario.setText(user.getDisplayName());
         lblRolUsuario.setText(user.getRole());
         lblVersion.setText("Versión " + UpdateService.currentVersion());
+        boolean administrator = isAdministrator(user.getRole());
+        btnUsuarios.setVisible(administrator);
+        btnUsuarios.setManaged(administrator);
         actualizarBotonTema();
         mostrarDashboard();
         sidebar.sceneProperty().addListener((observable, previous, scene) -> {
@@ -77,6 +81,15 @@ public class MainController {
     @FXML
     private void mostrarMiembros() {
         cargarVista("/fxml/views/miembros.fxml");
+    }
+
+    @FXML
+    private void mostrarUsuarios() {
+        cargarVista("/fxml/views/usuarios.fxml");
+    }
+
+    static boolean isAdministrator(String role) {
+        return role != null && ("ADMIN".equalsIgnoreCase(role) || "ADMINISTRADOR".equalsIgnoreCase(role));
     }
 
     @FXML

@@ -82,7 +82,7 @@ class FxmlNavigationTest {
             controller.setOnLogout(() -> logoutInvocado[0] = true);
 
             List<Button> botones = buscarBotones(root);
-            assertEquals(9, botones.size());
+            assertEquals(10, botones.size());
 
             for (Button boton : botones) {
                 if ("Miembros".equals(boton.getText())) {
@@ -104,6 +104,10 @@ class FxmlNavigationTest {
                     busqueda.setText("María");
                     assertEquals(0, tabla.getItems().size());
                     busqueda.clear();
+                } else if ("Usuarios".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Gestión de usuarios"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Proyectos".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()

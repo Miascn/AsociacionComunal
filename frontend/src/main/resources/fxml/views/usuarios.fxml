@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.UsuarioController" spacing="22" styleClass="module-page, members-page">
+    <padding><Insets top="30" right="34" bottom="30" left="34"/></padding>
+    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
+        <VBox spacing="7">
+            <Label text="SEGURIDAD / ACCESO" styleClass="page-eyebrow"/>
+            <Label text="Gestión de usuarios" styleClass="page-title, members-title"/>
+            <Label text="Administra cuentas, roles, miembros asociados y estados de acceso." styleClass="page-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="NUEVO USUARIO" onAction="#create" styleClass="primary-action, members-primary-action">
+            <graphic><FontIcon iconLiteral="fth-user-plus"/></graphic>
+        </Button>
+    </HBox>
+    <HBox spacing="14">
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-shield"/></HBox>
+            <VBox spacing="3"><Label text="CUENTAS REGISTRADAS" styleClass="summary-label"/><Label fx:id="lblTotalUsuarios" text="0 usuarios" styleClass="summary-value"/></VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-activity"/></HBox>
+            <VBox spacing="3"><Label text="ESTADO DEL MÓDULO" styleClass="summary-label"/><Label fx:id="lblEstadoModulo" text="Conectando al servidor..." styleClass="summary-value-success"/></VBox>
+        </HBox>
+    </HBox>
+    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="members-toolbar">
+            <VBox spacing="2"><Label text="Cuentas del sistema" styleClass="section-title"/><Label text="Acceso administrativo protegido por roles" styleClass="toolbar-caption"/></VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="search-box"><FontIcon iconLiteral="fth-search"/><TextField fx:id="campoBusqueda" promptText="Buscar usuario, rol o miembro" prefWidth="235" styleClass="search-field"/></HBox>
+            <Button fx:id="btnEditar" text="Editar" onAction="#edit" styleClass="secondary-action"><graphic><FontIcon iconLiteral="fth-edit-2"/></graphic></Button>
+            <Button fx:id="btnCambiarEstado" text="Desactivar" onAction="#changeState" styleClass="secondary-action"><graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic></Button>
+        </HBox>
+        <TableView fx:id="tablaUsuarios" VBox.vgrow="ALWAYS" styleClass="members-table">
+            <columns>
+                <TableColumn fx:id="columnaUsuario" text="USUARIO" prefWidth="155"/>
+                <TableColumn fx:id="columnaRol" text="ROL" prefWidth="130"/>
+                <TableColumn fx:id="columnaMiembro" text="MIEMBRO ASOCIADO" prefWidth="220"/>
+                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="105"/>
+                <TableColumn fx:id="columnaUltimoAcceso" text="ÚLTIMO ACCESO" prefWidth="180"/>
+            </columns>
+            <placeholder><Label text="Aún no hay usuarios para mostrar" styleClass="page-subtitle"/></placeholder>
+        </TableView>
+    </VBox>
+</VBox>

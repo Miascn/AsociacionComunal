@@ -49,6 +49,9 @@
                         <Button text="Miembros" onAction="#mostrarMiembros" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-users"/></graphic>
                         </Button>
+                        <Button fx:id="btnUsuarios" text="Usuarios" onAction="#mostrarUsuarios" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-shield"/></graphic>
+                        </Button>
                         <Button text="Viviendas" onAction="#mostrarViviendas" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-map-pin"/></graphic>
                         </Button>
