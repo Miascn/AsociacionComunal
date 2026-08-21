@@ -1,0 +1,9 @@
+tunnel: 1ec46398-7c7a-4d45-8241-f98a5267b6f8
+credentials-file: /home/miascn/.cloudflared/1ec46398-7c7a-4d45-8241-f98a5267b6f8.json
+
+ingress:
+  - hostname: asociacion-comunal.miascn.org
+    service: http://127.0.0.1:8080
+  - hostname: tiendalosolivares.miascn.org
+    service: http://127.0.0.1:80
+  - service: http_status:404

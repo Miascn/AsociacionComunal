@@ -1,6 +1,14 @@
-param([string]$InstallDir, [string]$Archive, [long]$ProcessId)
+param(
+    [string]$InstallDir,
+    [string]$Archive,
+    [long]$ProcessId,
+    [long]$LauncherProcessId = 0
+)
 $ErrorActionPreference = 'Stop'
 Wait-Process -Id $ProcessId -ErrorAction SilentlyContinue
+if ($LauncherProcessId -gt 0 -and $LauncherProcessId -ne $ProcessId) {
+    Wait-Process -Id $LauncherProcessId -ErrorAction SilentlyContinue
+}
 $staging = Join-Path ([IO.Path]::GetTempPath()) ('asociacion-update-' + [guid]::NewGuid())
 $backup = Join-Path ([IO.Path]::GetTempPath()) ('asociacion-backup-' + [guid]::NewGuid())
 try {

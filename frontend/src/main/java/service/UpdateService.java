@@ -185,7 +185,8 @@ public final class UpdateService {
                 script.toString(),
                 "-InstallDir", executable.getParent().toString(),
                 "-Archive", archive.toString(),
-                "-ProcessId", Long.toString(ProcessHandle.current().pid())
+                "-ProcessId", Long.toString(ProcessHandle.current().pid()),
+                "-LauncherProcessId", Long.toString(ProcessHandle.current().parent().map(ProcessHandle::pid).orElse(0L))
             ).start();
 
             Platform.runLater(Platform::exit);
