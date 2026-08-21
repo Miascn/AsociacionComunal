@@ -34,6 +34,7 @@ import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
 import service.MiembroApiClient.CreateMemberResult;
 import service.ViviendaApiClient;
+import security.SessionManager;
 import sv.asociacion.backend.entity.Miembro;
 
 public class MiembroController {
@@ -48,6 +49,9 @@ public class MiembroController {
     @FXML private Label lblEstadoModulo;
     @FXML private TextField campoBusqueda;
     @FXML private Button btnVerDetalle;
+    @FXML private Button btnNuevoMiembro;
+    @FXML private Button btnEditar;
+    @FXML private Button btnCambiarEstado;
 
     private final ObservableList<Miembro> miembros = FXCollections.observableArrayList();
     private FilteredList<Miembro> miembrosFiltrados;
@@ -66,6 +70,19 @@ public class MiembroController {
         tablaMiembros.setItems(miembrosFiltrados);
         campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
         btnVerDetalle.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
+        boolean puedeGestionar = puedeGestionar(SessionManager.getInstance().requireCurrentUser().getRole());
+        btnNuevoMiembro.setDisable(!puedeGestionar);
+        if (puedeGestionar) {
+            btnEditar.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
+            btnCambiarEstado.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
+        } else {
+            btnEditar.setDisable(true);
+            btnCambiarEstado.setDisable(true);
+        }
+        tablaMiembros.getSelectionModel().selectedItemProperty().addListener((observable, previous, selected) ->
+            btnCambiarEstado.setText(selected != null && selected.getEstado() == Miembro.Estado.INACTIVO
+                ? "Reactivar" : "Desactivar")
+        );
         tablaMiembros.setRowFactory(table -> {
             TableRow<Miembro> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -77,6 +94,10 @@ public class MiembroController {
         });
         actualizarTotal();
         cargarMiembros();
+    }
+
+    static boolean puedeGestionar(String role) {
+        return role != null && ("ADMIN".equalsIgnoreCase(role) || "ADMINISTRADOR".equalsIgnoreCase(role));
     }
 
     public ObservableList<Miembro> getMiembros() {
@@ -139,6 +160,132 @@ public class MiembroController {
     private void verDetalle() {
         Miembro seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
         if (seleccionado != null) mostrarDetalle(seleccionado);
+    }
+
+    @FXML
+    private void editar() {
+        Miembro seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/registrar-miembro.fxml"));
+            Parent content = loader.load();
+            RegistrarMiembroController controller = loader.getController();
+            var viviendas = new ViviendaApiClient().findAll().stream()
+                .filter(vivienda -> "ACTIVA".equals(vivienda.getEstado())
+                    || vivienda.getIdVivienda().equals(seleccionado.getIdVivienda()))
+                .toList();
+            controller.setViviendas(viviendas);
+            controller.setMiembro(seleccionado);
+
+            ButtonType guardarType = new ButtonType("Guardar cambios", ButtonBar.ButtonData.OK_DONE);
+            Dialog<Void> dialog = memberFormDialog("Editar miembro", content, guardarType);
+            Button guardar = (Button) dialog.getDialogPane().lookupButton(guardarType);
+            guardar.addEventFilter(ActionEvent.ACTION, event -> {
+                event.consume();
+                CreateMemberRequest request = controller.validatedRequest();
+                if (request != null) {
+                    guardar.setDisable(true);
+                    actualizarMiembro(seleccionado, request, controller, dialog, guardar);
+                }
+            });
+            dialog.show();
+        } catch (Exception exception) {
+            mostrarError("No fue posible abrir la edición: " + exception.getMessage());
+        }
+    }
+
+    @FXML
+    private void cambiarEstado() {
+        Miembro seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) return;
+        Miembro.Estado nuevoEstado = seleccionado.getEstado() == Miembro.Estado.ACTIVO
+            ? Miembro.Estado.INACTIVO : Miembro.Estado.ACTIVO;
+        String accion = nuevoEstado == Miembro.Estado.ACTIVO ? "reactivar" : "desactivar";
+        Alert confirmation = new Alert(
+            Alert.AlertType.CONFIRMATION,
+            "El miembro y su cuenta cambiarán a " + nuevoEstado + ". Se conservarán sus relaciones y su historial.",
+            ButtonType.YES, ButtonType.NO
+        );
+        confirmation.setHeaderText("¿Deseas " + accion + " a " + seleccionado.getNombres() + "?");
+        confirmation.initOwner(tablaMiembros.getScene().getWindow());
+        if (confirmation.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+
+        lblEstadoModulo.setText(nuevoEstado == Miembro.Estado.ACTIVO ? "Reactivando miembro..." : "Desactivando miembro...");
+        Task<Miembro> task = new Task<>() {
+            @Override protected Miembro call() throws Exception {
+                return new MiembroApiClient().changeState(seleccionado.getIdMiembro(), nuevoEstado);
+            }
+        };
+        task.setOnSucceeded(event -> {
+            reemplazarMiembro(seleccionado, task.getValue());
+            lblEstadoModulo.setText(nuevoEstado == Miembro.Estado.ACTIVO ? "Miembro reactivado" : "Miembro desactivado");
+        });
+        task.setOnFailed(event -> {
+            lblEstadoModulo.setText("No fue posible cambiar el estado");
+            mostrarError(task.getException() == null ? "No fue posible cambiar el estado." : task.getException().getMessage());
+        });
+        Thread thread = new Thread(task, "cambiar-estado-miembro-api");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private Dialog<Void> memberFormDialog(String title, Parent content, ButtonType actionType) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle(title);
+        dialog.initOwner(tablaMiembros.getScene().getWindow());
+        Rectangle2D screen = Screen.getScreensForRectangle(
+            tablaMiembros.getScene().getWindow().getX(), tablaMiembros.getScene().getWindow().getY(),
+            tablaMiembros.getScene().getWindow().getWidth(), tablaMiembros.getScene().getWindow().getHeight()
+        ).stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
+        ScrollPane formScroll = new ScrollPane(content);
+        formScroll.setFitToWidth(true);
+        formScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        formScroll.setMaxHeight(Math.max(360, screen.getHeight() - 180));
+        formScroll.getStyleClass().add("member-form-scroll");
+        dialog.getDialogPane().setContent(formScroll);
+        dialog.getDialogPane().getButtonTypes().addAll(actionType, ButtonType.CANCEL);
+        dialog.getDialogPane().getStyleClass().add("member-dialog");
+        java.net.URL css = MiembroController.class.getResource("/styles/member-dialog.css");
+        if (css != null) dialog.getDialogPane().getStylesheets().add(css.toExternalForm());
+        dialog.getDialogPane().setPrefWidth(Math.min(720, screen.getWidth() - 40));
+        return dialog;
+    }
+
+    private void actualizarMiembro(
+        Miembro original,
+        CreateMemberRequest request,
+        RegistrarMiembroController form,
+        Dialog<Void> dialog,
+        Button guardar
+    ) {
+        lblEstadoModulo.setText("Actualizando miembro...");
+        Task<Miembro> task = new Task<>() {
+            @Override protected Miembro call() throws Exception {
+                return new MiembroApiClient().update(original.getIdMiembro(), request);
+            }
+        };
+        task.setOnSucceeded(event -> {
+            reemplazarMiembro(original, task.getValue());
+            lblEstadoModulo.setText("Miembro actualizado");
+            dialog.close();
+        });
+        task.setOnFailed(event -> {
+            guardar.setDisable(false);
+            lblEstadoModulo.setText("No fue posible actualizar");
+            form.showError(task.getException() == null ? "No fue posible actualizar el miembro." : task.getException().getMessage());
+        });
+        Thread thread = new Thread(task, "actualizar-miembro-api");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void reemplazarMiembro(Miembro original, Miembro updated) {
+        int index = miembros.indexOf(original);
+        if (index >= 0) miembros.set(index, updated);
+        else miembros.add(updated);
+        tablaMiembros.getSelectionModel().select(updated);
+        tablaMiembros.refresh();
+        actualizarTotal();
     }
 
     private void mostrarDetalle(Miembro miembro) {

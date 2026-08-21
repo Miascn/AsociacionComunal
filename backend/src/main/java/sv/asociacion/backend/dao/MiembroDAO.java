@@ -83,38 +83,92 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
 
     @Override
     public Miembro update(Miembro entity) {
-        String sql = "UPDATE miembro SET dui = ?, tipo_documento = ?, pais_origen = ?, nombres = ?, apellidos = ?, telefono = ?, correo = ?, direccion = ?, fecha_ingreso = ?, estado = ? WHERE id_miembro = ?";
-        try (Connection conn = DBConnection.getInstance().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, entity.getDui());
-            ps.setString(2, entity.getTipoDocumento());
-            ps.setString(3, entity.getPaisOrigen());
-            ps.setString(4, entity.getNombres());
-            ps.setString(5, entity.getApellidos());
-            ps.setString(6, entity.getTelefono());
-            ps.setString(7, entity.getCorreo());
-            ps.setString(8, entity.getDireccion());
-            ps.setString(9, DateUtils.formatDate(entity.getFechaIngreso()));
-            ps.setString(10, entity.getEstado().name());
-            ps.setInt(11, entity.getIdMiembro());
-            ps.executeUpdate();
+        String memberSql = "UPDATE miembro SET dui = ?, tipo_documento = ?, pais_origen = ?, id_vivienda = ?, nombres = ?, apellidos = ?, telefono = ?, correo = ?, direccion = ?, fecha_ingreso = ?, estado = ? WHERE id_miembro = ?";
+        String userSql = "UPDATE usuario SET nombre_usuario = ? WHERE id_miembro = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement member = conn.prepareStatement(memberSql);
+                 PreparedStatement user = conn.prepareStatement(userSql)) {
+                member.setString(1, entity.getDui());
+                member.setString(2, entity.getTipoDocumento());
+                member.setString(3, entity.getPaisOrigen());
+                if (entity.getIdVivienda() == null) member.setNull(4, Types.INTEGER);
+                else member.setInt(4, entity.getIdVivienda());
+                member.setString(5, entity.getNombres());
+                member.setString(6, entity.getApellidos());
+                member.setString(7, entity.getTelefono());
+                member.setString(8, entity.getCorreo());
+                member.setString(9, entity.getDireccion());
+                member.setString(10, DateUtils.formatDate(entity.getFechaIngreso()));
+                member.setString(11, entity.getEstado().name());
+                member.setInt(12, entity.getIdMiembro());
+                if (member.executeUpdate() == 0) {
+                    conn.rollback();
+                    return null;
+                }
+                user.setString(1, entity.getDui());
+                user.setInt(2, entity.getIdMiembro());
+                user.executeUpdate();
+                conn.commit();
+                return entity;
+            } catch (SQLException exception) {
+                conn.rollback();
+                throw exception;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No fue posible actualizar el miembro.", e);
         }
-        return entity;
     }
 
     @Override
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM miembro WHERE id_miembro = ?";
+        return changeEstado(id, Miembro.Estado.INACTIVO);
+    }
+
+    public boolean changeEstado(Integer id, Miembro.Estado estado) {
+        String memberSql = "UPDATE miembro SET estado = ? WHERE id_miembro = ?";
+        String userSql = "UPDATE usuario SET estado = ? WHERE id_miembro = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement member = conn.prepareStatement(memberSql);
+                 PreparedStatement user = conn.prepareStatement(userSql)) {
+                member.setString(1, estado.name());
+                member.setInt(2, id);
+                boolean changed = member.executeUpdate() > 0;
+                if (!changed) {
+                    conn.rollback();
+                    return false;
+                }
+                user.setString(1, estado.name());
+                user.setInt(2, id);
+                user.executeUpdate();
+                conn.commit();
+                return true;
+            } catch (SQLException exception) {
+                conn.rollback();
+                throw exception;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No fue posible cambiar el estado del miembro.", e);
+        }
+    }
+
+    public boolean existsByDuiExcludingId(String dui, Integer id) {
+        String sql = "SELECT 1 FROM miembro WHERE dui = ? AND id_miembro <> ? LIMIT 1";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+            ps.setString(1, dui);
+            ps.setInt(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No fue posible validar el documento.", e);
         }
-        return false;
     }
 
     public List<Miembro> findByEstado(Miembro.Estado estado) {

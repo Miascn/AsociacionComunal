@@ -47,6 +47,13 @@ public final class MiembroApiClient {
         return Arrays.stream(values).map(MiembroResponse::toEntity).toList();
     }
 
+    public Miembro findById(int id) throws IOException, InterruptedException {
+        HttpResponse<String> response = send(authorizedRequest("/api/miembros/" + id).GET().build());
+        if (response.statusCode() == 404) throw new IOException("El miembro ya no existe.");
+        requireStatus(response, 200, "consultar el miembro");
+        return objectMapper.readValue(response.body(), MiembroResponse.class).toEntity();
+    }
+
     public CreateMemberResult create(CreateMemberRequest value) throws IOException, InterruptedException {
         HttpRequest request = authorizedRequest("/api/miembros")
             .header("Content-Type", "application/json")
@@ -60,6 +67,40 @@ public final class MiembroApiClient {
         }
         CreateMemberResponse created = objectMapper.readValue(response.body(), CreateMemberResponse.class);
         return new CreateMemberResult(created.member().toEntity(), created.username(), created.temporaryPassword());
+    }
+
+    public Miembro update(int id, CreateMemberRequest value) throws IOException, InterruptedException {
+        HttpRequest request = authorizedRequest("/api/miembros/" + id)
+            .header("Content-Type", "application/json")
+            .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(value)))
+            .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() == 404) throw new IOException("El miembro ya no existe.");
+        if (response.statusCode() == 409) throw new IOException("Ya existe otro miembro con ese documento.");
+        requireStatus(response, 200, "actualizar el miembro");
+        return objectMapper.readValue(response.body(), MiembroResponse.class).toEntity();
+    }
+
+    public Miembro changeState(int id, Miembro.Estado estado) throws IOException, InterruptedException {
+        String body = objectMapper.writeValueAsString(new MemberStateRequest(estado.name()));
+        HttpRequest request = authorizedRequest("/api/miembros/" + id + "/estado")
+            .header("Content-Type", "application/json")
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
+            .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() == 404) throw new IOException("El miembro ya no existe.");
+        requireStatus(response, 200, "cambiar el estado del miembro");
+        return objectMapper.readValue(response.body(), MiembroResponse.class).toEntity();
+    }
+
+    private HttpResponse<String> send(HttpRequest request) throws IOException, InterruptedException {
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private void requireStatus(HttpResponse<String> response, int expected, String operation) throws IOException {
+        if (response.statusCode() != expected) {
+            throw new IOException("No fue posible " + operation + " (HTTP " + response.statusCode() + ").");
+        }
     }
 
     private HttpRequest.Builder authorizedRequest(String path) {
@@ -83,6 +124,7 @@ public final class MiembroApiClient {
     ) {}
     public record CreateMemberResult(Miembro member, String username, String temporaryPassword) {}
     private record CreateMemberResponse(MiembroResponse member, String username, String temporaryPassword) {}
+    private record MemberStateRequest(String estado) {}
 
     private record MiembroResponse(
         Integer id, String dui, String tipoDocumento, String paisOrigen, Integer idVivienda, String nombres, String apellidos, String telefono,

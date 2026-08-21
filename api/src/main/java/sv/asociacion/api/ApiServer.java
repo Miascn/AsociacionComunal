@@ -49,14 +49,12 @@ public final class ApiServer {
             config.jetty.host = HOST;
             config.jetty.port = port;
             config.http.maxRequestSize = 268_435_456L;
-            config.routes.before("/api/miembros", context -> authenticate(context, apiSecret));
             config.routes.before("/api/proyectos", context -> authenticate(context, apiSecret));
             config.routes.before("/api/viviendas", context -> authenticate(context, apiSecret));
             config.routes.before("/api/viviendas/*", context -> authenticate(context, apiSecret));
             config.routes.before("/api/updates/*", context -> authenticate(context, apiSecret));
             config.routes.get("/health", ApiServer::health);
-            config.routes.get("/api/miembros", context -> context.json(toResponse(miembroDAO.findAll())));
-            config.routes.post("/api/miembros", ApiServer::createMember);
+            registerMemberRoutes(config.routes, miembroDAO, apiSecret);
             config.routes.get("/api/proyectos", context -> context.json(toProjectResponse(proyectoDAO.findAll())));
             config.routes.get("/api/viviendas", context -> context.json(viviendaDAO.findAll().stream().map(ViviendaResponse::from).toList()));
             config.routes.get("/api/viviendas/{id}", context -> {
@@ -86,6 +84,17 @@ public final class ApiServer {
         });
         app.start(HOST, port);
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, port);
+    }
+
+    static void registerMemberRoutes(io.javalin.router.JavalinDefaultRoutingApi routes, MiembroDAO dao, String apiSecret) {
+        routes.before("/api/miembros", context -> authenticate(context, apiSecret));
+        routes.before("/api/miembros/*", context -> authenticate(context, apiSecret));
+        routes.get("/api/miembros", context -> context.json(toResponse(dao.findAll())));
+        routes.get("/api/miembros/{id}", context -> memberById(context, dao));
+        routes.post("/api/miembros", ApiServer::createMember);
+        routes.put("/api/miembros/{id}", context -> updateMember(context, dao));
+        routes.patch("/api/miembros/{id}/estado", context -> changeMemberState(context, dao));
+        routes.delete("/api/miembros/{id}", context -> deactivateMember(context, dao));
     }
 
     private static void authenticate(Context context, String expectedSecret) {
@@ -141,6 +150,104 @@ public final class ApiServer {
             if (exception.getCause() instanceof SQLException sql && "23000".equals(sql.getSQLState())) context.status(HttpStatus.CONFLICT).json(Map.of("error", "Ya existe un miembro o usuario con ese DUI."));
             else throw exception;
         }
+    }
+
+    private static void memberById(Context context, MiembroDAO dao) {
+        Integer id = memberId(context);
+        if (id == null) return;
+        dao.findById(id).ifPresentOrElse(
+            value -> context.json(MiembroResponse.from(value)),
+            () -> context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "El miembro no existe."))
+        );
+    }
+
+    private static void updateMember(Context context, MiembroDAO dao) {
+        Integer id = memberId(context);
+        if (id == null) return;
+        CreateMemberRequest request = context.bodyAsClass(CreateMemberRequest.class);
+        String validationError = request.validationError();
+        if (validationError != null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", validationError));
+            return;
+        }
+        Miembro current = dao.findById(id).orElse(null);
+        if (current == null) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "El miembro no existe."));
+            return;
+        }
+        String document = request.documento().trim();
+        if (dao.existsByDuiExcludingId(document, id)) {
+            context.status(HttpStatus.CONFLICT).json(Map.of("error", "Ya existe otro miembro con ese documento."));
+            return;
+        }
+        Miembro updated = new Miembro(
+            id, document, request.tipoDocumento().trim(), clean(request.paisOrigen()), request.idVivienda(),
+            request.nombres().trim(), request.apellidos().trim(), clean(request.telefono()), clean(request.correo()),
+            current.getDireccion(), current.getFechaIngreso(), current.getEstado()
+        );
+        try {
+            Miembro saved = dao.update(updated);
+            if (saved == null) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "El miembro no existe."));
+                return;
+            }
+            context.json(MiembroResponse.from(saved));
+        } catch (IllegalStateException exception) {
+            if (isConstraintViolation(exception)) {
+                context.status(HttpStatus.CONFLICT).json(Map.of("error", "Ya existe otro miembro o usuario con ese documento."));
+            } else {
+                throw exception;
+            }
+        }
+    }
+
+    private static void changeMemberState(Context context, MiembroDAO dao) {
+        Integer id = memberId(context);
+        if (id == null) return;
+        MemberStateRequest request = context.bodyAsClass(MemberStateRequest.class);
+        Miembro.Estado estado;
+        try {
+            estado = Miembro.Estado.valueOf(request.estado() == null ? "" : request.estado().trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "El estado debe ser ACTIVO o INACTIVO."));
+            return;
+        }
+        if (!dao.changeEstado(id, estado)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "El miembro no existe."));
+            return;
+        }
+        Miembro updated = dao.findById(id).orElseThrow();
+        context.json(MiembroResponse.from(updated));
+    }
+
+    private static void deactivateMember(Context context, MiembroDAO dao) {
+        Integer id = memberId(context);
+        if (id == null) return;
+        if (!dao.changeEstado(id, Miembro.Estado.INACTIVO)) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "El miembro no existe."));
+            return;
+        }
+        context.status(HttpStatus.NO_CONTENT);
+    }
+
+    private static Integer memberId(Context context) {
+        try {
+            int id = Integer.parseInt(context.pathParam("id"));
+            if (id <= 0) throw new NumberFormatException();
+            return id;
+        } catch (NumberFormatException exception) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "El identificador del miembro no es válido."));
+            return null;
+        }
+    }
+
+    private static boolean isConstraintViolation(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof SQLException sql && "23000".equals(sql.getSQLState())) return true;
+            current = current.getCause();
+        }
+        return false;
     }
 
     private static String clean(String value) {
@@ -386,6 +493,8 @@ public final class ApiServer {
             return null;
         }
     }
+
+    private record MemberStateRequest(String estado) { }
 
     private static int readPort() {
         String configured = System.getenv("API_PORT");
