@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.CargoFormController"
+      spacing="16" prefWidth="480" styleClass="form-dialog, member-form-dialog">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del diálogo -->
+    <VBox spacing="4">
+        <Label fx:id="lblTitulo" text="Nuevo cargo directivo" styleClass="dialog-title"/>
+        <Label fx:id="lblSubtitulo" text="Define la jerarquía y responsabilidades del puesto de gobierno comunal" styleClass="dialog-subtitle"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Formulario en cuadrícula -->
+    <GridPane vgap="14" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="35"/>
+            <ColumnConstraints percentWidth="65"/>
+        </columnConstraints>
+
+        <!-- Nombre del cargo -->
+        <Label text="Nombre del cargo: *" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoNombre" promptText="Ej. Presidente, Tesorero, Vocal 1" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Nivel jerárquico -->
+        <Label text="Nivel jerárquico: *" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <Spinner fx:id="spinnerJerarquia" editable="true" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="120" styleClass="form-field-input"/>
+
+        <!-- Descripción / Atribuciones -->
+        <Label text="Responsabilidades: *" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-field-label" alignment="TOP_LEFT"/>
+        <TextArea fx:id="campoDescripcion" promptText="Atribuciones, responsabilidades estatutarias..." prefRowCount="4" wrapText="true" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Estado activo -->
+        <Label text="Estado:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <CheckBox fx:id="checkActivo" text="Cargo activo y disponible para asignaciones" selected="true" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <!-- Error message -->
+    <Label fx:id="lblError" text="" styleClass="form-error-label" wrapText="true"/>
+
+    <Region VBox.vgrow="ALWAYS"/>
+    <Separator/>
+
+    <!-- Acciones -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Guardar cargo" onAction="#guardar" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-check"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

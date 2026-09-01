@@ -56,7 +56,9 @@ CREATE TABLE usuario (
 CREATE TABLE cargo (
     id_cargo INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(200)
+    descripcion VARCHAR(200),
+    nivel_jerarquico INT NOT NULL DEFAULT 1,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

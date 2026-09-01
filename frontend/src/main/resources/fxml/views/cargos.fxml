@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.CargosController" spacing="20" styleClass="module-page, members-page">
+    <padding><Insets top="28" right="34" bottom="28" left="34"/></padding>
+
+    <!-- Encabezado de la página -->
+    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
+        <VBox spacing="6">
+            <Label text="GOBIERNO / JUNTA DIRECTIVA" styleClass="page-eyebrow"/>
+            <Label text="Catálogo de cargos directivos" styleClass="page-title, members-title"/>
+            <Label text="Definición de responsabilidades, jerarquías de gobierno y control de puestos asociativos." styleClass="page-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNuevoCargo" text="Nuevo cargo" onAction="#abrirFormularioCrear" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
+        </Button>
+    </HBox>
+
+    <!-- Tarjetas de resumen -->
+    <HBox spacing="14">
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-check-circle"/></HBox>
+            <VBox spacing="3">
+                <Label text="CARGOS ACTIVOS" styleClass="summary-label"/>
+                <Label fx:id="lblCargosActivos" text="0 cargos" styleClass="summary-value-success"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-award"/></HBox>
+            <VBox spacing="3">
+                <Label text="TOTAL REGISTRADOS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalCargos" text="0 cargos" styleClass="summary-value"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-users"/></HBox>
+            <VBox spacing="3">
+                <Label text="ASIGNACIONES VINCULADAS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalAsignaciones" text="0 asignaciones" styleClass="summary-value"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <!-- Contenedor principal de la tabla -->
+    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="members-toolbar">
+            <VBox spacing="2">
+                <Label text="Cargos registrados" styleClass="section-title"/>
+                <Label fx:id="lblContadorFiltrados" text="0 cargos listados" styleClass="toolbar-caption"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Filtro de estado -->
+            <ComboBox fx:id="comboEstado" prefWidth="130" promptText="Estado"/>
+
+            <!-- Búsqueda rápida -->
+            <HBox alignment="CENTER_LEFT" spacing="6" styleClass="search-box">
+                <FontIcon iconLiteral="fth-search"/>
+                <TextField fx:id="campoBusqueda" promptText="Buscar cargo o función..." prefWidth="200" styleClass="search-field"/>
+            </HBox>
+
+            <!-- Acciones -->
+            <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="primary-action">
+                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
+            </Button>
+            <Button fx:id="btnToggleActivo" text="Desactivar" onAction="#toggleActivo" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-power"/></graphic>
+            </Button>
+            <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarCargo" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
+            </Button>
+            <Button fx:id="btnRefrescar" text="Actualizar" onAction="#recargar" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
+            </Button>
+        </HBox>
+
+        <!-- Tabla de cargos -->
+        <TableView fx:id="tablaCargos" VBox.vgrow="ALWAYS" styleClass="members-table">
+            <columns>
+                <TableColumn fx:id="columnaJerarquia" text="JERARQUÍA" prefWidth="110"/>
+                <TableColumn fx:id="columnaNombre" text="CARGO" prefWidth="180"/>
+                <TableColumn fx:id="columnaDescripcion" text="RESPONSABILIDADES" prefWidth="300"/>
+                <TableColumn fx:id="columnaAsignaciones" text="ASIGNACIONES" prefWidth="120"/>
+                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="110"/>
+            </columns>
+            <placeholder><Label text="No hay cargos directivos registrados" styleClass="page-subtitle"/></placeholder>
+        </TableView>
+    </VBox>
+</VBox>

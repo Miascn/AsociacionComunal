@@ -55,6 +55,9 @@
                         <Button fx:id="btnRoles" text="Roles" onAction="#mostrarRoles" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-key"/></graphic>
                         </Button>
+                        <Button text="Cargos" onAction="#mostrarCargos" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-award"/></graphic>
+                        </Button>
                         <Button fx:id="btnBitacora" text="Bitácora" onAction="#mostrarBitacora" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
                         </Button>

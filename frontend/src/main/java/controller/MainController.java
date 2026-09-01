@@ -100,6 +100,11 @@ public class MainController {
     }
 
     @FXML
+    private void mostrarCargos() {
+        cargarVista("/fxml/views/cargos.fxml");
+    }
+
+    @FXML
     private void mostrarBitacora() {
         cargarVista("/fxml/views/bitacora.fxml");
     }

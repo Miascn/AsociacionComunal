@@ -29,6 +29,8 @@ public final class ApiServer {
         ViviendaDAO viviendaDAO = new ViviendaDAO();
         BitacoraDAO bitacoraDAO = new BitacoraDAO();
         AportacionDAO aportacionDAO = new AportacionDAO();
+        CargoDAO cargoDAO = new CargoDAO();
+        MiembroCargoDAO miembroCargoDAO = new MiembroCargoDAO();
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
@@ -39,6 +41,7 @@ public final class ApiServer {
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
         BitacoraService bitacoraService = new BitacoraService(bitacoraDAO);
         AportacionService aportacionService = new AportacionService(aportacionDAO, miembroDAO, proyectoDAO);
+        CargoService cargoService = new CargoService(cargoDAO, miembroCargoDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -49,6 +52,7 @@ public final class ApiServer {
         ViviendaController viviendas = new ViviendaController(viviendaService);
         BitacoraController bitacoras = new BitacoraController(bitacoraService);
         AportacionController aportaciones = new AportacionController(aportacionService);
+        CargoController cargos = new CargoController(cargoService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -107,6 +111,13 @@ public final class ApiServer {
             cfg.routes.put("/api/aportaciones/{id}", aportaciones::update);
             cfg.routes.patch("/api/aportaciones/{id}/anular", aportaciones::anular);
 
+            cfg.routes.get("/api/cargos", cargos::getAll);
+            cfg.routes.get("/api/cargos/{id}", cargos::getById);
+            cfg.routes.post("/api/cargos", cargos::create);
+            cfg.routes.put("/api/cargos/{id}", cargos::update);
+            cfg.routes.patch("/api/cargos/{id}/desactivar", cargos::toggleActivo);
+            cfg.routes.delete("/api/cargos/{id}", cargos::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -154,12 +165,14 @@ public final class ApiServer {
         if (path.contains("/viviendas")) return "VIVIENDA";
         if (path.contains("/proyectos")) return "PROYECTO";
         if (path.contains("/aportaciones")) return "APORTACION";
+        if (path.contains("/cargos")) return "CARGO";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
     }
 
     private static String extractAction(String method, String path) {
         if (path != null && path.contains("/anular")) return "ANULAR";
+        if (path != null && path.contains("/desactivar")) return "TOGGLE_ACTIVE";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {

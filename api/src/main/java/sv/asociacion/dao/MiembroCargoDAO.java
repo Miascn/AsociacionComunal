@@ -126,6 +126,20 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
         return list;
     }
 
+    public int countByCargo(Integer idCargo) {
+        String sql = "SELECT COUNT(*) FROM miembro_cargo WHERE id_cargo = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idCargo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private MiembroCargo mapResultSet(ResultSet rs) throws SQLException {
         return new MiembroCargo(
             rs.getInt("id_miembro_cargo"),
