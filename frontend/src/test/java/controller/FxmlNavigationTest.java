@@ -82,7 +82,7 @@ class FxmlNavigationTest {
             controller.setOnLogout(() -> logoutInvocado[0] = true);
 
             List<Button> botones = buscarBotones(root);
-            assertEquals(13, botones.size());
+            assertEquals(14, botones.size());
 
             for (Button boton : botones) {
                 if ("Miembros".equals(boton.getText())) {
@@ -115,6 +115,10 @@ class FxmlNavigationTest {
                 } else if ("Cargos".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Catálogo de cargos directivos"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
+                } else if ("Períodos".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Períodos de junta directiva"::equals));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Bitácora".equals(boton.getText())) {
                     boton.fire();

@@ -105,6 +105,11 @@ public class MainController {
     }
 
     @FXML
+    private void mostrarPeriodos() {
+        cargarVista("/fxml/views/periodos.fxml");
+    }
+
+    @FXML
     private void mostrarBitacora() {
         cargarVista("/fxml/views/bitacora.fxml");
     }

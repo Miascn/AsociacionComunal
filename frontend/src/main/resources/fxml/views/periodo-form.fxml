@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.PeriodoFormController"
+      spacing="16" prefWidth="500" styleClass="form-dialog, member-form-dialog">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del diálogo -->
+    <VBox spacing="4">
+        <Label fx:id="lblTitulo" text="Nuevo período directivo" styleClass="dialog-title"/>
+        <Label fx:id="lblSubtitulo" text="Define el ciclo de gobernanza y las fechas de vigencia de la junta directiva" styleClass="dialog-subtitle"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Formulario en cuadrícula -->
+    <GridPane vgap="14" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="38"/>
+            <ColumnConstraints percentWidth="62"/>
+        </columnConstraints>
+
+        <!-- Nombre del período -->
+        <Label text="Nombre del período: *" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoNombre" promptText="Ej. Gestión 2024-2026" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Fecha de inicio -->
+        <Label text="Fecha de inicio: *" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <DatePicker fx:id="pickerInicio" promptText="YYYY-MM-DD" GridPane.rowIndex="1" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Fecha de finalización -->
+        <Label text="Fecha de fin: *" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <DatePicker fx:id="pickerFin" promptText="YYYY-MM-DD" GridPane.rowIndex="2" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Estado inicial -->
+        <Label text="Estado:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboEstado" GridPane.rowIndex="3" GridPane.columnIndex="1" maxWidth="Infinity"/>
+    </GridPane>
+
+    <!-- Error message -->
+    <Label fx:id="lblError" text="" styleClass="form-error-label" wrapText="true"/>
+
+    <Region VBox.vgrow="ALWAYS"/>
+    <Separator/>
+
+    <!-- Acciones -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Guardar período" onAction="#guardar" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-check"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

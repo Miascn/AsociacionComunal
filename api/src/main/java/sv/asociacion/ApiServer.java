@@ -31,6 +31,7 @@ public final class ApiServer {
         AportacionDAO aportacionDAO = new AportacionDAO();
         CargoDAO cargoDAO = new CargoDAO();
         MiembroCargoDAO miembroCargoDAO = new MiembroCargoDAO();
+        PeriodoDirectivaDAO periodoDAO = new PeriodoDirectivaDAO();
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
@@ -42,6 +43,7 @@ public final class ApiServer {
         BitacoraService bitacoraService = new BitacoraService(bitacoraDAO);
         AportacionService aportacionService = new AportacionService(aportacionDAO, miembroDAO, proyectoDAO);
         CargoService cargoService = new CargoService(cargoDAO, miembroCargoDAO);
+        PeriodoService periodoService = new PeriodoService(periodoDAO, miembroCargoDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -53,6 +55,7 @@ public final class ApiServer {
         BitacoraController bitacoras = new BitacoraController(bitacoraService);
         AportacionController aportaciones = new AportacionController(aportacionService);
         CargoController cargos = new CargoController(cargoService);
+        PeriodoController periodos = new PeriodoController(periodoService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -118,6 +121,15 @@ public final class ApiServer {
             cfg.routes.patch("/api/cargos/{id}/desactivar", cargos::toggleActivo);
             cfg.routes.delete("/api/cargos/{id}", cargos::delete);
 
+            cfg.routes.get("/api/periodos", periodos::getAll);
+            cfg.routes.get("/api/periodos/activo", periodos::getActivo);
+            cfg.routes.get("/api/periodos/{id}", periodos::getById);
+            cfg.routes.post("/api/periodos", periodos::create);
+            cfg.routes.put("/api/periodos/{id}", periodos::update);
+            cfg.routes.patch("/api/periodos/{id}/activar", periodos::activar);
+            cfg.routes.patch("/api/periodos/{id}/finalizar", periodos::finalizar);
+            cfg.routes.delete("/api/periodos/{id}", periodos::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -166,6 +178,7 @@ public final class ApiServer {
         if (path.contains("/proyectos")) return "PROYECTO";
         if (path.contains("/aportaciones")) return "APORTACION";
         if (path.contains("/cargos")) return "CARGO";
+        if (path.contains("/periodos")) return "PERIODO";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
     }
@@ -173,6 +186,8 @@ public final class ApiServer {
     private static String extractAction(String method, String path) {
         if (path != null && path.contains("/anular")) return "ANULAR";
         if (path != null && path.contains("/desactivar")) return "TOGGLE_ACTIVE";
+        if (path != null && path.contains("/activar")) return "ACTIVAR";
+        if (path != null && path.contains("/finalizar")) return "FINALIZAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {
