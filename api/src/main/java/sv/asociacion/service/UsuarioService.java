@@ -24,7 +24,39 @@ public class UsuarioService {
     }
 
     public List<UsuarioResponse> findAll() {
-        return usuarioDAO.findAll().stream().map(this::toResponse).toList();
+        return findAll(null, null);
+    }
+
+    public List<UsuarioResponse> findAll(String roleFilter, String stateFilter) {
+        return usuarioDAO.findAll().stream()
+            .filter(u -> matchesFilter(u, roleFilter, stateFilter))
+            .map(this::toResponse)
+            .toList();
+    }
+
+    private boolean matchesFilter(Usuario u, String roleFilter, String stateFilter) {
+        if (stateFilter != null && !stateFilter.isBlank()) {
+            if (u.getEstado() == null || !u.getEstado().name().equalsIgnoreCase(stateFilter.trim())) {
+                return false;
+            }
+        }
+        if (roleFilter != null && !roleFilter.isBlank()) {
+            String trimmed = roleFilter.trim();
+            try {
+                int roleId = Integer.parseInt(trimmed);
+                if (u.getIdRol() == null || !u.getIdRol().equals(roleId)) {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                var rolOpt = rolDAO.findAll().stream()
+                    .filter(r -> r.getNombre().equalsIgnoreCase(trimmed))
+                    .findFirst();
+                if (rolOpt.isEmpty() || !rolOpt.get().getIdRol().equals(u.getIdRol())) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public UsuarioResponse findById(Integer id) {

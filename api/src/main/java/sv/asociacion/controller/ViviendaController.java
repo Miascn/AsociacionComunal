@@ -27,7 +27,13 @@ public class ViviendaController {
                 .json(update ? service.update(id(context), request) : service.create(request));
         } catch (IllegalArgumentException exception) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", exception.getMessage()));
+        } catch (IllegalStateException exception) {
+            context.status(HttpStatus.CONFLICT).json(Map.of("error", readableMessage(exception)));
         }
     }
     private static int id(Context context) { return Integer.parseInt(context.pathParam("id")); }
+
+    private static String readableMessage(IllegalStateException exception) {
+        return exception.getMessage() == null ? "No fue posible guardar la vivienda." : exception.getMessage();
+    }
 }

@@ -18,7 +18,9 @@ public class UsuarioController {
 
     public void getAll(Context context) {
         if (!requireAdministrator(context)) return;
-        context.json(usuarioService.findAll());
+        String rol = context.queryParam("rol");
+        String estado = context.queryParam("estado");
+        context.json(usuarioService.findAll(rol, estado));
     }
 
     public void getById(Context context) {
@@ -51,18 +53,18 @@ public class UsuarioController {
 
     public void update(Context context) {
         if (!requireAdministrator(context)) return;
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
-        if (id == null) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
-            return;
-        }
-        UpdateUsuarioRequest request = context.bodyAsClass(UpdateUsuarioRequest.class);
-        Integer currentUser = context.attribute("idUsuario");
-        if (id.equals(currentUser) && request.estado() != null && !"ACTIVO".equalsIgnoreCase(request.estado())) {
-            context.status(HttpStatus.CONFLICT).json(Map.of("error", "No puedes desactivar o bloquear tu propia cuenta."));
-            return;
-        }
         try {
+            Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+            if (id == null) {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
+                return;
+            }
+            UpdateUsuarioRequest request = context.bodyAsClass(UpdateUsuarioRequest.class);
+            Integer currentUser = context.attribute("idUsuario");
+            if (id.equals(currentUser) && request.estado() != null && !"ACTIVO".equalsIgnoreCase(request.estado())) {
+                context.status(HttpStatus.CONFLICT).json(Map.of("error", "No puedes desactivar o bloquear tu propia cuenta."));
+                return;
+            }
             var response = usuarioService.update(id, request);
             context.json(response);
         } catch (NoSuchElementException e) {

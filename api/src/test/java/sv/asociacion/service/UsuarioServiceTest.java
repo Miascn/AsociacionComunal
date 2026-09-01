@@ -50,6 +50,30 @@ class UsuarioServiceTest {
             () -> service.changeState(1, "DESCONOCIDO"));
     }
 
+    @Test
+    void filtersByRoleAndStateCorrectly() {
+        MemoryUsuarioDAO users = new MemoryUsuarioDAO();
+        UsuarioService service = new UsuarioService(users, new ExistingRolDAO(), new ExistingMiembroDAO());
+        var u1 = service.create(new CreateUsuarioRequest("admin.user", "segura123", 1, null));
+        var u2 = service.create(new CreateUsuarioRequest("member.user", "segura123", 2, 10));
+        service.changeState(u2.idUsuario(), "BLOQUEADO");
+
+        assertEquals(2, service.findAll().size());
+        assertEquals(1, service.findAll("1", null).size());
+        assertEquals("admin.user", service.findAll("ADMINISTRADOR", null).get(0).nombreUsuario());
+        assertEquals(1, service.findAll(null, "BLOQUEADO").size());
+        assertEquals("member.user", service.findAll(null, "BLOQUEADO").get(0).nombreUsuario());
+        assertEquals(0, service.findAll("ADMINISTRADOR", "BLOQUEADO").size());
+    }
+
+    @Test
+    void rejectsShortPassword() {
+        MemoryUsuarioDAO users = new MemoryUsuarioDAO();
+        UsuarioService service = new UsuarioService(users, new ExistingRolDAO(), new ExistingMiembroDAO());
+        assertThrows(IllegalArgumentException.class,
+            () -> service.create(new CreateUsuarioRequest("valid.user", "short", 1, null)));
+    }
+
     private static final class MemoryUsuarioDAO extends UsuarioDAO {
         private final List<Usuario> values = new ArrayList<>();
         @Override public List<Usuario> findAll() { return new ArrayList<>(values); }
@@ -74,7 +98,12 @@ class UsuarioServiceTest {
 
     private static final class ExistingRolDAO extends RolDAO {
         @Override public Optional<Rol> findById(Integer id) {
-            return id != null && id == 1 ? Optional.of(new Rol(1, "ADMINISTRADOR", "Admin")) : Optional.empty();
+            if (id != null && id == 1) return Optional.of(new Rol(1, "ADMINISTRADOR", "Admin"));
+            if (id != null && id == 2) return Optional.of(new Rol(2, "MIEMBRO", "Miembro"));
+            return Optional.empty();
+        }
+        @Override public List<Rol> findAll() {
+            return List.of(new Rol(1, "ADMINISTRADOR", "Admin"), new Rol(2, "MIEMBRO", "Miembro"));
         }
     }
 
