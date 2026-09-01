@@ -50,6 +50,7 @@ public final class ApiServer {
         AsignacionCargoService asignacionService = new AsignacionCargoService(miembroCargoDAO, miembroDAO, cargoDAO, periodoDAO);
         VotacionService votacionService = new VotacionService(votacionDAO, opcionVotacionDAO, votoDAO, proyectoDAO);
         OpcionVotacionService opcionVotacionService = new OpcionVotacionService(opcionVotacionDAO, votacionDAO, votoDAO);
+        VotoService votoService = new VotoService(votoDAO, votacionDAO, opcionVotacionDAO, miembroDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -65,6 +66,7 @@ public final class ApiServer {
         AsignacionCargoController asignaciones = new AsignacionCargoController(asignacionService);
         VotacionController votaciones = new VotacionController(votacionService);
         OpcionVotacionController opcionesVotacion = new OpcionVotacionController(opcionVotacionService);
+        VotoController votos = new VotoController(votoService, usuarioDAO);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -164,6 +166,9 @@ public final class ApiServer {
             cfg.routes.put("/api/opciones-votacion/{id}", opcionesVotacion::update);
             cfg.routes.delete("/api/opciones-votacion/{id}", opcionesVotacion::delete);
 
+            cfg.routes.post("/api/votos", votos::emitir);
+            cfg.routes.get("/api/votaciones/{idVotacion}/mi-participacion", votos::verificarParticipacion);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -215,6 +220,7 @@ public final class ApiServer {
         if (path.contains("/periodos")) return "PERIODO";
         if (path.contains("/directiva") || path.contains("/asignaciones-cargo")) return "ASIGNACION_DIRECTIVA";
         if (path.contains("/opciones")) return "OPCION_VOTACION";
+        if (path.contains("/votos")) return "VOTO";
         if (path.contains("/votaciones")) return "VOTACION";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";

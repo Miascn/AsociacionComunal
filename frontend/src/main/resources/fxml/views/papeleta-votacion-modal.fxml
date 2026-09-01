@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.PapeletaVotacionModalController" spacing="16" prefWidth="540"
+      style="-fx-background-color: white; -fx-background-radius: 12;">
+    <padding><Insets top="26" right="30" bottom="26" left="30"/></padding>
+
+    <!-- Encabezado -->
+    <VBox spacing="4">
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="PAPELETA DE VOTACIÓN COMUNAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #2563eb;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblEstado" text="ABIERTA" style="-fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-font-weight: bold; -fx-padding: 2 8 2 8; -fx-background-radius: 6;"/>
+        </HBox>
+        <Label fx:id="lblTitulo" text="Título de la consulta" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" wrapText="true"/>
+        <Label fx:id="lblDescripcion" text="Descripción de la votación..." style="-fx-text-fill: #64748b; -fx-font-size: 13px;" wrapText="true"/>
+        <Label fx:id="lblFechas" text="Vigencia..." style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Banner si ya votó -->
+    <HBox fx:id="bannerYaVoto" alignment="CENTER_LEFT" spacing="10"
+          style="-fx-background-color: #ecfdf5; -fx-border-color: #10b981; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12 16 12 16;">
+        <FontIcon iconLiteral="fth-check-circle" iconSize="22" iconColor="#059669"/>
+        <VBox spacing="2">
+            <Label text="¡Ya has participado en esta votación!" style="-fx-font-weight: bold; -fx-text-fill: #065f46; -fx-font-size: 13px;"/>
+            <Label fx:id="lblFechaHoraVoto" text="Tu voto fue registrado de forma anónima e inmutable." style="-fx-text-fill: #047857; -fx-font-size: 12px;"/>
+        </VBox>
+    </HBox>
+
+    <!-- Opciones disponibles para votar -->
+    <VBox fx:id="secOpciones" spacing="10">
+        <Label text="Selecciona tu preferencia:" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 13px;"/>
+        <VBox fx:id="boxOpciones" spacing="10"/>
+    </VBox>
+
+    <!-- Error/Aviso -->
+    <Label fx:id="lblError" text="" style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" wrapText="true"/>
+
+    <!-- Acciones -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnEmitirVoto" text="Emitir mi voto" onAction="#emitirVoto" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

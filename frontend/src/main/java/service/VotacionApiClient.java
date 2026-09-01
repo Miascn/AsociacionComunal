@@ -224,6 +224,37 @@ public final class VotacionApiClient {
         }
     }
 
+    public void emitirVoto(Integer idVotacion, Integer idOpcion, Integer idMiembro) throws IOException, InterruptedException {
+        Map<String, Object> map = new HashMap<>();
+        map.put("idVotacion", idVotacion);
+        map.put("idOpcion", idOpcion);
+        if (idMiembro != null) {
+            map.put("idMiembro", idMiembro);
+        }
+
+        HttpRequest request = requestBuilder("/api/votos")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(map)))
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 201) {
+            throw new IOException(error(response));
+        }
+    }
+
+    public ParticipacionDto verificarParticipacion(Integer idVotacion, Integer idMiembro) throws IOException, InterruptedException {
+        String path = "/api/votaciones/" + idVotacion + "/mi-participacion" + (idMiembro != null ? "?miembroId=" + idMiembro : "");
+        HttpRequest request = requestBuilder(path).GET().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            return new ParticipacionDto(idVotacion, idMiembro, false, null);
+        }
+        return objectMapper.readValue(response.body(), ParticipacionDto.class);
+    }
+
+    public record ParticipacionDto(Integer idVotacion, Integer idMiembro, boolean yaVoto, String fechaHoraVoto) {}
+
     private record OpcionVotacionResponseDto(
         Integer id, Integer idVotacion, String tituloVotacion, String estadoVotacion,
         String descripcion, short orden, int votos, boolean editable

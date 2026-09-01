@@ -174,11 +174,18 @@ public class VotacionesController {
 
                             box.getChildren().addAll(btnAbrir, btnEditar, btnEliminar);
                         } else if (m.isAbierta()) {
-                            Button btnCerrar = new Button("Cerrar votación");
+                            Button btnCerrar = new Button("Cerrar");
                             btnCerrar.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
                             btnCerrar.setOnAction(e -> cerrarVotacion(m));
                             box.getChildren().add(btnCerrar);
                         }
+                    }
+
+                    if (m.isAbierta()) {
+                        Button btnVotar = new Button("Votar");
+                        btnVotar.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
+                        btnVotar.setOnAction(e -> abrirPapeleta(m));
+                        box.getChildren().add(0, btnVotar);
                     }
 
                     Button btnDetalle = new Button("Ver opciones");
@@ -344,6 +351,28 @@ public class VotacionesController {
         } catch (Exception e) {
             e.printStackTrace();
             mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo abrir el gestor de opciones: " + e.getMessage());
+        }
+    }
+
+    public void abrirPapeleta(VotacionModel v) {
+        if (v == null) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/papeleta-votacion-modal.fxml"));
+            Parent root = loader.load();
+
+            PapeletaVotacionModalController ctrl = loader.getController();
+            ctrl.setVotacion(v);
+            ctrl.setOnVotedCallback(this::cargarDatos);
+
+            Stage stage = new Stage();
+            stage.setTitle("Emitir voto: " + v.getTitulo());
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+            mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo abrir la papeleta de votación: " + e.getMessage());
         }
     }
 

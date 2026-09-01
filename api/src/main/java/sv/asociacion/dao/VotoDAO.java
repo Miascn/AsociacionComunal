@@ -141,6 +141,21 @@ public class VotoDAO implements DAO<Voto, Long> {
         return false;
     }
 
+    public Optional<Voto> findByVotacionAndMiembro(Integer idVotacion, Integer idMiembro) {
+        String sql = "SELECT * FROM voto WHERE id_votacion = ? AND id_miembro = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idVotacion);
+            ps.setInt(2, idMiembro);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
     public int countByVotacion(Integer idVotacion) {
         String sql = "SELECT COUNT(*) FROM voto WHERE id_votacion = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
