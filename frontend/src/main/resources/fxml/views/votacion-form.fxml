@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.VotacionFormController" spacing="14" prefWidth="540"
+      style="-fx-background-color: white; -fx-background-radius: 12;">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del modal -->
+    <VBox spacing="4">
+        <Label fx:id="lblModalTitulo" text="Nueva votación comunal" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+        <Label text="Configura el proceso electoral o de consulta ciudadana y sus opciones de voto." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+    </VBox>
+
+    <!-- Título -->
+    <VBox spacing="4">
+        <Label text="Título del proceso *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+        <TextField fx:id="txtTitulo" promptText="Ej: Consulta para instalación de alumbrado público"/>
+    </VBox>
+
+    <!-- Descripción -->
+    <VBox spacing="4">
+        <Label text="Descripción / Justificación" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+        <TextArea fx:id="txtDescripcion" promptText="Detalles de la propuesta a someter a votación..." prefRowCount="3" wrapText="true"/>
+    </VBox>
+
+    <!-- Proyecto vinculado -->
+    <VBox spacing="4">
+        <Label text="Proyecto comunal vinculado (opcional)" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+        <ComboBox fx:id="comboProyecto" maxWidth="Infinity" promptText="Seleccionar proyecto o Consulta General"/>
+    </VBox>
+
+    <!-- Fechas -->
+    <HBox spacing="14">
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="Fecha de inicio *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <DatePicker fx:id="pickerFechaInicio" maxWidth="Infinity" promptText="Inicio de recepción de votos"/>
+        </VBox>
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="Fecha de finalización *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <DatePicker fx:id="pickerFechaFin" maxWidth="Infinity" promptText="Cierre de votación"/>
+        </VBox>
+    </HBox>
+
+    <!-- Opciones de Votación (Pre-registro) -->
+    <VBox fx:id="secOpciones" spacing="6">
+        <HBox alignment="CENTER_LEFT" spacing="6">
+            <Label text="Opciones de votación" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <Label text="(mínimo 2 opciones para poder abrirla posteriormente)" style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+        </HBox>
+        <HBox spacing="8">
+            <TextField fx:id="txtNuevaOpcion" promptText="Ej: A favor / En contra / Abstención" HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnAgregarOpcion" text="Agregar" onAction="#agregarOpcion" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
+            </Button>
+        </HBox>
+        <ListView fx:id="listOpciones" prefHeight="95"/>
+    </VBox>
+
+    <!-- Mensaje de error -->
+    <Label fx:id="lblError" text="" style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" wrapText="true"/>
+
+    <!-- Acciones -->
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Guardar votación" onAction="#guardar" styleClass="primary-action"/>
+    </HBox>
+</VBox>

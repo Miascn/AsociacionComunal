@@ -135,12 +135,13 @@ ALTER TABLE aportacion ADD CONSTRAINT fk_aportacion_proyecto FOREIGN KEY (id_pro
 -- =====================================================
 CREATE TABLE votacion (
     id_votacion INT AUTO_INCREMENT PRIMARY KEY,
-    id_proyecto INT NOT NULL,
+    id_proyecto INT NULL,
     titulo VARCHAR(150) NOT NULL,
+    descripcion VARCHAR(500) NULL,
     fecha_inicio DATETIME NOT NULL,
     fecha_fin DATETIME NOT NULL,
-    estado ENUM('PROGRAMADA', 'ABIERTA', 'CERRADA', 'CANCELADA') NOT NULL DEFAULT 'PROGRAMADA',
-    CONSTRAINT fk_votacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto)
+    estado ENUM('BORRADOR', 'PROGRAMADA', 'ABIERTA', 'CERRADA', 'CANCELADA') NOT NULL DEFAULT 'BORRADOR',
+    CONSTRAINT fk_votacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

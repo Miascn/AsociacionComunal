@@ -141,6 +141,34 @@ public class VotoDAO implements DAO<Voto, Long> {
         return false;
     }
 
+    public int countByVotacion(Integer idVotacion) {
+        String sql = "SELECT COUNT(*) FROM voto WHERE id_votacion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idVotacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int countByOpcion(Integer idOpcion) {
+        String sql = "SELECT COUNT(*) FROM voto WHERE id_opcion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idOpcion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private Voto mapResultSet(ResultSet rs) throws SQLException {
         return new Voto(
             rs.getLong("id_voto"),

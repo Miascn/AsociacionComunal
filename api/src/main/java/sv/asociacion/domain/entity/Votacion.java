@@ -3,25 +3,32 @@ package sv.asociacion.domain.entity;
 import java.time.LocalDateTime;
 
 public class Votacion {
-    public enum Estado { PROGRAMADA, ABIERTA, CERRADA, CANCELADA }
+    public enum Estado { BORRADOR, PROGRAMADA, ABIERTA, CERRADA, CANCELADA }
 
     private Integer idVotacion;
     private Integer idProyecto;
     private String titulo;
+    private String descripcion;
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaFin;
-    private Estado estado;
+    private Estado estado = Estado.BORRADOR;
 
     public Votacion() {}
 
     public Votacion(Integer idVotacion, Integer idProyecto, String titulo,
                     LocalDateTime fechaInicio, LocalDateTime fechaFin, Estado estado) {
+        this(idVotacion, idProyecto, titulo, null, fechaInicio, fechaFin, estado);
+    }
+
+    public Votacion(Integer idVotacion, Integer idProyecto, String titulo, String descripcion,
+                    LocalDateTime fechaInicio, LocalDateTime fechaFin, Estado estado) {
         this.idVotacion = idVotacion;
         this.idProyecto = idProyecto;
         this.titulo = titulo;
+        this.descripcion = descripcion;
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
-        this.estado = estado;
+        this.estado = estado != null ? estado : Estado.BORRADOR;
     }
 
     public Integer getIdVotacion() { return idVotacion; }
@@ -32,6 +39,9 @@ public class Votacion {
 
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
+
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public void setFechaInicio(LocalDateTime fechaInicio) { this.fechaInicio = fechaInicio; }

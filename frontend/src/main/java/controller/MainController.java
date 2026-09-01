@@ -149,7 +149,7 @@ public class MainController {
 
     @FXML
     private void mostrarVotaciones() {
-        mostrarPlaceholder("Votaciones");
+        cargarVista("/fxml/views/votaciones.fxml");
     }
 
     @FXML

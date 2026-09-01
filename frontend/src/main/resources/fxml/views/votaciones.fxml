@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.VotacionesController" spacing="20" styleClass="module-page, members-page">
+    <padding><Insets top="28" right="34" bottom="28" left="34"/></padding>
+
+    <!-- Encabezado de la página -->
+    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
+        <VBox spacing="6">
+            <Label text="PARTICIPACIÓN CIUDADANA / ASAMBLEA" styleClass="page-eyebrow"/>
+            <Label text="Procesos de votación comunal" styleClass="page-title, members-title"/>
+            <Label text="Elecciones directivas, consultas populares de proyectos y reformas comunitarias." styleClass="page-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNuevaVotacion" text="Nueva votación" onAction="#abrirFormularioCrear" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
+        </Button>
+    </HBox>
+
+    <!-- Tarjetas de resumen del tablero -->
+    <HBox spacing="14">
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-check-circle"/></HBox>
+            <VBox spacing="3">
+                <Label text="VOTACIONES ABIERTAS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalAbiertas" text="0 activas" styleClass="summary-value-success"/>
+                <Label fx:id="lblAbiertasDetalle" text="Recepción de votos en curso" styleClass="summary-label"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-edit"/></HBox>
+            <VBox spacing="3">
+                <Label text="EN BORRADOR" styleClass="summary-label"/>
+                <Label fx:id="lblTotalBorradores" text="0 procesos" styleClass="summary-value"/>
+                <Label text="Pendientes de apertura" styleClass="summary-label"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-archive"/></HBox>
+            <VBox spacing="3">
+                <Label text="CONCLUIDAS / CERRADAS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalCerradas" text="0 concluidas" styleClass="summary-value"/>
+                <Label text="Histórico con resultados finales" styleClass="summary-label"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-bar-chart-2"/></HBox>
+            <VBox spacing="3">
+                <Label text="TOTAL VOTOS EMITIDOS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalVotos" text="0 votos" styleClass="summary-value"/>
+                <Label text="Participación comunal global" styleClass="summary-label"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <!-- Contenedor principal de la tabla y resultados -->
+    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="members-toolbar">
+            <VBox spacing="2">
+                <Label text="Listado de procesos de votación" styleClass="section-title"/>
+                <Label fx:id="lblContadorFiltrados" text="0 procesos registrados" styleClass="toolbar-caption"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Búsqueda -->
+            <TextField fx:id="txtBuscar" promptText="Buscar votación..." prefWidth="200" styleClass="search-field"/>
+
+            <!-- Filtro de estado -->
+            <ComboBox fx:id="comboEstado" prefWidth="140" promptText="Estado"/>
+
+            <!-- Botón refrescar -->
+            <Button onAction="#cargarDatos" styleClass="icon-button" tooltip="$null">
+                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
+            </Button>
+        </HBox>
+
+        <!-- Tabla -->
+        <TableView fx:id="tablaVotaciones" VBox.vgrow="ALWAYS" styleClass="members-table">
+            <columns>
+                <TableColumn fx:id="colTitulo" text="TÍTULO Y DESCRIPCIÓN" prefWidth="260"/>
+                <TableColumn fx:id="colProyecto" text="PROYECTO VINCULADO" prefWidth="180"/>
+                <TableColumn fx:id="colFechas" text="VIGENCIA (INICIO → FIN)" prefWidth="210"/>
+                <TableColumn fx:id="colOpcionesVotos" text="OPCIONES / VOTOS" prefWidth="150"/>
+                <TableColumn fx:id="colEstado" text="ESTADO" prefWidth="120"/>
+                <TableColumn fx:id="colAcciones" text="ACCIONES" prefWidth="220"/>
+            </columns>
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+        </TableView>
+
+        <!-- Panel de Desglose de Opciones de la votación seleccionada -->
+        <VBox fx:id="pnlDetalleOpciones" spacing="8" style="-fx-background-color: #f8fafc; -fx-padding: 14; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="lblDetalleTitulo" text="Selecciona una votación para ver sus opciones y resultados" style="-fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblDetalleEstado" text=""/>
+            </HBox>
+            <FlowPane fx:id="flowOpciones" hgap="12" vgap="8"/>
+        </VBox>
+    </VBox>
+</VBox>

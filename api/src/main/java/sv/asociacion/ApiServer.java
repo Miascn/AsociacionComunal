@@ -32,6 +32,9 @@ public final class ApiServer {
         CargoDAO cargoDAO = new CargoDAO();
         MiembroCargoDAO miembroCargoDAO = new MiembroCargoDAO();
         PeriodoDirectivaDAO periodoDAO = new PeriodoDirectivaDAO();
+        VotacionDAO votacionDAO = new VotacionDAO();
+        OpcionVotacionDAO opcionVotacionDAO = new OpcionVotacionDAO();
+        VotoDAO votoDAO = new VotoDAO();
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
@@ -45,6 +48,7 @@ public final class ApiServer {
         CargoService cargoService = new CargoService(cargoDAO, miembroCargoDAO);
         PeriodoService periodoService = new PeriodoService(periodoDAO, miembroCargoDAO);
         AsignacionCargoService asignacionService = new AsignacionCargoService(miembroCargoDAO, miembroDAO, cargoDAO, periodoDAO);
+        VotacionService votacionService = new VotacionService(votacionDAO, opcionVotacionDAO, votoDAO, proyectoDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -58,6 +62,7 @@ public final class ApiServer {
         CargoController cargos = new CargoController(cargoService);
         PeriodoController periodos = new PeriodoController(periodoService);
         AsignacionCargoController asignaciones = new AsignacionCargoController(asignacionService);
+        VotacionController votaciones = new VotacionController(votacionService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -141,6 +146,15 @@ public final class ApiServer {
             cfg.routes.patch("/api/asignaciones-cargo/{id}/finalizar", asignaciones::finalizar);
             cfg.routes.delete("/api/asignaciones-cargo/{id}", asignaciones::delete);
 
+            cfg.routes.get("/api/votaciones", votaciones::getAll);
+            cfg.routes.get("/api/votaciones/{id}", votaciones::getById);
+            cfg.routes.post("/api/votaciones", votaciones::create);
+            cfg.routes.put("/api/votaciones/{id}", votaciones::update);
+            cfg.routes.patch("/api/votaciones/{id}/abrir", votaciones::abrir);
+            cfg.routes.patch("/api/votaciones/{id}/cerrar", votaciones::cerrar);
+            cfg.routes.patch("/api/votaciones/{id}/cancelar", votaciones::cancelar);
+            cfg.routes.delete("/api/votaciones/{id}", votaciones::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -191,6 +205,7 @@ public final class ApiServer {
         if (path.contains("/cargos")) return "CARGO";
         if (path.contains("/periodos")) return "PERIODO";
         if (path.contains("/directiva") || path.contains("/asignaciones-cargo")) return "ASIGNACION_DIRECTIVA";
+        if (path.contains("/votaciones")) return "VOTACION";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
     }
@@ -201,6 +216,9 @@ public final class ApiServer {
         if (path != null && path.contains("/activar")) return "ACTIVAR";
         if (path != null && path.contains("/finalizar")) return "FINALIZAR";
         if (path != null && path.contains("/revocar")) return "REVOCAR";
+        if (path != null && path.contains("/abrir")) return "ABRIR";
+        if (path != null && path.contains("/cerrar")) return "CERRAR";
+        if (path != null && path.contains("/cancelar")) return "CANCELAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {
