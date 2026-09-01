@@ -11,6 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.StackPane;
 import javafx.geometry.Insets;
+import org.kordamp.ikonli.javafx.FontIcon;
 import models.AuthResult;
 import services.auth.AuthService;
 import security.SessionManager;
@@ -22,6 +23,15 @@ public class LoginController {
 
     @FXML
     private PasswordField campoContrasena;
+
+    @FXML
+    private TextField campoContrasenaVisible;
+
+    @FXML
+    private Button btnVerContrasena;
+
+    @FXML
+    private FontIcon iconoVerContrasena;
 
     @FXML
     private Label mensajeError;
@@ -38,6 +48,9 @@ public class LoginController {
     private void initialize() {
         ocultarError();
         actualizarBotonTema();
+        if (campoContrasenaVisible != null && campoContrasena != null) {
+            campoContrasenaVisible.textProperty().bindBidirectional(campoContrasena.textProperty());
+        }
         loginShell.sceneProperty().addListener((observable, previous, scene) -> {
             if (scene == null) return;
             scene.widthProperty().addListener((obs, oldWidth, width) -> adaptar(width.doubleValue(), scene.getHeight()));
@@ -64,6 +77,26 @@ public class LoginController {
     private void onAlternarTema() {
         ThemeService.toggle(btnTema.getScene());
         actualizarBotonTema();
+    }
+
+    @FXML
+    private void onAlternarVerContrasena() {
+        if (campoContrasenaVisible == null || campoContrasena == null) return;
+        boolean mostrar = !campoContrasenaVisible.isVisible();
+        campoContrasenaVisible.setVisible(mostrar);
+        campoContrasenaVisible.setManaged(mostrar);
+        campoContrasena.setVisible(!mostrar);
+        campoContrasena.setManaged(!mostrar);
+        if (iconoVerContrasena != null) {
+            iconoVerContrasena.setIconLiteral(mostrar ? "fth-eye-off" : "fth-eye");
+        }
+        if (mostrar) {
+            campoContrasenaVisible.requestFocus();
+            campoContrasenaVisible.positionCaret(campoContrasenaVisible.getText() == null ? 0 : campoContrasenaVisible.getText().length());
+        } else {
+            campoContrasena.requestFocus();
+            campoContrasena.positionCaret(campoContrasena.getText() == null ? 0 : campoContrasena.getText().length());
+        }
     }
 
     private void actualizarBotonTema() {

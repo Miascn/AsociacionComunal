@@ -31,7 +31,15 @@
    <Label text="ACCESO SEGURO" styleClass="login-eyebrow"/><Label text="Bienvenido de nuevo" styleClass="login-title"/>
    <Label text="Ingresa tus datos para continuar al sistema de la asociación." styleClass="login-subtitle" wrapText="true"/><Region prefHeight="8"/>
    <Label text="Usuario o correo electrónico" styleClass="field-label"/><TextField fx:id="campoUsuario" promptText="usuario@asociacion.com" styleClass="login-field"/>
-   <Label text="Contraseña" styleClass="field-label"/><PasswordField fx:id="campoContrasena" promptText="Ingresa tu contraseña" styleClass="login-field" onAction="#onIniciarSesion"/>
+   <Label text="Contraseña" styleClass="field-label"/>
+   <StackPane alignment="CENTER_RIGHT" styleClass="password-container">
+    <PasswordField fx:id="campoContrasena" promptText="Ingresa tu contraseña" styleClass="login-field, login-field-password" onAction="#onIniciarSesion"/>
+    <TextField fx:id="campoContrasenaVisible" promptText="Ingresa tu contraseña" styleClass="login-field, login-field-password" onAction="#onIniciarSesion" visible="false" managed="false"/>
+    <Button fx:id="btnVerContrasena" onAction="#onAlternarVerContrasena" focusTraversable="false" styleClass="password-toggle-btn">
+     <graphic><FontIcon fx:id="iconoVerContrasena" iconLiteral="fth-eye"/></graphic>
+     <StackPane.margin><Insets right="6"/></StackPane.margin>
+    </Button>
+   </StackPane>
    <HBox alignment="CENTER_LEFT"><CheckBox text="Recordarme"/><Region HBox.hgrow="ALWAYS"/><Hyperlink text="¿Olvidaste tu contraseña?"/></HBox>
    <Button text="Ingresar al sistema   →" onAction="#onIniciarSesion" defaultButton="true" maxWidth="Infinity" styleClass="login-button"/>
    <Label fx:id="mensajeError" styleClass="login-error" wrapText="true"/>

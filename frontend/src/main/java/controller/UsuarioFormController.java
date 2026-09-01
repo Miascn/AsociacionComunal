@@ -2,6 +2,7 @@ package controller;
 
 import java.util.List;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -9,6 +10,7 @@ import javafx.scene.control.TextField;
 import models.MiembroModel;
 import models.RolModel;
 import models.UsuarioModel;
+import org.kordamp.ikonli.javafx.FontIcon;
 import service.UsuarioApiClient.UsuarioRequest;
 
 public class UsuarioFormController {
@@ -16,6 +18,9 @@ public class UsuarioFormController {
     @FXML private Label lblError;
     @FXML private TextField campoUsuario;
     @FXML private PasswordField campoClave;
+    @FXML private TextField campoClaveVisible;
+    @FXML private Button btnVerClave;
+    @FXML private FontIcon iconoVerClave;
     @FXML private ComboBox<RolModel> selectorRol;
     @FXML private ComboBox<MiembroModel> selectorMiembro;
     @FXML private ComboBox<String> selectorEstado;
@@ -27,6 +32,11 @@ public class UsuarioFormController {
         selectorEstado.setDisable(true);
         selectorMiembro.setCellFactory(list -> memberCell());
         selectorMiembro.setButtonCell(memberCell());
+
+        if (campoClaveVisible != null && campoClave != null) {
+            campoClaveVisible.textProperty().bindBidirectional(campoClave.textProperty());
+            campoClaveVisible.promptTextProperty().bind(campoClave.promptTextProperty());
+        }
     }
 
     public void setCatalogs(List<RolModel> roles, List<MiembroModel> members) {
@@ -48,6 +58,26 @@ public class UsuarioFormController {
         selectorMiembro.getItems().stream().filter(member -> java.util.Objects.equals(member.getIdMiembro(), user.getIdMiembro()))
             .findFirst().ifPresent(selectorMiembro::setValue);
         selectorEstado.setValue(user.getEstado());
+    }
+
+    @FXML
+    private void onAlternarVerClave() {
+        if (campoClaveVisible == null || campoClave == null) return;
+        boolean mostrar = !campoClaveVisible.isVisible();
+        campoClaveVisible.setVisible(mostrar);
+        campoClaveVisible.setManaged(mostrar);
+        campoClave.setVisible(!mostrar);
+        campoClave.setManaged(!mostrar);
+        if (iconoVerClave != null) {
+            iconoVerClave.setIconLiteral(mostrar ? "fth-eye-off" : "fth-eye");
+        }
+        if (mostrar) {
+            campoClaveVisible.requestFocus();
+            campoClaveVisible.positionCaret(campoClaveVisible.getText() == null ? 0 : campoClaveVisible.getText().length());
+        } else {
+            campoClave.requestFocus();
+            campoClave.positionCaret(campoClave.getText() == null ? 0 : campoClave.getText().length());
+        }
     }
 
     public UsuarioRequest validatedRequest() {

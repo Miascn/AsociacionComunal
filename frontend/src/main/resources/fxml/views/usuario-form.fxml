@@ -2,13 +2,22 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
       fx:controller="controller.UsuarioFormController" spacing="13">
     <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
     <Label fx:id="lblTitulo" text="Nuevo usuario" styleClass="page-title"/>
     <Label text="Nombre de usuario *"/><TextField fx:id="campoUsuario" promptText="Ejemplo: maria.lopez"/>
-    <Label text="Contraseña *"/><PasswordField fx:id="campoClave" promptText="Mínimo 8 caracteres"/>
+    <Label text="Contraseña *"/>
+    <StackPane alignment="CENTER_RIGHT" styleClass="password-container">
+        <PasswordField fx:id="campoClave" promptText="Mínimo 8 caracteres" styleClass="form-field-password"/>
+        <TextField fx:id="campoClaveVisible" promptText="Mínimo 8 caracteres" styleClass="form-field-password" visible="false" managed="false"/>
+        <Button fx:id="btnVerClave" onAction="#onAlternarVerClave" focusTraversable="false" styleClass="password-toggle-btn">
+            <graphic><FontIcon fx:id="iconoVerClave" iconLiteral="fth-eye"/></graphic>
+            <StackPane.margin><Insets right="4"/></StackPane.margin>
+        </Button>
+    </StackPane>
     <Label text="Rol *"/><ComboBox fx:id="selectorRol" maxWidth="Infinity"/>
     <Label text="Miembro asociado"/><ComboBox fx:id="selectorMiembro" maxWidth="Infinity"/>
     <Label text="Estado"/><ComboBox fx:id="selectorEstado" maxWidth="Infinity"/>

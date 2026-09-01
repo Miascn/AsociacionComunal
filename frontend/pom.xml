@@ -99,7 +99,7 @@
                 <executions>
                     <execution>
                         <id>copy-javafx-dependencies</id>
-                        <phase>package</phase>
+                        <phase>process-classes</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>

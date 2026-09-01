@@ -411,3 +411,29 @@
 .quick-action { -fx-alignment: CENTER_LEFT; -fx-background-color: -color-bg-inset; -fx-border-color: -color-border-default; -fx-border-radius: 7; -fx-background-radius: 7; -fx-padding: 9 12; }
 .quick-action:hover { -fx-border-color: -color-accent-fg; }
 .icon-button { -fx-background-color: transparent; }
+
+/* ---------- Visualización de contraseñas ---------- */
+.password-container {
+    -fx-alignment: CENTER_RIGHT;
+}
+
+.password-toggle-btn {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-padding: 6 10 6 10;
+    -fx-border-width: 0;
+    -fx-background-radius: 8;
+}
+
+.password-toggle-btn:hover {
+    -fx-background-color: -color-bg-inset;
+}
+
+.login-field-password {
+    -fx-padding: 0 42 0 14;
+}
+
+.form-field-password {
+    -fx-padding: 7 38 7 10;
+}
+
