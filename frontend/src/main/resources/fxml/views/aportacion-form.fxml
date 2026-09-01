@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.AportacionFormController"
+      spacing="16" prefWidth="520" styleClass="form-dialog, member-form-dialog">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del diálogo -->
+    <VBox spacing="4">
+        <Label fx:id="lblTitulo" text="Registrar nueva aportación" styleClass="dialog-title"/>
+        <Label fx:id="lblSubtitulo" text="Ingresa los datos del pago y comprobante de la aportación comunal" styleClass="dialog-subtitle"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Contenido del formulario -->
+    <GridPane vgap="14" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="35"/>
+            <ColumnConstraints percentWidth="65"/>
+        </columnConstraints>
+
+        <!-- Miembro aportante -->
+        <Label text="Miembro aportante: *" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboMiembro" promptText="Selecciona un miembro" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <!-- Proyecto (opcional) -->
+        <Label text="Proyecto asociado:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboProyecto" promptText="Ninguno (Cuota ordinaria)" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <!-- Período (YYYY-MM) -->
+        <Label text="Período mensual: *" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoPeriodo" promptText="YYYY-MM (ej. 2026-03)" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Monto ($) -->
+        <Label text="Monto ($): *" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoMonto" promptText="0.00" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Fecha de pago -->
+        <Label text="Fecha de pago: *" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <DatePicker fx:id="pickerFechaPago" promptText="Selecciona fecha" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+        <!-- Método de pago -->
+        <Label text="Método de pago: *" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboMetodoPago" promptText="Selecciona método" maxWidth="Infinity" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+        <!-- Referencia / Comprobante -->
+        <Label text="Comprobante / Ref:" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoReferencia" promptText="N° de recibo, voucher o transferencia" GridPane.rowIndex="6" GridPane.columnIndex="1" styleClass="form-field-input"/>
+    </GridPane>
+
+    <!-- Mensaje de error / estado -->
+    <Label fx:id="lblError" text="" styleClass="form-error-label" wrapText="true"/>
+
+    <Region VBox.vgrow="ALWAYS"/>
+    <Separator/>
+
+    <!-- Botones de acción -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Guardar aportación" onAction="#guardar" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-check"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

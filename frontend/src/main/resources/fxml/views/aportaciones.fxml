@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.AportacionesController" spacing="20" styleClass="module-page, members-page">
+    <padding><Insets top="28" right="34" bottom="28" left="34"/></padding>
+
+    <!-- Encabezado de la página -->
+    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
+        <VBox spacing="6">
+            <Label text="FINANZAS / TESORERÍA" styleClass="page-eyebrow"/>
+            <Label text="Control de aportaciones" styleClass="page-title, members-title"/>
+            <Label text="Registro de cuotas y aportaciones comunales, emisión de recibos y recaudación." styleClass="page-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNuevaAportacion" text="Nueva aportación" onAction="#abrirFormularioCrear" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
+        </Button>
+    </HBox>
+
+    <!-- Tarjetas de resumen financiero -->
+    <HBox spacing="14">
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-dollar-sign"/></HBox>
+            <VBox spacing="3">
+                <Label text="TOTAL RECAUDADO (FILTRADO)" styleClass="summary-label"/>
+                <Label fx:id="lblTotalRecaudado" text="\$0.00" styleClass="summary-value-success"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-credit-card"/></HBox>
+            <VBox spacing="3">
+                <Label text="TOTAL DE REGISTROS" styleClass="summary-label"/>
+                <Label fx:id="lblTotalRegistros" text="0 aportaciones" styleClass="summary-value"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-calendar"/></HBox>
+            <VBox spacing="3">
+                <Label text="PERÍODO SELECCIONADO" styleClass="summary-label"/>
+                <Label fx:id="lblPeriodoActual" text="Todos los períodos" styleClass="summary-value"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <!-- Tabla principal y barra de herramientas -->
+    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="members-toolbar">
+            <VBox spacing="2">
+                <Label text="Historial de recaudación" styleClass="section-title"/>
+                <Label text="Consulta y control de aportaciones por miembro y proyecto" styleClass="toolbar-caption"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Filtros -->
+            <TextField fx:id="campoFiltroPeriodo" promptText="Período (YYYY-MM)" prefWidth="130" styleClass="search-field"/>
+            <ComboBox fx:id="comboMetodo" prefWidth="125" promptText="Método"/>
+            <ComboBox fx:id="comboEstado" prefWidth="125" promptText="Estado"/>
+
+            <!-- Búsqueda rápida -->
+            <HBox alignment="CENTER_LEFT" spacing="6" styleClass="search-box">
+                <FontIcon iconLiteral="fth-search"/>
+                <TextField fx:id="campoBusqueda" promptText="Buscar miembro, DUI o ref." prefWidth="190" styleClass="search-field"/>
+            </HBox>
+
+            <!-- Acciones -->
+            <Button fx:id="btnVerRecibo" text="Ver recibo" onAction="#verRecibo" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
+            </Button>
+            <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
+            </Button>
+            <Button fx:id="btnAnular" text="Anular" onAction="#anularAportacion" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-slash"/></graphic>
+            </Button>
+            <Button fx:id="btnRefrescar" text="Actualizar" onAction="#recargar" styleClass="secondary-action">
+                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
+            </Button>
+        </HBox>
+
+        <!-- TableView de aportaciones -->
+        <TableView fx:id="tablaAportaciones" VBox.vgrow="ALWAYS" styleClass="members-table">
+            <columns>
+                <TableColumn fx:id="columnaFecha" text="FECHA PAGO" prefWidth="110"/>
+                <TableColumn fx:id="columnaMiembro" text="MIEMBRO" prefWidth="180"/>
+                <TableColumn fx:id="columnaDui" text="DUI" prefWidth="110"/>
+                <TableColumn fx:id="columnaPeriodo" text="PERÍODO" prefWidth="90"/>
+                <TableColumn fx:id="columnaMonto" text="MONTO" prefWidth="95"/>
+                <TableColumn fx:id="columnaMetodo" text="MÉTODO" prefWidth="110"/>
+                <TableColumn fx:id="columnaProyecto" text="PROYECTO" prefWidth="160"/>
+                <TableColumn fx:id="columnaReferencia" text="COMPROBANTE" prefWidth="130"/>
+                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="110"/>
+            </columns>
+            <placeholder><Label text="No se encontraron aportaciones registradas" styleClass="page-subtitle"/></placeholder>
+        </TableView>
+
+        <!-- Paginación -->
+        <HBox alignment="CENTER_RIGHT" spacing="12" style="-fx-padding: 10 16 10 16; -fx-background-color: -color-bg-inset;">
+            <Label fx:id="lblPaginacion" text="Página 1 de 1" styleClass="toolbar-caption"/>
+            <Button fx:id="btnAnterior" text="← Anterior" onAction="#paginaAnterior" styleClass="secondary-action"/>
+            <Button fx:id="btnSiguiente" text="Siguiente →" onAction="#paginaSiguiente" styleClass="secondary-action"/>
+        </HBox>
+    </VBox>
+</VBox>

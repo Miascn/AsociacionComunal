@@ -94,6 +94,7 @@ CREATE TABLE miembro_cargo (
 CREATE TABLE aportacion (
     id_aportacion BIGINT AUTO_INCREMENT PRIMARY KEY,
     id_miembro INT NOT NULL,
+    id_proyecto INT NULL,
     periodo_mes CHAR(7) NOT NULL,
     monto DECIMAL(10,2) NOT NULL,
     fecha_pago DATE NOT NULL,
@@ -118,6 +119,8 @@ CREATE TABLE proyecto (
     estado ENUM('BORRADOR', 'PROPUESTO', 'APROBADO', 'RECHAZADO', 'EN_EJECUCION', 'FINALIZADO') NOT NULL DEFAULT 'BORRADOR',
     CONSTRAINT fk_proyecto_usuario FOREIGN KEY (creado_por) REFERENCES usuario(id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE aportacion ADD CONSTRAINT fk_aportacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL;
 
 -- =====================================================
 -- TABLA: votacion

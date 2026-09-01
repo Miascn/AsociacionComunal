@@ -28,6 +28,7 @@ public final class ApiServer {
         RolDAO rolDAO = new RolDAO();
         ViviendaDAO viviendaDAO = new ViviendaDAO();
         BitacoraDAO bitacoraDAO = new BitacoraDAO();
+        AportacionDAO aportacionDAO = new AportacionDAO();
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
@@ -37,6 +38,7 @@ public final class ApiServer {
         RolService rolService = new RolService(rolDAO, usuarioDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
         BitacoraService bitacoraService = new BitacoraService(bitacoraDAO);
+        AportacionService aportacionService = new AportacionService(aportacionDAO, miembroDAO, proyectoDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -46,6 +48,7 @@ public final class ApiServer {
         RolController roles = new RolController(rolService);
         ViviendaController viviendas = new ViviendaController(viviendaService);
         BitacoraController bitacoras = new BitacoraController(bitacoraService);
+        AportacionController aportaciones = new AportacionController(aportacionService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -93,6 +96,12 @@ public final class ApiServer {
             cfg.routes.get("/api/bitacoras", bitacoras::getPage);
             cfg.routes.get("/api/bitacoras/{id}", bitacoras::getById);
 
+            cfg.routes.get("/api/aportaciones", aportaciones::getAll);
+            cfg.routes.get("/api/aportaciones/{id}", aportaciones::getById);
+            cfg.routes.post("/api/aportaciones", aportaciones::create);
+            cfg.routes.put("/api/aportaciones/{id}", aportaciones::update);
+            cfg.routes.patch("/api/aportaciones/{id}/anular", aportaciones::anular);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -139,11 +148,13 @@ public final class ApiServer {
         if (path.contains("/miembros")) return "MIEMBRO";
         if (path.contains("/viviendas")) return "VIVIENDA";
         if (path.contains("/proyectos")) return "PROYECTO";
+        if (path.contains("/aportaciones")) return "APORTACION";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
     }
 
     private static String extractAction(String method, String path) {
+        if (path != null && path.contains("/anular")) return "ANULAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {

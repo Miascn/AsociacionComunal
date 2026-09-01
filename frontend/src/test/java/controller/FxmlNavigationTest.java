@@ -128,6 +128,10 @@ class FxmlNavigationTest {
                             .map(Label::getText)
                             .anyMatch("Gestión de viviendas"::equals));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
+                } else if ("Aportaciones".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Control de aportaciones"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()

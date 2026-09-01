@@ -9,6 +9,7 @@ public class Aportacion {
 
     private Long idAportacion;
     private Integer idMiembro;
+    private Integer idProyecto;
     private String periodoMes;
     private BigDecimal monto;
     private LocalDate fechaPago;
@@ -21,8 +22,15 @@ public class Aportacion {
     public Aportacion(Long idAportacion, Integer idMiembro, String periodoMes,
                       BigDecimal monto, LocalDate fechaPago, MetodoPago metodoPago,
                       String referencia, Estado estado) {
+        this(idAportacion, idMiembro, null, periodoMes, monto, fechaPago, metodoPago, referencia, estado);
+    }
+
+    public Aportacion(Long idAportacion, Integer idMiembro, Integer idProyecto, String periodoMes,
+                      BigDecimal monto, LocalDate fechaPago, MetodoPago metodoPago,
+                      String referencia, Estado estado) {
         this.idAportacion = idAportacion;
         this.idMiembro = idMiembro;
+        this.idProyecto = idProyecto;
         this.periodoMes = periodoMes;
         this.monto = monto;
         this.fechaPago = fechaPago;
@@ -36,6 +44,9 @@ public class Aportacion {
 
     public Integer getIdMiembro() { return idMiembro; }
     public void setIdMiembro(Integer idMiembro) { this.idMiembro = idMiembro; }
+
+    public Integer getIdProyecto() { return idProyecto; }
+    public void setIdProyecto(Integer idProyecto) { this.idProyecto = idProyecto; }
 
     public String getPeriodoMes() { return periodoMes; }
     public void setPeriodoMes(String periodoMes) { this.periodoMes = periodoMes; }

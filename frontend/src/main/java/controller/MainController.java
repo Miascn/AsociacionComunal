@@ -119,7 +119,7 @@ public class MainController {
 
     @FXML
     private void mostrarAportaciones() {
-        mostrarPlaceholder("Aportaciones");
+        cargarVista("/fxml/views/aportaciones.fxml");
     }
 
     @FXML
