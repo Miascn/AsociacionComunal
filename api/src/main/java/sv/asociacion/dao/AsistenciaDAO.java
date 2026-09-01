@@ -168,6 +168,47 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         return false;
     }
 
+    public Optional<Asistencia> findByReunionAndMiembro(Integer idReunion, Integer idMiembro) {
+        String sql = "SELECT * FROM asistencia WHERE id_reunion = ? AND id_miembro = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idReunion);
+            ps.setInt(2, idMiembro);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    public boolean toggleAsistencia(Long idAsistencia, boolean asistio, String observacion) {
+        String sql = "UPDATE asistencia SET asistio = ?, observacion = ? WHERE id_asistencia = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, asistio);
+            ps.setString(2, observacion);
+            ps.setLong(3, idAsistencia);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public int deleteByReunion(Integer idReunion) {
+        String sql = "DELETE FROM asistencia WHERE id_reunion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idReunion);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private Asistencia mapResultSet(ResultSet rs) throws SQLException {
         return new Asistencia(
             rs.getLong("id_asistencia"),

@@ -362,9 +362,24 @@ public class ReunionesController {
 
     public void abrirGestionAsistencias(ReunionModel m) {
         if (m == null) return;
-        mostrarAlerta(Alert.AlertType.INFORMATION, "Control de Asistencia",
-            "Reunión: " + m.getTitulo() + "\nFecha: " + m.getFechaDisplay() +
-            "\nEstado: " + m.getEstado() + "\nQuórum: " + m.getQuorumDisplay());
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/asistencias-modal.fxml"));
+            Parent root = loader.load();
+
+            AsistenciasModalController ctrl = loader.getController();
+            ctrl.setReunion(m);
+            ctrl.setOnCloseCallback(this::cargarDatos);
+
+            Stage stage = new Stage();
+            stage.setTitle("Control de Asistencia: " + m.getTitulo());
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.setResizable(true);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+            mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo abrir el control de asistencia: " + e.getMessage());
+        }
     }
 
     private void mostrarAlerta(Alert.AlertType tipo, String titulo, String mensaje) {

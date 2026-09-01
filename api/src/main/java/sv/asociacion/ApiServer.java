@@ -54,6 +54,7 @@ public final class ApiServer {
         OpcionVotacionService opcionVotacionService = new OpcionVotacionService(opcionVotacionDAO, votacionDAO, votoDAO);
         VotoService votoService = new VotoService(votoDAO, votacionDAO, opcionVotacionDAO, miembroDAO);
         ReunionService reunionService = new ReunionService(reunionDAO, asistenciaDAO);
+        AsistenciaService asistenciaService = new AsistenciaService(asistenciaDAO, reunionDAO, miembroDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -71,6 +72,7 @@ public final class ApiServer {
         OpcionVotacionController opcionesVotacion = new OpcionVotacionController(opcionVotacionService);
         VotoController votos = new VotoController(votoService, usuarioDAO);
         ReunionController reuniones = new ReunionController(reunionService);
+        AsistenciaController asistencias = new AsistenciaController(asistenciaService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -181,6 +183,12 @@ public final class ApiServer {
             cfg.routes.patch("/api/reuniones/{id}/cancelar", reuniones::cancelar);
             cfg.routes.delete("/api/reuniones/{id}", reuniones::delete);
 
+            cfg.routes.get("/api/reuniones/{idReunion}/asistencias", asistencias::getByReunion);
+            cfg.routes.post("/api/reuniones/{idReunion}/asistencias/convocar", asistencias::convocar);
+            cfg.routes.post("/api/reuniones/{idReunion}/asistencias", asistencias::registrarOActualizar);
+            cfg.routes.patch("/api/asistencias/{id}", asistencias::toggle);
+            cfg.routes.delete("/api/asistencias/{id}", asistencias::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -234,6 +242,7 @@ public final class ApiServer {
         if (path.contains("/opciones")) return "OPCION_VOTACION";
         if (path.contains("/votos")) return "VOTO";
         if (path.contains("/votaciones")) return "VOTACION";
+        if (path.contains("/asistencias")) return "ASISTENCIA";
         if (path.contains("/reuniones")) return "REUNION";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
@@ -250,6 +259,7 @@ public final class ApiServer {
         if (path != null && path.contains("/cancelar")) return "CANCELAR";
         if (path != null && path.contains("/realizada")) return "REALIZADA";
         if (path != null && path.contains("/reordenar")) return "REORDENAR";
+        if (path != null && path.contains("/convocar")) return "CONVOCAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {

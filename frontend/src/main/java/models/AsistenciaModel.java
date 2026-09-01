@@ -1,35 +1,61 @@
 package models;
 
+import javafx.beans.property.*;
+
 public class AsistenciaModel {
-    private Long id;
-    private Integer idReunion;
-    private Integer idMiembro;
-    private boolean asistio;
-    private String observacion;
+    private final LongProperty idAsistencia = new SimpleLongProperty();
+    private final IntegerProperty idReunion = new SimpleIntegerProperty();
+    private final IntegerProperty idMiembro = new SimpleIntegerProperty();
+    private final StringProperty nombreMiembro = new SimpleStringProperty();
+    private final StringProperty duiMiembro = new SimpleStringProperty();
+    private final StringProperty telefonoMiembro = new SimpleStringProperty();
+    private final BooleanProperty asistio = new SimpleBooleanProperty();
+    private final StringProperty observacion = new SimpleStringProperty();
 
     public AsistenciaModel() {}
 
-    public AsistenciaModel(Long id, Integer idReunion, Integer idMiembro,
-                            boolean asistio, String observacion) {
-        this.id = id;
-        this.idReunion = idReunion;
-        this.idMiembro = idMiembro;
-        this.asistio = asistio;
-        this.observacion = observacion;
+    public AsistenciaModel(Long idAsistencia, Integer idReunion, Integer idMiembro,
+                           String nombreMiembro, String duiMiembro, String telefonoMiembro,
+                           boolean asistio, String observacion) {
+        this.idAsistencia.set(idAsistencia != null ? idAsistencia : 0L);
+        this.idReunion.set(idReunion != null ? idReunion : 0);
+        this.idMiembro.set(idMiembro != null ? idMiembro : 0);
+        this.nombreMiembro.set(nombreMiembro != null ? nombreMiembro : "");
+        this.duiMiembro.set(duiMiembro != null ? duiMiembro : "-");
+        this.telefonoMiembro.set(telefonoMiembro != null ? telefonoMiembro : "-");
+        this.asistio.set(asistio);
+        this.observacion.set(observacion != null ? observacion : "");
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public long getIdAsistencia() { return idAsistencia.get(); }
+    public LongProperty idAsistenciaProperty() { return idAsistencia; }
+    public void setIdAsistencia(long idAsistencia) { this.idAsistencia.set(idAsistencia); }
 
-    public Integer getIdReunion() { return idReunion; }
-    public void setIdReunion(Integer idReunion) { this.idReunion = idReunion; }
+    public int getIdReunion() { return idReunion.get(); }
+    public IntegerProperty idReunionProperty() { return idReunion; }
+    public void setIdReunion(int idReunion) { this.idReunion.set(idReunion); }
 
-    public Integer getIdMiembro() { return idMiembro; }
-    public void setIdMiembro(Integer idMiembro) { this.idMiembro = idMiembro; }
+    public int getIdMiembro() { return idMiembro.get(); }
+    public IntegerProperty idMiembroProperty() { return idMiembro; }
+    public void setIdMiembro(int idMiembro) { this.idMiembro.set(idMiembro); }
 
-    public boolean isAsistio() { return asistio; }
-    public void setAsistio(boolean asistio) { this.asistio = asistio; }
+    public String getNombreMiembro() { return nombreMiembro.get(); }
+    public StringProperty nombreMiembroProperty() { return nombreMiembro; }
+    public void setNombreMiembro(String nombreMiembro) { this.nombreMiembro.set(nombreMiembro); }
 
-    public String getObservacion() { return observacion; }
-    public void setObservacion(String observacion) { this.observacion = observacion; }
+    public String getDuiMiembro() { return duiMiembro.get(); }
+    public StringProperty duiMiembroProperty() { return duiMiembro; }
+    public void setDuiMiembro(String duiMiembro) { this.duiMiembro.set(duiMiembro); }
+
+    public String getTelefonoMiembro() { return telefonoMiembro.get(); }
+    public StringProperty telefonoMiembroProperty() { return telefonoMiembro; }
+    public void setTelefonoMiembro(String telefonoMiembro) { this.telefonoMiembro.set(telefonoMiembro); }
+
+    public boolean isAsistio() { return asistio.get(); }
+    public BooleanProperty asistioProperty() { return asistio; }
+    public void setAsistio(boolean asistio) { this.asistio.set(asistio); }
+
+    public String getObservacion() { return observacion.get(); }
+    public StringProperty observacionProperty() { return observacion; }
+    public void setObservacion(String observacion) { this.observacion.set(observacion); }
 }
