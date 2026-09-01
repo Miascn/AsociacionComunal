@@ -117,6 +117,21 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
         return null;
     }
 
+    public int countByRol(Integer idRol) {
+        if (idRol == null) return 0;
+        String sql = "SELECT COUNT(*) FROM usuario WHERE id_rol = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idRol);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Error al consultar usuarios por rol.", e);
+        }
+        return 0;
+    }
+
     private Usuario mapResultSet(ResultSet rs) throws SQLException {
         Integer idMiembro = rs.getObject("id_miembro", Integer.class);
         return new Usuario(

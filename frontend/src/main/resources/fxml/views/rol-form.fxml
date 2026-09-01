@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.RolFormController" spacing="13">
+    <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
+    <Label fx:id="lblTitulo" text="Nuevo rol" styleClass="page-title"/>
+    <Label text="Nombre del rol *"/><TextField fx:id="campoNombre" promptText="Ejemplo: COORDINADOR"/>
+    <Label text="Descripción"/><TextField fx:id="campoDescripcion" promptText="Descripción del perfil de acceso y responsabilidades"/>
+    <Label fx:id="lblError" wrapText="true" style="-fx-text-fill: #c0392b;"/>
+</VBox>

@@ -33,7 +33,7 @@ public final class ApiServer {
         MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
         ProyectoService proyectoService = new ProyectoService(proyectoDAO);
         UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
-        RolService rolService = new RolService(rolDAO);
+        RolService rolService = new RolService(rolDAO, usuarioDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
@@ -77,6 +77,10 @@ public final class ApiServer {
 
             cfg.routes.get("/api/usuarios", usuarios::getAll);
             cfg.routes.get("/api/roles", roles::getAll);
+            cfg.routes.get("/api/roles/{id}", roles::getById);
+            cfg.routes.post("/api/roles", roles::create);
+            cfg.routes.put("/api/roles/{id}", roles::update);
+            cfg.routes.delete("/api/roles/{id}", roles::delete);
             cfg.routes.get("/api/usuarios/{id}", usuarios::getById);
             cfg.routes.post("/api/usuarios", usuarios::create);
             cfg.routes.put("/api/usuarios/{id}", usuarios::update);

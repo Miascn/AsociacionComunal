@@ -87,6 +87,20 @@ public class RolDAO implements DAO<Rol, Integer> {
         return false;
     }
 
+    public Optional<Rol> findByNombre(String nombre) {
+        String sql = "SELECT * FROM rol WHERE LOWER(nombre) = LOWER(?)";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, nombre == null ? "" : nombre.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
     private Rol mapResultSet(ResultSet rs) throws SQLException {
         return new Rol(
             rs.getInt("id_rol"),

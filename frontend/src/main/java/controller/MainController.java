@@ -28,10 +28,10 @@ public class MainController {
     @FXML
     private StackPane contentArea;
 
-    @FXML
-    private Button btnTema;
+    @FXML private Button btnTema;
     @FXML private VBox sidebar;
     @FXML private Button btnUsuarios;
+    @FXML private Button btnRoles;
 
     private Runnable onLogout;
 
@@ -44,6 +44,8 @@ public class MainController {
         boolean administrator = isAdministrator(user.getRole());
         btnUsuarios.setVisible(administrator);
         btnUsuarios.setManaged(administrator);
+        btnRoles.setVisible(administrator);
+        btnRoles.setManaged(administrator);
         actualizarBotonTema();
         mostrarDashboard();
         sidebar.sceneProperty().addListener((observable, previous, scene) -> {
@@ -86,6 +88,11 @@ public class MainController {
     @FXML
     private void mostrarUsuarios() {
         cargarVista("/fxml/views/usuarios.fxml");
+    }
+
+    @FXML
+    private void mostrarRoles() {
+        cargarVista("/fxml/views/roles.fxml");
     }
 
     static boolean isAdministrator(String role) {
