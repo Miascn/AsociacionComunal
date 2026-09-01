@@ -49,6 +49,7 @@ public final class ApiServer {
         PeriodoService periodoService = new PeriodoService(periodoDAO, miembroCargoDAO);
         AsignacionCargoService asignacionService = new AsignacionCargoService(miembroCargoDAO, miembroDAO, cargoDAO, periodoDAO);
         VotacionService votacionService = new VotacionService(votacionDAO, opcionVotacionDAO, votoDAO, proyectoDAO);
+        OpcionVotacionService opcionVotacionService = new OpcionVotacionService(opcionVotacionDAO, votacionDAO, votoDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -63,6 +64,7 @@ public final class ApiServer {
         PeriodoController periodos = new PeriodoController(periodoService);
         AsignacionCargoController asignaciones = new AsignacionCargoController(asignacionService);
         VotacionController votaciones = new VotacionController(votacionService);
+        OpcionVotacionController opcionesVotacion = new OpcionVotacionController(opcionVotacionService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -155,6 +157,13 @@ public final class ApiServer {
             cfg.routes.patch("/api/votaciones/{id}/cancelar", votaciones::cancelar);
             cfg.routes.delete("/api/votaciones/{id}", votaciones::delete);
 
+            cfg.routes.get("/api/votaciones/{idVotacion}/opciones", opcionesVotacion::getByVotacion);
+            cfg.routes.post("/api/votaciones/{idVotacion}/opciones", opcionesVotacion::create);
+            cfg.routes.patch("/api/votaciones/{idVotacion}/opciones/reordenar", opcionesVotacion::reordenar);
+            cfg.routes.get("/api/opciones-votacion/{id}", opcionesVotacion::getById);
+            cfg.routes.put("/api/opciones-votacion/{id}", opcionesVotacion::update);
+            cfg.routes.delete("/api/opciones-votacion/{id}", opcionesVotacion::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -205,6 +214,7 @@ public final class ApiServer {
         if (path.contains("/cargos")) return "CARGO";
         if (path.contains("/periodos")) return "PERIODO";
         if (path.contains("/directiva") || path.contains("/asignaciones-cargo")) return "ASIGNACION_DIRECTIVA";
+        if (path.contains("/opciones")) return "OPCION_VOTACION";
         if (path.contains("/votaciones")) return "VOTACION";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
@@ -219,6 +229,7 @@ public final class ApiServer {
         if (path != null && path.contains("/abrir")) return "ABRIR";
         if (path != null && path.contains("/cerrar")) return "CERRAR";
         if (path != null && path.contains("/cancelar")) return "CANCELAR";
+        if (path != null && path.contains("/reordenar")) return "REORDENAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {

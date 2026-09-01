@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.OpcionesVotacionModalController" spacing="14" prefWidth="560"
+      style="-fx-background-color: white; -fx-background-radius: 12;">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado -->
+    <VBox spacing="4">
+        <Label fx:id="lblModalTitulo" text="Opciones de votación" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+        <Label fx:id="lblSubtitulo" text="Gestiona las alternativas disponibles en este proceso electoral o de consulta." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+    </VBox>
+
+    <!-- Banner informativo de estado -->
+    <HBox fx:id="bannerSoloLectura" alignment="CENTER_LEFT" spacing="10"
+          style="-fx-background-color: #fef3c7; -fx-border-color: #f59e0b; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8 12 8 12;">
+        <Label fx:id="lblBannerMensaje" text="Esta votación ya se encuentra ABIERTA/CERRADA. Las opciones están en modo de solo lectura."
+               style="-fx-text-fill: #92400e; -fx-font-size: 12px;" wrapText="true"/>
+    </HBox>
+
+    <!-- Sección de agregar nueva opción -->
+    <VBox fx:id="secAgregar" spacing="6">
+        <Label text="Agregar nueva alternativa *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+        <HBox spacing="8">
+            <TextField fx:id="txtNuevaOpcion" promptText="Descripción de la opción..." HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnAgregar" text="Agregar opción" onAction="#agregarOpcion" styleClass="primary-action">
+                <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
+            </Button>
+        </HBox>
+    </VBox>
+
+    <!-- Listado ordenado de opciones -->
+    <VBox spacing="6" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT">
+            <Label text="Alternativas registradas" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblContadorOpciones" text="0 opciones" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+        </HBox>
+        <ListView fx:id="listOpciones" prefHeight="220" VBox.vgrow="ALWAYS"/>
+    </VBox>
+
+    <!-- Mensaje de estado/error -->
+    <Label fx:id="lblError" text="" style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" wrapText="true"/>
+
+    <!-- Pie del modal -->
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button text="Cerrar" onAction="#cerrar" styleClass="secondary-action"/>
+    </HBox>
+</VBox>

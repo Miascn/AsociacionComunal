@@ -106,6 +106,34 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
         return opciones;
     }
 
+    public int countByVotacion(Integer idVotacion) {
+        String sql = "SELECT COUNT(*) FROM opcion_votacion WHERE id_votacion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idVotacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public short findMaxOrdenByVotacion(Integer idVotacion) {
+        String sql = "SELECT COALESCE(MAX(orden), 0) FROM opcion_votacion WHERE id_votacion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idVotacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getShort(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private OpcionVotacion mapResultSet(ResultSet rs) throws SQLException {
         return new OpcionVotacion(
             rs.getInt("id_opcion"),

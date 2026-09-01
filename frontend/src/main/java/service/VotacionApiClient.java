@@ -158,6 +158,83 @@ public final class VotacionApiClient {
         }
     }
 
+    public List<models.OpcionVotacionModel> getOpciones(Integer idVotacion) throws IOException, InterruptedException {
+        HttpRequest request = requestBuilder("/api/votaciones/" + idVotacion + "/opciones").GET().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+        OpcionVotacionResponseDto[] arr = objectMapper.readValue(response.body(), OpcionVotacionResponseDto[].class);
+        return Arrays.stream(arr).map(OpcionVotacionResponseDto::toModel).toList();
+    }
+
+    public models.OpcionVotacionModel addOpcion(Integer idVotacion, String descripcion, Short orden) throws IOException, InterruptedException {
+        Map<String, Object> map = new HashMap<>();
+        map.put("idVotacion", idVotacion);
+        map.put("descripcion", descripcion);
+        map.put("orden", orden);
+
+        HttpRequest request = requestBuilder("/api/votaciones/" + idVotacion + "/opciones")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(map)))
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 201) {
+            throw new IOException(error(response));
+        }
+        return objectMapper.readValue(response.body(), OpcionVotacionResponseDto.class).toModel();
+    }
+
+    public models.OpcionVotacionModel updateOpcion(Integer idOpcion, String descripcion, Short orden) throws IOException, InterruptedException {
+        Map<String, Object> map = new HashMap<>();
+        map.put("descripcion", descripcion);
+        map.put("orden", orden);
+
+        HttpRequest request = requestBuilder("/api/opciones-votacion/" + idOpcion)
+            .header("Content-Type", "application/json")
+            .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(map)))
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+        return objectMapper.readValue(response.body(), OpcionVotacionResponseDto.class).toModel();
+    }
+
+    public void reordenarOpciones(Integer idVotacion, List<Integer> idsEnOrden) throws IOException, InterruptedException {
+        Map<String, Object> map = Map.of("idsEnOrden", idsEnOrden);
+        HttpRequest request = requestBuilder("/api/votaciones/" + idVotacion + "/opciones/reordenar")
+            .header("Content-Type", "application/json")
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(map)))
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+    }
+
+    public void deleteOpcion(Integer idOpcion) throws IOException, InterruptedException {
+        HttpRequest request = requestBuilder("/api/opciones-votacion/" + idOpcion).DELETE().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+    }
+
+    private record OpcionVotacionResponseDto(
+        Integer id, Integer idVotacion, String tituloVotacion, String estadoVotacion,
+        String descripcion, short orden, int votos, boolean editable
+    ) {
+        private models.OpcionVotacionModel toModel() {
+            return new models.OpcionVotacionModel(
+                id, idVotacion, tituloVotacion, estadoVotacion, descripcion, orden, votos, editable
+            );
+        }
+    }
+
     private HttpRequest.Builder requestBuilder(String path) {
         return HttpRequest.newBuilder(URI.create(config.baseUrl() + path))
             .timeout(Duration.ofSeconds(20))

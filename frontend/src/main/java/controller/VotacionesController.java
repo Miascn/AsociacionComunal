@@ -186,6 +186,13 @@ public class VotacionesController {
                     btnDetalle.setOnAction(e -> mostrarDetalle(m));
                     box.getChildren().add(btnDetalle);
 
+                    if (canManage()) {
+                        Button btnOpciones = new Button("Opciones");
+                        btnOpciones.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
+                        btnOpciones.setOnAction(e -> abrirModalOpciones(m));
+                        box.getChildren().add(btnOpciones);
+                    }
+
                     setGraphic(box);
                 }
             }
@@ -315,6 +322,28 @@ public class VotacionesController {
         } catch (Exception e) {
             e.printStackTrace();
             mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo abrir el formulario: " + e.getMessage());
+        }
+    }
+
+    public void abrirModalOpciones(VotacionModel v) {
+        if (v == null) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/opciones-votacion-modal.fxml"));
+            Parent root = loader.load();
+
+            OpcionesVotacionModalController ctrl = loader.getController();
+            ctrl.setVotacion(v);
+            ctrl.setOnCloseCallback(this::cargarDatos);
+
+            Stage stage = new Stage();
+            stage.setTitle("Opciones de votación: " + v.getTitulo());
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+            mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo abrir el gestor de opciones: " + e.getMessage());
         }
     }
 
