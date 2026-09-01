@@ -27,6 +27,7 @@ public final class ApiServer {
         UsuarioDAO usuarioDAO = new UsuarioDAO();
         RolDAO rolDAO = new RolDAO();
         ViviendaDAO viviendaDAO = new ViviendaDAO();
+        BitacoraDAO bitacoraDAO = new BitacoraDAO();
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
@@ -35,6 +36,7 @@ public final class ApiServer {
         UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
         RolService rolService = new RolService(rolDAO, usuarioDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
+        BitacoraService bitacoraService = new BitacoraService(bitacoraDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -43,6 +45,7 @@ public final class ApiServer {
         UsuarioController usuarios = new UsuarioController(usuarioService);
         RolController roles = new RolController(rolService);
         ViviendaController viviendas = new ViviendaController(viviendaService);
+        BitacoraController bitacoras = new BitacoraController(bitacoraService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -87,6 +90,26 @@ public final class ApiServer {
             cfg.routes.patch("/api/usuarios/{id}/estado", usuarios::changeState);
             cfg.routes.delete("/api/usuarios/{id}", usuarios::delete);
 
+            cfg.routes.get("/api/bitacoras", bitacoras::getPage);
+            cfg.routes.get("/api/bitacoras/{id}", bitacoras::getById);
+
+            cfg.routes.after("/api/*", ctx -> {
+                int status = ctx.status().getCode();
+                if (status >= 200 && status < 300) {
+                    String method = ctx.method().name();
+                    String path = ctx.path();
+                    if (path.startsWith("/api/bitacoras")) return;
+
+                    if (method.equals("POST") || method.equals("PUT") || method.equals("PATCH") || method.equals("DELETE")) {
+                        Integer idUsuario = ctx.attribute("idUsuario");
+                        String entidad = extractEntity(path);
+                        String accion = extractAction(method, path);
+                        String idRegistro = extractId(path);
+                        bitacoraService.registrar(idUsuario, accion, entidad, idRegistro, method + " " + path);
+                    }
+                }
+            });
+
             cfg.routes.get("/api/updates/windows/manifest", updates::manifestV1);
             cfg.routes.get("/api/updates/windows/manifest-v2", updates::manifestV2);
             cfg.routes.get("/api/updates/windows/build-manifest", updates::buildManifest);
@@ -108,4 +131,38 @@ public final class ApiServer {
         app.start();
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, config.apiPort);
     }
+
+    private static String extractEntity(String path) {
+        if (path == null) return "SISTEMA";
+        if (path.contains("/usuarios")) return "USUARIO";
+        if (path.contains("/roles")) return "ROL";
+        if (path.contains("/miembros")) return "MIEMBRO";
+        if (path.contains("/viviendas")) return "VIVIENDA";
+        if (path.contains("/proyectos")) return "PROYECTO";
+        if (path.contains("/auth") || path.contains("/login")) return "AUTH";
+        return "GENERAL";
+    }
+
+    private static String extractAction(String method, String path) {
+        if (path != null && path.contains("/estado")) return "STATE_CHANGE";
+        if (path != null && path.contains("/login")) return "LOGIN";
+        return switch (method) {
+            case "POST" -> "CREATE";
+            case "PUT", "PATCH" -> "UPDATE";
+            case "DELETE" -> "DELETE";
+            default -> method;
+        };
+    }
+
+    private static String extractId(String path) {
+        if (path == null) return null;
+        String[] parts = path.split("/");
+        for (int i = parts.length - 1; i >= 0; i--) {
+            if (parts[i].matches("\\d+")) {
+                return parts[i];
+            }
+        }
+        return null;
+    }
 }
+

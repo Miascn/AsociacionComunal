@@ -1,45 +1,35 @@
 package models;
 
-public class BitacoraModel {
-    private Long id;
-    private Integer idUsuario;
-    private String accion;
-    private String entidad;
-    private String idRegistro;
-    private String fechaHora;
-    private String detalle;
+import java.util.List;
 
-    public BitacoraModel() {}
-
-    public BitacoraModel(Long id, Integer idUsuario, String accion, String entidad,
-                          String idRegistro, String fechaHora, String detalle) {
-        this.id = id;
-        this.idUsuario = idUsuario;
-        this.accion = accion;
-        this.entidad = entidad;
-        this.idRegistro = idRegistro;
-        this.fechaHora = fechaHora;
-        this.detalle = detalle;
+public record BitacoraModel(
+    Long idBitacora,
+    Integer idUsuario,
+    String nombreUsuario,
+    String accion,
+    String entidad,
+    String idRegistro,
+    String fechaHora,
+    String detalle
+) {
+    public String getUsuarioDisplay() {
+        if (nombreUsuario != null && !nombreUsuario.isBlank()) {
+            return nombreUsuario;
+        }
+        return idUsuario != null ? "Usuario #" + idUsuario : "Sistema";
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getDetalleCorto() {
+        if (detalle == null) return "Sin detalle adicional";
+        if (detalle.length() <= 80) return detalle;
+        return detalle.substring(0, 77) + "...";
+    }
 
-    public Integer getIdUsuario() { return idUsuario; }
-    public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
-
-    public String getAccion() { return accion; }
-    public void setAccion(String accion) { this.accion = accion; }
-
-    public String getEntidad() { return entidad; }
-    public void setEntidad(String entidad) { this.entidad = entidad; }
-
-    public String getIdRegistro() { return idRegistro; }
-    public void setIdRegistro(String idRegistro) { this.idRegistro = idRegistro; }
-
-    public String getFechaHora() { return fechaHora; }
-    public void setFechaHora(String fechaHora) { this.fechaHora = fechaHora; }
-
-    public String getDetalle() { return detalle; }
-    public void setDetalle(String detalle) { this.detalle = detalle; }
+    public record Page(
+        List<BitacoraModel> items,
+        int total,
+        int page,
+        int size,
+        int totalPages
+    ) {}
 }

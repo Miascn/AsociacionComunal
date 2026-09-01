@@ -32,6 +32,7 @@ public class MainController {
     @FXML private VBox sidebar;
     @FXML private Button btnUsuarios;
     @FXML private Button btnRoles;
+    @FXML private Button btnBitacora;
 
     private Runnable onLogout;
 
@@ -42,10 +43,13 @@ public class MainController {
         lblRolUsuario.setText(user.getRole());
         lblVersion.setText("Versión " + UpdateService.currentVersion());
         boolean administrator = isAdministrator(user.getRole());
+        boolean puedeAuditar = administrator || isSindico(user.getRole());
         btnUsuarios.setVisible(administrator);
         btnUsuarios.setManaged(administrator);
         btnRoles.setVisible(administrator);
         btnRoles.setManaged(administrator);
+        btnBitacora.setVisible(puedeAuditar);
+        btnBitacora.setManaged(puedeAuditar);
         actualizarBotonTema();
         mostrarDashboard();
         sidebar.sceneProperty().addListener((observable, previous, scene) -> {
@@ -95,8 +99,17 @@ public class MainController {
         cargarVista("/fxml/views/roles.fxml");
     }
 
+    @FXML
+    private void mostrarBitacora() {
+        cargarVista("/fxml/views/bitacora.fxml");
+    }
+
     static boolean isAdministrator(String role) {
         return role != null && ("ADMIN".equalsIgnoreCase(role) || "ADMINISTRADOR".equalsIgnoreCase(role));
+    }
+
+    static boolean isSindico(String role) {
+        return role != null && "SINDICO".equalsIgnoreCase(role.trim());
     }
 
     @FXML
