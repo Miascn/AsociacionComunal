@@ -148,6 +148,10 @@ class FxmlNavigationTest {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Procesos de votación comunal"::equals));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
+                } else if ("Reuniones".equals(boton.getText())) {
+                    boton.fire();
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Reuniones y Asambleas Comunitarias"::equals));
+                    assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();
                     assertTrue(buscarEtiquetas(root).stream()

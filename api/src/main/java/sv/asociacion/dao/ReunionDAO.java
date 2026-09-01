@@ -96,7 +96,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
 
     public List<Reunion> findByEstado(Reunion.Estado estado) {
         List<Reunion> list = new ArrayList<>();
-        String sql = "SELECT * FROM reunion WHERE estado = ?";
+        String sql = "SELECT * FROM reunion WHERE estado = ? ORDER BY fecha_hora DESC";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, estado.name());
@@ -109,6 +109,56 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public List<Reunion> findFiltered(String search, Reunion.Tipo tipo, Reunion.Estado estado) {
+        List<Reunion> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM reunion WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (search != null && !search.isBlank()) {
+            sql.append(" AND (LOWER(titulo) LIKE ? OR LOWER(lugar) LIKE ?)");
+            String term = "%" + search.trim().toLowerCase() + "%";
+            params.add(term);
+            params.add(term);
+        }
+        if (tipo != null) {
+            sql.append(" AND tipo = ?");
+            params.add(tipo.name());
+        }
+        if (estado != null) {
+            sql.append(" AND estado = ?");
+            params.add(estado.name());
+        }
+        sql.append(" ORDER BY fecha_hora DESC");
+
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean updateEstado(Integer idReunion, Reunion.Estado nuevoEstado) {
+        String sql = "UPDATE reunion SET estado = ? WHERE id_reunion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, nuevoEstado.name());
+            ps.setInt(2, idReunion);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private Reunion mapResultSet(ResultSet rs) throws SQLException {

@@ -30,10 +30,7 @@ public class VotoController {
             Integer idMiembroSesion = null;
             Integer idUsuario = context.attribute("idUsuario");
             if (idUsuario != null && usuarioDAO != null) {
-                Usuario u = usuarioDAO.findById(idUsuario);
-                if (u != null) {
-                    idMiembroSesion = u.getIdMiembro();
-                }
+                idMiembroSesion = usuarioDAO.findById(idUsuario).map(Usuario::getIdMiembro).orElse(null);
             }
 
             EmitirVotoResponse res = service.emitirVoto(req, idMiembroSesion);
@@ -62,10 +59,7 @@ public class VotoController {
         if (idMiembro == null) {
             Integer idUsuario = context.attribute("idUsuario");
             if (idUsuario != null && usuarioDAO != null) {
-                Usuario u = usuarioDAO.findById(idUsuario);
-                if (u != null) {
-                    idMiembro = u.getIdMiembro();
-                }
+                idMiembro = usuarioDAO.findById(idUsuario).map(Usuario::getIdMiembro).orElse(null);
             }
         }
 

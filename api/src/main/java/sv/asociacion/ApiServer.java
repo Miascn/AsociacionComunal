@@ -35,6 +35,8 @@ public final class ApiServer {
         VotacionDAO votacionDAO = new VotacionDAO();
         OpcionVotacionDAO opcionVotacionDAO = new OpcionVotacionDAO();
         VotoDAO votoDAO = new VotoDAO();
+        ReunionDAO reunionDAO = new ReunionDAO();
+        AsistenciaDAO asistenciaDAO = new AsistenciaDAO();
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
@@ -51,6 +53,7 @@ public final class ApiServer {
         VotacionService votacionService = new VotacionService(votacionDAO, opcionVotacionDAO, votoDAO, proyectoDAO);
         OpcionVotacionService opcionVotacionService = new OpcionVotacionService(opcionVotacionDAO, votacionDAO, votoDAO);
         VotoService votoService = new VotoService(votoDAO, votacionDAO, opcionVotacionDAO, miembroDAO);
+        ReunionService reunionService = new ReunionService(reunionDAO, asistenciaDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -67,6 +70,7 @@ public final class ApiServer {
         VotacionController votaciones = new VotacionController(votacionService);
         OpcionVotacionController opcionesVotacion = new OpcionVotacionController(opcionVotacionService);
         VotoController votos = new VotoController(votoService, usuarioDAO);
+        ReunionController reuniones = new ReunionController(reunionService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -169,6 +173,14 @@ public final class ApiServer {
             cfg.routes.post("/api/votos", votos::emitir);
             cfg.routes.get("/api/votaciones/{idVotacion}/mi-participacion", votos::verificarParticipacion);
 
+            cfg.routes.get("/api/reuniones", reuniones::getAll);
+            cfg.routes.get("/api/reuniones/{id}", reuniones::getById);
+            cfg.routes.post("/api/reuniones", reuniones::create);
+            cfg.routes.put("/api/reuniones/{id}", reuniones::update);
+            cfg.routes.patch("/api/reuniones/{id}/realizada", reuniones::marcarRealizada);
+            cfg.routes.patch("/api/reuniones/{id}/cancelar", reuniones::cancelar);
+            cfg.routes.delete("/api/reuniones/{id}", reuniones::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -222,6 +234,7 @@ public final class ApiServer {
         if (path.contains("/opciones")) return "OPCION_VOTACION";
         if (path.contains("/votos")) return "VOTO";
         if (path.contains("/votaciones")) return "VOTACION";
+        if (path.contains("/reuniones")) return "REUNION";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
     }
@@ -235,6 +248,7 @@ public final class ApiServer {
         if (path != null && path.contains("/abrir")) return "ABRIR";
         if (path != null && path.contains("/cerrar")) return "CERRAR";
         if (path != null && path.contains("/cancelar")) return "CANCELAR";
+        if (path != null && path.contains("/realizada")) return "REALIZADA";
         if (path != null && path.contains("/reordenar")) return "REORDENAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";

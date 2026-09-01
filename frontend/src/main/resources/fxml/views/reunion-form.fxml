@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.ReunionFormController" spacing="18" prefWidth="480"
+      style="-fx-background-color: white; -fx-background-radius: 12;">
+    <padding><Insets top="26" right="28" bottom="26" left="28"/></padding>
+
+    <!-- Encabezado del modal -->
+    <VBox spacing="4">
+        <Label fx:id="lblTituloForm" text="Nueva Reunión Comunal" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+        <Label text="Programa o actualiza los datos de la convocatoria comunal." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Campos -->
+    <VBox spacing="14">
+        <VBox spacing="5">
+            <Label text="Título de la reunión *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <TextField fx:id="txtTitulo" promptText="Ej. Asamblea General Ordinaria de Octubre"/>
+        </VBox>
+
+        <HBox spacing="14">
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="Fecha *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+                <DatePicker fx:id="dpFecha" maxWidth="Infinity"/>
+            </VBox>
+            <VBox spacing="5" prefWidth="140">
+                <Label text="Hora *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+                <ComboBox fx:id="cbHora" maxWidth="Infinity"/>
+            </VBox>
+        </HBox>
+
+        <VBox spacing="5">
+            <Label text="Lugar de la reunión" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <TextField fx:id="txtLugar" promptText="Ej. Casa Comunal, Cancha Principal"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="Tipo de reunión *" style="-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 12px;"/>
+            <ComboBox fx:id="cbTipo" maxWidth="Infinity"/>
+        </VBox>
+    </VBox>
+
+    <Label fx:id="lblError" text="" style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" wrapText="true"/>
+
+    <!-- Botones -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Guardar reunión" onAction="#guardar" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-save"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

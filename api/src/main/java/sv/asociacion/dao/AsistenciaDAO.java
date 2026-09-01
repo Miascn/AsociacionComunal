@@ -125,6 +125,49 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         return list;
     }
 
+    public int countByReunion(Integer idReunion) {
+        String sql = "SELECT COUNT(*) FROM asistencia WHERE id_reunion = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idReunion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int countAsistieronByReunion(Integer idReunion) {
+        String sql = "SELECT COUNT(*) FROM asistencia WHERE id_reunion = ? AND asistio = 1";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idReunion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public boolean existsByReunionAndMiembro(Integer idReunion, Integer idMiembro) {
+        String sql = "SELECT 1 FROM asistencia WHERE id_reunion = ? AND id_miembro = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idReunion);
+            ps.setInt(2, idMiembro);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     private Asistencia mapResultSet(ResultSet rs) throws SQLException {
         return new Asistencia(
             rs.getLong("id_asistencia"),

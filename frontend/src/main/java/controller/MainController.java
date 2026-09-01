@@ -144,7 +144,7 @@ public class MainController {
 
     @FXML
     private void mostrarReuniones() {
-        mostrarPlaceholder("Reuniones");
+        cargarVista("/fxml/views/reuniones.fxml");
     }
 
     @FXML
