@@ -44,6 +44,7 @@ public final class ApiServer {
         AportacionService aportacionService = new AportacionService(aportacionDAO, miembroDAO, proyectoDAO);
         CargoService cargoService = new CargoService(cargoDAO, miembroCargoDAO);
         PeriodoService periodoService = new PeriodoService(periodoDAO, miembroCargoDAO);
+        AsignacionCargoService asignacionService = new AsignacionCargoService(miembroCargoDAO, miembroDAO, cargoDAO, periodoDAO);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -56,6 +57,7 @@ public final class ApiServer {
         AportacionController aportaciones = new AportacionController(aportacionService);
         CargoController cargos = new CargoController(cargoService);
         PeriodoController periodos = new PeriodoController(periodoService);
+        AsignacionCargoController asignaciones = new AsignacionCargoController(asignacionService);
         UpdateController updates = new UpdateController(new UpdateService());
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
@@ -130,6 +132,15 @@ public final class ApiServer {
             cfg.routes.patch("/api/periodos/{id}/finalizar", periodos::finalizar);
             cfg.routes.delete("/api/periodos/{id}", periodos::delete);
 
+            cfg.routes.get("/api/directiva/actual", asignaciones::getDirectivaActual);
+            cfg.routes.get("/api/directiva/periodo/{id}", asignaciones::getDirectivaPeriodo);
+            cfg.routes.get("/api/asignaciones-cargo", asignaciones::getAll);
+            cfg.routes.get("/api/asignaciones-cargo/{id}", asignaciones::getById);
+            cfg.routes.post("/api/asignaciones-cargo", asignaciones::create);
+            cfg.routes.patch("/api/asignaciones-cargo/{id}/revocar", asignaciones::revocar);
+            cfg.routes.patch("/api/asignaciones-cargo/{id}/finalizar", asignaciones::finalizar);
+            cfg.routes.delete("/api/asignaciones-cargo/{id}", asignaciones::delete);
+
             cfg.routes.after("/api/*", ctx -> {
                 int status = ctx.status().getCode();
                 if (status >= 200 && status < 300) {
@@ -179,6 +190,7 @@ public final class ApiServer {
         if (path.contains("/aportaciones")) return "APORTACION";
         if (path.contains("/cargos")) return "CARGO";
         if (path.contains("/periodos")) return "PERIODO";
+        if (path.contains("/directiva") || path.contains("/asignaciones-cargo")) return "ASIGNACION_DIRECTIVA";
         if (path.contains("/auth") || path.contains("/login")) return "AUTH";
         return "GENERAL";
     }
@@ -188,6 +200,7 @@ public final class ApiServer {
         if (path != null && path.contains("/desactivar")) return "TOGGLE_ACTIVE";
         if (path != null && path.contains("/activar")) return "ACTIVAR";
         if (path != null && path.contains("/finalizar")) return "FINALIZAR";
+        if (path != null && path.contains("/revocar")) return "REVOCAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {

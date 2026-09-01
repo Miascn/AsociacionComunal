@@ -34,5 +34,6 @@ public class Cargo {
     public void setNivelJerarquico(Integer nivelJerarquico) { this.nivelJerarquico = nivelJerarquico; }
 
     public Boolean getActivo() { return activo; }
+    public boolean isActivo() { return Boolean.TRUE.equals(activo); }
     public void setActivo(Boolean activo) { this.activo = activo; }
 }

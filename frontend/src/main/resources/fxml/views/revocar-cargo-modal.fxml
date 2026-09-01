@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.RevocarCargoModalController"
+      spacing="16" prefWidth="480" styleClass="form-dialog, member-form-dialog">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del diálogo -->
+    <VBox spacing="4">
+        <Label text="Revocar cargo directivo" styleClass="dialog-title"/>
+        <Label text="Concluye de manera anticipada las funciones del directivo en la junta" styleClass="dialog-subtitle"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Información del directivo actual -->
+    <VBox spacing="6" style="-fx-background-color: -color-bg-subtle; -fx-padding: 12; -fx-background-radius: 6;">
+        <HBox spacing="8">
+            <Label text="Directivo:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblNombreMiembro" text=""/>
+        </HBox>
+        <HBox spacing="8">
+            <Label text="Cargo:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblNombreCargo" text=""/>
+        </HBox>
+        <HBox spacing="8">
+            <Label text="Período:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblNombrePeriodo" text=""/>
+        </HBox>
+    </VBox>
+
+    <!-- Campos de revocación -->
+    <GridPane vgap="14" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="36"/>
+            <ColumnConstraints percentWidth="64"/>
+        </columnConstraints>
+
+        <!-- Fecha fin / cese -->
+        <Label text="Fecha de cese: *" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <DatePicker fx:id="pickerFechaFin" promptText="YYYY-MM-DD" GridPane.rowIndex="0" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Motivo de salida -->
+        <Label text="Motivo de salida: *" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoMotivo" promptText="Ej. Renuncia, traslado, destitución..." GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="form-field-input"/>
+    </GridPane>
+
+    <!-- Error message -->
+    <Label fx:id="lblError" text="" styleClass="form-error-label" wrapText="true"/>
+
+    <Region VBox.vgrow="ALWAYS"/>
+    <Separator/>
+
+    <!-- Acciones -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnRevocar" text="Confirmar revocación" onAction="#revocar" styleClass="danger-action">
+            <graphic><FontIcon iconLiteral="fth-user-x"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

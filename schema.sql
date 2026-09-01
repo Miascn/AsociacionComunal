@@ -83,10 +83,15 @@ CREATE TABLE miembro_cargo (
     id_cargo INT NOT NULL,
     id_periodo INT NOT NULL,
     fecha_asignacion DATE NOT NULL,
+    fecha_fin DATE NULL,
+    motivo_salida VARCHAR(255) NULL,
+    estado ENUM('ACTIVO', 'REVOCADO', 'FINALIZADO') NOT NULL DEFAULT 'ACTIVO',
+    KEY idx_mc_miembro (id_miembro),
+    KEY idx_mc_cargo (id_cargo),
+    KEY idx_mc_periodo (id_periodo),
     CONSTRAINT fk_mc_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro),
     CONSTRAINT fk_mc_cargo FOREIGN KEY (id_cargo) REFERENCES cargo(id_cargo),
-    CONSTRAINT fk_mc_periodo FOREIGN KEY (id_periodo) REFERENCES periodo_directiva(id_periodo),
-    CONSTRAINT uk_mc_cargo_periodo UNIQUE (id_cargo, id_periodo)
+    CONSTRAINT fk_mc_periodo FOREIGN KEY (id_periodo) REFERENCES periodo_directiva(id_periodo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

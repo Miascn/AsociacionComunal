@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.AsignacionCargoFormController"
+      spacing="16" prefWidth="540" styleClass="form-dialog, member-form-dialog">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del diálogo -->
+    <VBox spacing="4">
+        <Label text="Asignar cargo en junta directiva" styleClass="dialog-title"/>
+        <Label text="Vincula un miembro activo a un cargo de gobernanza en el período seleccionado" styleClass="dialog-subtitle"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Formulario en cuadrícula -->
+    <GridPane vgap="14" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="36"/>
+            <ColumnConstraints percentWidth="64"/>
+        </columnConstraints>
+
+        <!-- Período directivo -->
+        <Label text="Período directivo: *" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboPeriodo" promptText="Seleccionar período" GridPane.rowIndex="0" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Cargo directivo -->
+        <Label text="Cargo a asignar: *" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboCargo" promptText="Seleccionar cargo" GridPane.rowIndex="1" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Miembro activo -->
+        <Label text="Miembro activo: *" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <ComboBox fx:id="comboMiembro" promptText="Seleccionar miembro" GridPane.rowIndex="2" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Fecha de inicio / toma de posesión -->
+        <Label text="Fecha asignación: *" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <DatePicker fx:id="pickerFechaAsignacion" promptText="YYYY-MM-DD" GridPane.rowIndex="3" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+        <!-- Fecha de fin (opcional) -->
+        <Label text="Fecha conclusión:" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <DatePicker fx:id="pickerFechaFin" promptText="Opcional (YYYY-MM-DD)" GridPane.rowIndex="4" GridPane.columnIndex="1" maxWidth="Infinity"/>
+    </GridPane>
+
+    <!-- Error message -->
+    <Label fx:id="lblError" text="" styleClass="form-error-label" wrapText="true"/>
+
+    <Region VBox.vgrow="ALWAYS"/>
+    <Separator/>
+
+    <!-- Acciones -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Confirmar asignación" onAction="#guardar" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-check"/></graphic>
+        </Button>
+    </HBox>
+</VBox>

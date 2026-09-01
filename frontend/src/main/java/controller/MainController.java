@@ -110,6 +110,11 @@ public class MainController {
     }
 
     @FXML
+    private void mostrarDirectiva() {
+        cargarVista("/fxml/views/directiva.fxml");
+    }
+
+    @FXML
     private void mostrarBitacora() {
         cargarVista("/fxml/views/bitacora.fxml");
     }

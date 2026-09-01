@@ -65,9 +65,11 @@ public class Miembro {
     public void setIdVivienda(Integer idVivienda) { this.idVivienda = idVivienda; }
 
     public String getNombres() { return nombres; }
+    public String getNombre() { return nombres; }
     public void setNombres(String nombres) { this.nombres = nombres; }
 
     public String getApellidos() { return apellidos; }
+    public String getApellido() { return apellidos; }
     public void setApellidos(String apellidos) { this.apellidos = apellidos; }
 
     public String getTelefono() { return telefono; }

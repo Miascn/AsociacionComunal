@@ -37,8 +37,11 @@ public class MiembroModel {
     public Integer getIdVivienda() { return idVivienda; }
     public void setIdVivienda(Integer value) { idVivienda = value; }
     public String getNombres() { return nombres; }
+    public String getNombre() { return nombres; }
     public void setNombres(String nombres) { this.nombres = nombres; }
+
     public String getApellidos() { return apellidos; }
+    public String getApellido() { return apellidos; }
     public void setApellidos(String apellidos) { this.apellidos = apellidos; }
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }

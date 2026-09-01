@@ -61,6 +61,9 @@
                         <Button text="Períodos" onAction="#mostrarPeriodos" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
                         </Button>
+                        <Button text="Directiva" onAction="#mostrarDirectiva" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-users"/></graphic>
+                        </Button>
                         <Button fx:id="btnBitacora" text="Bitácora" onAction="#mostrarBitacora" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
                         </Button>
