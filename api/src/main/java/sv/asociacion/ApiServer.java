@@ -33,7 +33,7 @@ public final class ApiServer {
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
         MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
-        ProyectoService proyectoService = new ProyectoService(proyectoDAO);
+        ProyectoService proyectoService = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO);
         UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
         RolService rolService = new RolService(rolDAO, usuarioDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
@@ -74,6 +74,11 @@ public final class ApiServer {
             cfg.routes.put("/api/miembros/{id}", miembros::update);
             cfg.routes.patch("/api/miembros/{id}/estado", miembros::changeState);
             cfg.routes.get("/api/proyectos", proyectos::getAll);
+            cfg.routes.get("/api/proyectos/{id}", proyectos::getById);
+            cfg.routes.post("/api/proyectos", proyectos::create);
+            cfg.routes.put("/api/proyectos/{id}", proyectos::update);
+            cfg.routes.patch("/api/proyectos/{id}/estado", proyectos::changeState);
+            cfg.routes.delete("/api/proyectos/{id}", proyectos::delete);
 
             cfg.routes.get("/api/viviendas", viviendas::getAll);
             cfg.routes.get("/api/viviendas/{id}", viviendas::getById);

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.ProyectoFormController"
+      spacing="16" prefWidth="500" styleClass="form-dialog, member-form-dialog">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del diálogo -->
+    <VBox spacing="4">
+        <Label fx:id="lblTitulo" text="Nuevo proyecto comunal" styleClass="dialog-title"/>
+        <Label fx:id="lblSubtitulo" text="Ingresa los datos para registrar la propuesta de mejora comunitaria" styleClass="dialog-subtitle"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Contenido del formulario -->
+    <GridPane vgap="14" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="35"/>
+            <ColumnConstraints percentWidth="65"/>
+        </columnConstraints>
+
+        <!-- Nombre del proyecto -->
+        <Label text="Nombre del proyecto: *" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoNombre" promptText="Nombre descriptivo y único" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Presupuesto ($) -->
+        <Label text="Presupuesto ($): *" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
+        <TextField fx:id="campoPresupuesto" promptText="0.00" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="form-field-input"/>
+
+        <!-- Descripción -->
+        <Label text="Descripción / Alcance: *" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-field-label" alignment="TOP_LEFT"/>
+        <TextArea fx:id="campoDescripcion" promptText="Detalle de los objetivos y actividades de la obra..." prefRowCount="4" wrapText="true" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="form-field-input"/>
+    </GridPane>
+
+    <!-- Mensaje de error / estado -->
+    <Label fx:id="lblError" text="" styleClass="form-error-label" wrapText="true"/>
+
+    <Region VBox.vgrow="ALWAYS"/>
+    <Separator/>
+
+    <!-- Botones de acción -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardar" text="Guardar proyecto" onAction="#guardar" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-check"/></graphic>
+        </Button>
+    </HBox>
+</VBox>
