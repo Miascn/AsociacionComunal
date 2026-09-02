@@ -38,7 +38,7 @@ public class BitacoraController {
             return;
         }
 
-        Long id = context.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
             return;

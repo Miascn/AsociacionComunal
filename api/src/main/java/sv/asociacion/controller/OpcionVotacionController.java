@@ -16,7 +16,7 @@ public class OpcionVotacionController {
     }
 
     public void getByVotacion(Context context) {
-        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrDefault(null);
+        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrNull();
         if (idVotacion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de votación inválido."));
             return;
@@ -30,7 +30,7 @@ public class OpcionVotacionController {
     }
 
     public void getById(Context context) {
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de opción inválido."));
             return;
@@ -50,7 +50,7 @@ public class OpcionVotacionController {
             return;
         }
 
-        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrDefault(null);
+        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrNull();
         if (idVotacion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de votación inválido."));
             return;
@@ -74,7 +74,7 @@ public class OpcionVotacionController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de opción inválido."));
             return;
@@ -97,7 +97,7 @@ public class OpcionVotacionController {
             return;
         }
 
-        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrDefault(null);
+        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrNull();
         if (idVotacion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de votación inválido."));
             return;
@@ -120,7 +120,7 @@ public class OpcionVotacionController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de opción inválido."));
             return;

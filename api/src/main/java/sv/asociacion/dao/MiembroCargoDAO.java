@@ -227,7 +227,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
     public Optional<AsignacionCargoResponse> findDetalladoById(Integer id) {
         String sql = """
             SELECT mc.id_miembro_cargo,
-                   m.id_miembro, CONCAT(m.nombre, ' ', m.apellido) AS nombre_miembro, m.dui, m.telefono,
+                   m.id_miembro, CONCAT(m.nombres, ' ', m.apellidos) AS nombre_miembro, m.dui, m.telefono,
                    c.id_cargo, c.nombre AS nombre_cargo, c.nivel_jerarquico,
                    p.id_periodo, p.nombre AS nombre_periodo, p.estado AS estado_periodo,
                    mc.fecha_asignacion, mc.fecha_fin, mc.motivo_salida, mc.estado
@@ -253,7 +253,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
         List<AsignacionCargoResponse> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
             SELECT mc.id_miembro_cargo,
-                   m.id_miembro, CONCAT(m.nombre, ' ', m.apellido) AS nombre_miembro, m.dui, m.telefono,
+                   m.id_miembro, CONCAT(m.nombres, ' ', m.apellidos) AS nombre_miembro, m.dui, m.telefono,
                    c.id_cargo, c.nombre AS nombre_cargo, c.nivel_jerarquico,
                    p.id_periodo, p.nombre AS nombre_periodo, p.estado AS estado_periodo,
                    mc.fecha_asignacion, mc.fecha_fin, mc.motivo_salida, mc.estado
@@ -274,7 +274,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
             params.add(estado.trim().toUpperCase());
         }
         if (busqueda != null && !busqueda.isBlank()) {
-            sql.append(" AND (LOWER(m.nombre) LIKE ? OR LOWER(m.apellido) LIKE ? OR LOWER(c.nombre) LIKE ? OR m.dui LIKE ?)");
+            sql.append(" AND (LOWER(m.nombres) LIKE ? OR LOWER(m.apellidos) LIKE ? OR LOWER(c.nombre) LIKE ? OR m.dui LIKE ?)");
             String q = "%" + busqueda.trim().toLowerCase() + "%";
             params.add(q);
             params.add(q);

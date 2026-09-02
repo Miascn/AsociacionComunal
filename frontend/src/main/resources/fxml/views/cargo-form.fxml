@@ -29,8 +29,15 @@
         <TextField fx:id="campoNombre" promptText="Ej. Presidente, Tesorero, Vocal 1" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field-input"/>
 
         <!-- Nivel jerárquico -->
-        <Label text="Nivel jerárquico: *" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-field-label"/>
-        <Spinner fx:id="spinnerJerarquia" editable="true" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="120" styleClass="form-field-input"/>
+        <VBox GridPane.rowIndex="1" GridPane.columnIndex="0" spacing="2">
+            <Label text="Nivel jerárquico: *" styleClass="form-field-label"/>
+            <Label text="Rango en directiva" style="-fx-font-size: 10px; -fx-text-fill: -color-fg-muted;"/>
+        </VBox>
+        <VBox GridPane.rowIndex="1" GridPane.columnIndex="1" spacing="4">
+            <ComboBox fx:id="comboJerarquia" maxWidth="Infinity" styleClass="form-field-input"/>
+            <Label text="1 es el Nivel Máximo de autoridad; valores mayores son rangos subordinados o apoyo"
+                   style="-fx-font-size: 10px; -fx-text-fill: -color-fg-muted;" wrapText="true"/>
+        </VBox>
 
         <!-- Descripción / Atribuciones -->
         <Label text="Responsabilidades: *" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-field-label" alignment="TOP_LEFT"/>

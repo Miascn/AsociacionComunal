@@ -1,12 +1,13 @@
 package controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -14,10 +15,17 @@ import models.CargoModel;
 import service.CargoApiClient;
 
 public class CargoFormController {
+    public record JerarquiaItem(int nivel, String etiqueta) {
+        @Override
+        public String toString() {
+            return etiqueta;
+        }
+    }
+
     @FXML private Label lblTitulo;
     @FXML private Label lblSubtitulo;
     @FXML private TextField campoNombre;
-    @FXML private Spinner<Integer> spinnerJerarquia;
+    @FXML private ComboBox<JerarquiaItem> comboJerarquia;
     @FXML private TextArea campoDescripcion;
     @FXML private CheckBox checkActivo;
     @FXML private Label lblError;
@@ -28,8 +36,19 @@ public class CargoFormController {
 
     @FXML
     private void initialize() {
-        SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 99, 1);
-        spinnerJerarquia.setValueFactory(valueFactory);
+        List<JerarquiaItem> items = new ArrayList<>();
+        items.add(new JerarquiaItem(1, "1 - Nivel Máximo (Presidencia)"));
+        items.add(new JerarquiaItem(2, "2 - Nivel Alto (Vicepresidencia)"));
+        items.add(new JerarquiaItem(3, "3 - Nivel Medio-Alto (Secretaría)"));
+        items.add(new JerarquiaItem(4, "4 - Nivel Medio (Tesorería)"));
+        items.add(new JerarquiaItem(5, "5 - Nivel Operativo (Vocalía / Síndico)"));
+        items.add(new JerarquiaItem(6, "6 - Nivel de Apoyo (Vocal 2)"));
+        items.add(new JerarquiaItem(7, "7 - Nivel de Apoyo (Vocal 3)"));
+        items.add(new JerarquiaItem(8, "8 - Nivel de Apoyo (Suplente)"));
+        items.add(new JerarquiaItem(9, "9 - Nivel de Apoyo"));
+        items.add(new JerarquiaItem(10, "10 - Nivel de Apoyo"));
+        comboJerarquia.getItems().setAll(items);
+        comboJerarquia.getSelectionModel().selectFirst();
     }
 
     public void initData(CargoModel cargo, Runnable onSuccess) {
@@ -42,8 +61,17 @@ public class CargoFormController {
             btnGuardar.setText("Guardar cambios");
 
             campoNombre.setText(cargo.getNombre());
-            if (cargo.getNivelJerarquico() != null && spinnerJerarquia.getValueFactory() != null) {
-                spinnerJerarquia.getValueFactory().setValue(cargo.getNivelJerarquico());
+            if (cargo.getNivelJerarquico() != null && comboJerarquia != null) {
+                int nivel = cargo.getNivelJerarquico();
+                JerarquiaItem matching = comboJerarquia.getItems().stream()
+                    .filter(it -> it.nivel() == nivel)
+                    .findFirst()
+                    .orElseGet(() -> {
+                        JerarquiaItem custom = new JerarquiaItem(nivel, CargoModel.getDescripcionJerarquia(nivel));
+                        comboJerarquia.getItems().add(custom);
+                        return custom;
+                    });
+                comboJerarquia.getSelectionModel().select(matching);
             }
             campoDescripcion.setText(cargo.getDescripcion());
             checkActivo.setSelected(cargo.isActivo());
@@ -60,11 +88,8 @@ public class CargoFormController {
             return;
         }
 
-        Integer jerarquia = spinnerJerarquia.getValue();
-        if (jerarquia == null || jerarquia <= 0) {
-            lblError.setText("El nivel jerárquico debe ser un número entero mayor que cero.");
-            return;
-        }
+        JerarquiaItem selectedJerarquia = comboJerarquia.getValue();
+        Integer jerarquia = selectedJerarquia != null ? selectedJerarquia.nivel() : 1;
 
         String descripcion = campoDescripcion.getText() != null ? campoDescripcion.getText().trim() : "";
         if (descripcion.isBlank()) {

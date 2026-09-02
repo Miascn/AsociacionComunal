@@ -3,6 +3,9 @@ package sv.asociacion;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
 import java.util.Map;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.javalin.json.JavalinJackson;
 import sv.asociacion.api.auth.AuthRoutes;
 import sv.asociacion.api.auth.JdbcSessionRepository;
 import sv.asociacion.api.auth.JdbcUserAuthRepository;
@@ -86,6 +89,11 @@ public final class ApiServer {
             cfg.jetty.host = HOST;
             cfg.jetty.port = config.apiPort;
             cfg.http.maxRequestSize = 268_435_456L;
+
+            cfg.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
+                mapper.registerModule(new JavaTimeModule());
+                mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            }));
 
             cfg.routes.before("/api/updates/*", sharedSecretAuth::authenticate);
             cfg.routes.before("/api/*", jwtAuth::authenticate);

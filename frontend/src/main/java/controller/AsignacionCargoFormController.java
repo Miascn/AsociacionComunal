@@ -35,7 +35,7 @@ public class AsignacionCargoFormController {
         @Override public String toString() { return nombre; }
     }
     public record CargoOption(Integer id, String nombre, Integer jerarquia) {
-        @Override public String toString() { return nombre + " (Nivel " + jerarquia + ")"; }
+        @Override public String toString() { return nombre + " (" + CargoModel.getDescripcionCortaJerarquia(jerarquia) + ")"; }
     }
     public record MiembroOption(Integer id, String nombreCompleto, String dui) {
         @Override public String toString() { return nombreCompleto + " (" + (dui != null ? dui : "Sin DUI") + ")"; }

@@ -20,7 +20,7 @@ public class RolController {
     }
 
     public void getById(Context context) {
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
             return;
@@ -49,7 +49,7 @@ public class RolController {
     public void update(Context context) {
         if (!requireAdministrator(context)) return;
         try {
-            Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+            Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
             if (id == null) {
                 context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
                 return;
@@ -69,7 +69,7 @@ public class RolController {
     public void delete(Context context) {
         if (!requireAdministrator(context)) return;
         try {
-            Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+            Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
             if (id == null) {
                 context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
                 return;

@@ -13,6 +13,22 @@
     -fx-background-color: -color-bg-default;
 }
 
+/* ---------- Interactividad y Cursores ---------- */
+.button,
+.primary-action,
+.secondary-action,
+.members-primary-action,
+.login-button,
+.theme-button,
+.password-toggle-btn,
+.nav-button,
+.logout-button,
+.hyperlink,
+.check-box,
+.radio-button {
+    -fx-cursor: hand;
+}
+
 /* ---------- Sidebar ---------- */
 
 .sidebar {

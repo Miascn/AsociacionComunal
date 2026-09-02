@@ -43,7 +43,7 @@ public class VotoController {
     }
 
     public void verificarParticipacion(Context context) {
-        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrDefault(null);
+        Integer idVotacion = context.pathParamAsClass("idVotacion", Integer.class).getOrNull();
         if (idVotacion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de votación inválido."));
             return;

@@ -46,8 +46,32 @@ public class CargoModel {
     public Integer getTotalAsignaciones() { return totalAsignaciones; }
     public void setTotalAsignaciones(Integer totalAsignaciones) { this.totalAsignaciones = totalAsignaciones; }
 
+    public static String getDescripcionJerarquia(Integer nivel) {
+        int n = (nivel != null && nivel > 0) ? nivel : 1;
+        return switch (n) {
+            case 1 -> "1 - Nivel Máximo (Presidencia)";
+            case 2 -> "2 - Nivel Alto (Vicepresidencia)";
+            case 3 -> "3 - Nivel Medio-Alto (Secretaría)";
+            case 4 -> "4 - Nivel Medio (Tesorería)";
+            case 5 -> "5 - Nivel Operativo (Vocalía / Síndico)";
+            default -> n + " - Nivel de Apoyo";
+        };
+    }
+
+    public static String getDescripcionCortaJerarquia(Integer nivel) {
+        int n = (nivel != null && nivel > 0) ? nivel : 1;
+        return switch (n) {
+            case 1 -> "Nivel Máximo";
+            case 2 -> "Nivel Alto";
+            case 3 -> "Nivel Medio-Alto";
+            case 4 -> "Nivel Medio";
+            case 5 -> "Nivel Operativo";
+            default -> "Nivel " + n;
+        };
+    }
+
     public String getNivelDisplay() {
-        return "Nivel " + (nivelJerarquico != null ? nivelJerarquico : 1);
+        return getDescripcionJerarquia(nivelJerarquico);
     }
 
     public String getEstadoDisplay() {

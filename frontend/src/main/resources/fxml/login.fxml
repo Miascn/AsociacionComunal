@@ -40,7 +40,7 @@
      <StackPane.margin><Insets right="6"/></StackPane.margin>
     </Button>
    </StackPane>
-   <HBox alignment="CENTER_LEFT"><CheckBox text="Recordarme"/><Region HBox.hgrow="ALWAYS"/><Hyperlink text="¿Olvidaste tu contraseña?"/></HBox>
+   <HBox alignment="CENTER_LEFT"><CheckBox fx:id="chkRecordarme" text="Recordarme"/><Region HBox.hgrow="ALWAYS"/><Hyperlink text="¿Olvidaste tu contraseña?"/></HBox>
    <Button text="Ingresar al sistema   →" onAction="#onIniciarSesion" defaultButton="true" maxWidth="Infinity" styleClass="login-button"/>
    <Label fx:id="mensajeError" styleClass="login-error" wrapText="true"/>
    <Label text="Acceso exclusivo para personal autorizado de la asociación." maxWidth="Infinity" alignment="CENTER" styleClass="login-footnote"/>

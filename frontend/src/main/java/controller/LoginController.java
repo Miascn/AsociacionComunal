@@ -1,12 +1,15 @@
 package controller;
 
 import java.util.Objects;
+import java.util.prefs.Preferences;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.StackPane;
@@ -18,6 +21,9 @@ import security.SessionManager;
 import service.ThemeService;
 
 public class LoginController {
+    private static final String PREF_REMEMBER_USER = "remember_user";
+    private static final String PREF_SAVED_USERNAME = "saved_username";
+
     @FXML
     private TextField campoUsuario;
 
@@ -37,6 +43,9 @@ public class LoginController {
     private Label mensajeError;
 
     @FXML
+    private CheckBox chkRecordarme;
+
+    @FXML
     private Button btnTema;
     @FXML private HBox loginShell;
     @FXML private VBox loginBrandPanel;
@@ -48,6 +57,7 @@ public class LoginController {
     private void initialize() {
         ocultarError();
         actualizarBotonTema();
+        cargarUsuarioRecordado();
         if (campoContrasenaVisible != null && campoContrasena != null) {
             campoContrasenaVisible.textProperty().bindBidirectional(campoContrasena.textProperty());
         }
@@ -57,6 +67,25 @@ public class LoginController {
             scene.heightProperty().addListener((obs, oldHeight, height) -> adaptar(scene.getWidth(), height.doubleValue()));
             adaptar(scene.getWidth(), scene.getHeight());
         });
+    }
+
+    private void cargarUsuarioRecordado() {
+        if (chkRecordarme == null || campoUsuario == null) return;
+        try {
+            Preferences prefs = Preferences.userNodeForPackage(LoginController.class);
+            boolean remember = prefs.getBoolean(PREF_REMEMBER_USER, false);
+            String savedUsername = prefs.get(PREF_SAVED_USERNAME, "");
+            if (remember && !savedUsername.isBlank()) {
+                campoUsuario.setText(savedUsername);
+                chkRecordarme.setSelected(true);
+                Platform.runLater(() -> {
+                    if (campoContrasena != null) {
+                        campoContrasena.requestFocus();
+                    }
+                });
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void adaptar(double width, double height) {
@@ -125,10 +154,25 @@ public class LoginController {
         }
 
         SessionManager.getInstance().start(result.user(), result.token());
+        guardarPreferenciaUsuario(username);
         campoContrasena.clear();
         ocultarError();
         if (onAuthenticated != null) {
             onAuthenticated.run();
+        }
+    }
+
+    private void guardarPreferenciaUsuario(String username) {
+        try {
+            Preferences prefs = Preferences.userNodeForPackage(LoginController.class);
+            if (chkRecordarme != null && chkRecordarme.isSelected()) {
+                prefs.putBoolean(PREF_REMEMBER_USER, true);
+                prefs.put(PREF_SAVED_USERNAME, username.trim());
+            } else {
+                prefs.putBoolean(PREF_REMEMBER_USER, false);
+                prefs.remove(PREF_SAVED_USERNAME);
+            }
+        } catch (Exception ignored) {
         }
     }
 
