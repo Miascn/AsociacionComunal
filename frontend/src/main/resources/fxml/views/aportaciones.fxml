@@ -12,13 +12,15 @@
     <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
         <VBox spacing="6">
             <Label text="FINANZAS / TESORERÍA" styleClass="page-eyebrow"/>
-            <Label text="Control de aportaciones" styleClass="page-title, members-title"/>
-            <Label text="Registro de cuotas y aportaciones comunales, emisión de recibos y recaudación." styleClass="page-subtitle"/>
+            <Label text="Auditoría de aportaciones y vigilancia" styleClass="page-title, members-title"/>
+            <Label text="Control y conciliación de aportaciones y pagos mensuales de vigilancia generados por los residentes desde la app móvil." styleClass="page-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnNuevaAportacion" text="Nueva aportación" onAction="#abrirFormularioCrear" styleClass="primary-action">
-            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
-        </Button>
+        <!-- Origen de datos: App Móvil -->
+        <HBox alignment="CENTER" spacing="8" style="-fx-background-color: rgba(7, 89, 199, 0.08); -fx-padding: 8 16; -fx-background-radius: 12; -fx-border-color: rgba(7, 89, 199, 0.25); -fx-border-radius: 12;">
+            <FontIcon iconLiteral="fth-smartphone" style="-fx-icon-color: #0759C7; -fx-icon-size: 16;"/>
+            <Label text="Pagos registrados desde celulares" style="-fx-text-fill: #0759C7; -fx-font-weight: bold; -fx-font-size: 13px;"/>
+        </HBox>
     </HBox>
 
     <!-- Tarjetas de resumen financiero -->
@@ -69,9 +71,6 @@
             <!-- Acciones -->
             <Button fx:id="btnVerRecibo" text="Ver recibo" onAction="#verRecibo" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
-            </Button>
-            <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
             </Button>
             <Button fx:id="btnAnular" text="Anular" onAction="#anularAportacion" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-slash"/></graphic>

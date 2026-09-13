@@ -16,7 +16,15 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
 
     @Override
     public Optional<AuthUser> findByUsername(String username) {
-        return find(SELECT_BASE + " WHERE LOWER(u.nombre_usuario) = ?", statement -> statement.setString(1, username));
+        String clean = username.trim().toLowerCase().replace("-", "");
+        return find(
+            SELECT_BASE + " WHERE LOWER(u.nombre_usuario) = ? OR REPLACE(LOWER(u.nombre_usuario), '-', '') = ? OR REPLACE(LOWER(COALESCE(m.dui, '')), '-', '') = ?",
+            statement -> {
+                statement.setString(1, username.trim().toLowerCase());
+                statement.setString(2, clean);
+                statement.setString(3, clean);
+            }
+        );
     }
 
     @Override

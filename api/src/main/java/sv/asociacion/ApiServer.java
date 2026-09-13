@@ -18,7 +18,7 @@ import sv.asociacion.middleware.JwtAuthMiddleware;
 import sv.asociacion.service.*;
 
 public final class ApiServer {
-    private static final String HOST = "127.0.0.1";
+    private static final String HOST = "0.0.0.0";
 
     private ApiServer() { }
 
@@ -80,10 +80,11 @@ public final class ApiServer {
         AndroidUpdateController androidUpdates = new AndroidUpdateController(new AndroidUpdateService());
 
         AuthMiddleware sharedSecretAuth = new AuthMiddleware(config.apiSharedSecret);
-        JwtAuthMiddleware jwtAuth = new JwtAuthMiddleware(jwtService);
-        AuthRoutes mobileAuth = new AuthRoutes(new sv.asociacion.api.auth.AuthService(
+        sv.asociacion.api.auth.AuthService mobileAuthService = new sv.asociacion.api.auth.AuthService(
             new JdbcUserAuthRepository(), new JdbcSessionRepository()
-        ));
+        );
+        JwtAuthMiddleware jwtAuth = new JwtAuthMiddleware(jwtService, mobileAuthService, usuarioDAO);
+        AuthRoutes mobileAuth = new AuthRoutes(mobileAuthService);
 
         Javalin app = Javalin.create(cfg -> {
             cfg.jetty.host = HOST;

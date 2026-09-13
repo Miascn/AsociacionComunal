@@ -1,0 +1,11 @@
+{
+  "name": "Asociación Comunal — Portal del Residente",
+  "short_name": "Asociación",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#002D72",
+  "theme_color": "#0759C7",
+  "description": "Cliente móvil con Glassmorphism para residentes y miembros de la Asociación Comunal.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}

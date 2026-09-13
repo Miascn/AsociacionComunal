@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura del Sistema - Asociación Comunal",
+    "output": "docs/architecture-diagram.html",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Miascn/AsociacionComunal.git",
+      "revision": "777ba350497c6f667f96ffd50131078ad3731011"
+    },
+    "viewBox": [1260, 480],
+    "views": [
+      {
+        "id": "overview",
+        "label": "Vista General",
+        "focus": ["desktop", "mobile", "proxy", "gateway", "api_core", "dao_layer", "mysql"],
+        "note": "Flujo integral desde clientes administrativos y móviles hasta la base de datos MySQL."
+      },
+      {
+        "id": "admin-flow",
+        "label": "Administración JavaFX",
+        "focus": ["desktop", "proxy", "gateway", "api_core", "dao_layer", "mysql"],
+        "note": "Gestión comunitaria con JavaFX, validación JWT y registro automático en bitácora."
+      },
+      {
+        "id": "mobile-flow",
+        "label": "App Móvil Residentes",
+        "focus": ["mobile", "proxy", "gateway", "api_core", "mysql"],
+        "note": "Autenticación segura PBKDF2, rotación de sesiones y almacenamiento cifrado en Keystore."
+      },
+      {
+        "id": "data-persistence",
+        "label": "Persistencia y Datos",
+        "focus": ["dao_layer", "mysql", "docker"],
+        "note": "Modelo relacional InnoDB con 14+ tablas, censo familiar y contenedor Docker local."
+      },
+      {
+        "id": "updates-delivery",
+        "label": "CI/CD y Actualizaciones",
+        "focus": ["actions", "releases", "updater", "desktop", "mobile"],
+        "note": "Compilación automatizada en GitHub Actions, jpackage y distribución de deltas."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "desktop",
+      "type": "frontend",
+      "label": "Cliente JavaFX",
+      "sublabel": "Windows Desktop",
+      "tag": "Personal Administrativo",
+      "pos": [40, 95],
+      "size": [135, 58],
+      "sources": [
+        { "path": "frontend/src/main/java/app/Main.java", "label": "Launcher JavaFX" }
+      ]
+    },
+    {
+      "id": "mobile",
+      "type": "frontend",
+      "label": "Cliente Android",
+      "sublabel": "Kotlin + Compose",
+      "tag": "Residentes",
+      "pos": [40, 230],
+      "size": [135, 58],
+      "sources": [
+        { "path": "android-app/app/src/main/java/sv/asociacion/comunal/MainActivity.kt", "label": "MainActivity" }
+      ]
+    },
+    {
+      "id": "actions",
+      "type": "external",
+      "label": "GitHub Actions",
+      "sublabel": "Workflows CI/CD",
+      "tag": "Build & Package",
+      "brand": "github-actions",
+      "pos": [40, 380],
+      "size": [135, 58],
+      "sources": [
+        { "path": ".github/workflows/qa-package.yml", "label": "QA Workflow" }
+      ]
+    },
+    {
+      "id": "proxy",
+      "type": "cloud",
+      "label": "Reverse Proxy",
+      "sublabel": "Nginx / HTTPS :443",
+      "tag": "Terminación TLS",
+      "pos": [230, 160],
+      "size": [135, 58]
+    },
+    {
+      "id": "releases",
+      "type": "external",
+      "label": "Releases",
+      "sublabel": "GitHub Storage",
+      "tag": "ZIP & APK",
+      "brand": "github",
+      "pos": [230, 380],
+      "size": [135, 58]
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "Filtros API",
+      "sublabel": "JWT & Seguridad",
+      "tag": "Javalin Middleware",
+      "pos": [445, 160],
+      "size": [135, 58],
+      "sources": [
+        { "path": "api/src/main/java/sv/asociacion/middleware/JwtAuthMiddleware.java", "label": "JWT Middleware" }
+      ]
+    },
+    {
+      "id": "api_core",
+      "type": "backend",
+      "label": "API Server",
+      "sublabel": "Javalin 7 + Jetty",
+      "tag": "Controllers & Services",
+      "pos": [660, 160],
+      "size": [140, 58],
+      "sources": [
+        { "path": "api/src/main/java/sv/asociacion/ApiServer.java", "label": "Javalin Server" }
+      ]
+    },
+    {
+      "id": "updater",
+      "type": "backend",
+      "label": "Servicio Updates",
+      "sublabel": "Deltas y APK",
+      "tag": "Update Controllers",
+      "pos": [660, 380],
+      "size": [140, 58],
+      "sources": [
+        { "path": "api/src/main/java/sv/asociacion/controller/UpdateController.java", "label": "Update Controller" }
+      ]
+    },
+    {
+      "id": "dao_layer",
+      "type": "backend",
+      "label": "Capa DAO JDBC",
+      "sublabel": "Sentencias SQL",
+      "tag": "PreparedStatements",
+      "pos": [880, 160],
+      "size": [135, 58],
+      "sources": [
+        { "path": "api/src/main/java/sv/asociacion/dao/MiembroDAO.java", "label": "Miembro DAO" }
+      ]
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL 8.0",
+      "sublabel": "asociacion_comunal",
+      "tag": "InnoDB utf8mb4",
+      "brand": "mysql",
+      "pos": [1095, 160],
+      "size": [135, 58],
+      "sources": [
+        { "path": "schema.sql", "label": "Schema Base" }
+      ]
+    },
+    {
+      "id": "docker",
+      "type": "cloud",
+      "label": "Docker",
+      "sublabel": "asociacion_mysql",
+      "tag": "Local & QA Dev",
+      "brand": "docker",
+      "pos": [1095, 310],
+      "size": [135, 58],
+      "sources": [
+        { "path": "docker-compose.yml", "label": "Docker Services" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Capa de Clientes (Frontend)",
+      "wraps": ["desktop", "mobile"],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "Red de Aplicación (Javalin API :8080)",
+      "wraps": ["gateway", "api_core", "updater", "dao_layer"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Capa de Datos (MySQL :3306)",
+      "wraps": ["mysql", "docker"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Automatización & Releases",
+      "wraps": ["actions", "releases"],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn-desktop-proxy",
+      "from": "desktop",
+      "to": "proxy",
+      "label": "HTTPS :443",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn-mobile-proxy",
+      "from": "mobile",
+      "to": "proxy",
+      "label": "HTTPS :443",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn-proxy-gateway",
+      "from": "proxy",
+      "to": "gateway",
+      "label": "Port :8080",
+      "variant": "security",
+      "labelDy": 20
+    },
+    {
+      "id": "conn-gateway-api",
+      "from": "gateway",
+      "to": "api_core",
+      "label": "Auth & Audit",
+      "variant": "default",
+      "labelDy": 20
+    },
+    {
+      "id": "conn-api-dao",
+      "from": "api_core",
+      "to": "dao_layer",
+      "label": "DAO / JDBC",
+      "variant": "default",
+      "labelDy": 20
+    },
+    {
+      "id": "conn-dao-mysql",
+      "from": "dao_layer",
+      "to": "mysql",
+      "label": "SQL :3306",
+      "variant": "emphasis",
+      "labelDy": 20
+    },
+    {
+      "id": "conn-docker-mysql",
+      "from": "docker",
+      "to": "mysql",
+      "label": "asociacion_mysql",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": -68
+    },
+    {
+      "id": "conn-api-updater",
+      "from": "api_core",
+      "to": "updater",
+      "label": "Updates",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [780, 270]
+    },
+    {
+      "id": "conn-actions-releases",
+      "from": "actions",
+      "to": "releases",
+      "label": "Crea Release",
+      "variant": "default",
+      "labelAt": [203, 455]
+    },
+    {
+      "id": "conn-actions-proxy",
+      "from": "actions",
+      "to": "proxy",
+      "label": "Token Técnico",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [215, 315]
+    },
+    {
+      "id": "conn-releases-updater",
+      "from": "releases",
+      "to": "updater",
+      "label": "Hashes SHA-256",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 20
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Clientes y Acceso",
+      "items": [
+        "JavaFX 21 (Desktop): Gestión administrativa comunitaria integral (censo, viviendas, proyectos, finanzas, votaciones).",
+        "Android (Móvil): Jetpack Compose para residentes con tokens cifrados en Keystore (AES-GCM)."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend y Persistencia",
+      "items": [
+        "API Server Javalin 7 + Jetty 12: Arquitectura multicapa limpia con auditoría automática en bitácora.",
+        "Base de datos MySQL 8: Modelo relacional normalizado para miembros, aportaciones, votaciones y censo familiar."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Seguridad y Distribución",
+      "items": [
+        "Autenticación: JWT para administración y sesiones con refresh rotation y hash SHA-256 para móvil.",
+        "CI/CD con GitHub Actions: Empaquetado jpackage para Windows, APK firmado y actualizador incremental."
+      ]
+    }
+  ]
+}

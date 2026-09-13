@@ -22,6 +22,12 @@ public class AportacionController {
         }
 
         Integer idMiembro = context.queryParamAsClass("idMiembro", Integer.class).getOrNull();
+        if (!canManage(context)) {
+            Integer sessionMemberId = context.attribute("idMiembro");
+            if (sessionMemberId != null) {
+                idMiembro = sessionMemberId;
+            }
+        }
         Integer idProyecto = context.queryParamAsClass("idProyecto", Integer.class).getOrNull();
         String periodo = context.queryParam("periodo");
         String desde = context.queryParam("desde");
@@ -60,13 +66,28 @@ public class AportacionController {
     }
 
     public void create(Context context) {
-        if (!canManage(context)) {
-            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Se requiere rol de Administrador o Tesorero para registrar aportaciones."));
+        boolean isManager = canManage(context);
+        Integer sessionMemberId = context.attribute("idMiembro");
+
+        if (!isManager && sessionMemberId == null) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Se requiere rol de Administrador, Tesorero o Residente registrado para realizar aportaciones."));
             return;
         }
 
         try {
             AportacionRequest request = context.bodyAsClass(AportacionRequest.class);
+            if (!isManager) {
+                // Seguridad: Los pagos desde celular se asocian estrictamente al residente en sesión
+                request = new AportacionRequest(
+                    sessionMemberId,
+                    request.idProyecto(),
+                    request.periodoMes(),
+                    request.monto(),
+                    request.fechaPago() != null ? request.fechaPago() : java.time.LocalDate.now(),
+                    request.metodoPago() != null ? request.metodoPago() : sv.asociacion.domain.entity.Aportacion.MetodoPago.TRANSFERENCIA,
+                    request.referencia() != null && !request.referencia().isBlank() ? request.referencia() : "Pago móvil - Vigilancia mensual"
+                );
+            }
             AportacionResponse created = aportacionService.create(request);
             context.status(HttpStatus.CREATED).json(created);
         } catch (IllegalArgumentException e) {

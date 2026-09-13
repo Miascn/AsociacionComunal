@@ -70,12 +70,18 @@ public class AportacionesController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         puedeGestionar = isAdministrator(user.getRole()) || "TESORERO".equalsIgnoreCase(user.getRole());
 
-        btnNuevaAportacion.setVisible(puedeGestionar);
-        btnNuevaAportacion.setManaged(puedeGestionar);
-        btnEditar.setVisible(puedeGestionar);
-        btnEditar.setManaged(puedeGestionar);
-        btnAnular.setVisible(puedeGestionar);
-        btnAnular.setManaged(puedeGestionar);
+        if (btnNuevaAportacion != null) {
+            btnNuevaAportacion.setVisible(false);
+            btnNuevaAportacion.setManaged(false);
+        }
+        if (btnEditar != null) {
+            btnEditar.setVisible(false);
+            btnEditar.setManaged(false);
+        }
+        if (btnAnular != null) {
+            btnAnular.setVisible(puedeGestionar);
+            btnAnular.setManaged(puedeGestionar);
+        }
 
         columnaFecha.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getFechaPago()));
         columnaMiembro.setCellValueFactory(cell -> new SimpleStringProperty(
