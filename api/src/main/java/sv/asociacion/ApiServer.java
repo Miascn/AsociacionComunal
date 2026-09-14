@@ -41,6 +41,10 @@ public final class ApiServer {
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
         MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
+        // Lecturas del padron a traves del contrato generico. Se inyecta la misma
+        // implementacion JDBC que usa el resto del sistema: el origen de datos de
+        // produccion no cambia.
+        CensoMiembrosService censoMiembros = new CensoMiembrosService(miembroDAO);
         ProyectoService proyectoService = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO);
         UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
         RolService rolService = new RolService(rolDAO, usuarioDAO);
@@ -58,7 +62,7 @@ public final class ApiServer {
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
-        MiembroController miembros = new MiembroController(miembroService);
+        MiembroController miembros = new MiembroController(miembroService, censoMiembros);
         ProyectoController proyectos = new ProyectoController(proyectoService);
         UsuarioController usuarios = new UsuarioController(usuarioService);
         RolController roles = new RolController(rolService);

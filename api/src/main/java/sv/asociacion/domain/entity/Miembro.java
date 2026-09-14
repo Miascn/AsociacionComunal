@@ -1,15 +1,18 @@
 package sv.asociacion.domain.entity;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class Miembro {
+public class Miembro extends Persona implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     public enum Estado { ACTIVO, INACTIVO }
 
     private Integer idMiembro;
     private String dui;
     private String tipoDocumento;
     private String paisOrigen;
-    private Integer idVivienda;
     private String nombres;
     private String apellidos;
     private String telefono;
@@ -46,7 +49,7 @@ public class Miembro {
                    Integer idVivienda, String nombres, String apellidos, String telefono,
                    String correo, String direccion, LocalDate fechaIngreso, Estado estado) {
         this(idMiembro, dui, tipoDocumento, paisOrigen, nombres, apellidos, telefono, correo, direccion, fechaIngreso, estado);
-        this.idVivienda = idVivienda;
+        setIdVivienda(idVivienda);
     }
 
     public Integer getIdMiembro() { return idMiembro; }
@@ -60,9 +63,6 @@ public class Miembro {
 
     public String getPaisOrigen() { return paisOrigen; }
     public void setPaisOrigen(String paisOrigen) { this.paisOrigen = paisOrigen; }
-
-    public Integer getIdVivienda() { return idVivienda; }
-    public void setIdVivienda(Integer idVivienda) { this.idVivienda = idVivienda; }
 
     public String getNombres() { return nombres; }
     public String getNombre() { return nombres; }
@@ -86,4 +86,19 @@ public class Miembro {
 
     public Estado getEstado() { return estado; }
     public void setEstado(Estado estado) { this.estado = estado; }
+
+    /** El miembro guarda nombres y apellidos por separado; aqui se componen. */
+    @Override
+    public String getNombreCompleto() {
+        String primeros = nombres == null ? "" : nombres.trim();
+        String ultimos = apellidos == null ? "" : apellidos.trim();
+        return (primeros + " " + ultimos).trim();
+    }
+
+    /** Todo miembro registrado es asociado, aunque su estado sea INACTIVO. */
+    @Override
+    public boolean esAsociado() { return true; }
+
+    /** Solo los miembros ACTIVO ejercen aportacion y voto. */
+    public boolean estaActivo() { return estado == Estado.ACTIVO; }
 }
