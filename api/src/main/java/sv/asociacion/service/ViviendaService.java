@@ -19,7 +19,9 @@ public class ViviendaService {
         Vivienda value = dao.findById(id).orElse(null);
         if (value == null) return null;
         var residents = dao.residents(id).stream()
-            .map(r -> new ResidentResponse(r.id(), r.memberId(), r.name(), r.type(), r.representative()))
+            .map(r -> new ResidentResponse(
+                r.getIdResidente(), r.getIdMiembro(), r.getNombreCompleto(),
+                r.getTipoPersona() == null ? null : r.getTipoPersona().name(), r.isRepresentante()))
             .toList();
         return new ViviendaDetailResponse(ViviendaResponse.from(value), residents);
     }

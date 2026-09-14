@@ -1,6 +1,7 @@
 package sv.asociacion.dao;
 
 import sv.asociacion.config.DBConnection;
+import sv.asociacion.domain.entity.Residente;
 import sv.asociacion.domain.entity.Vivienda;
 import java.sql.*;
 import java.util.*;
@@ -30,11 +31,11 @@ public class ViviendaDAO {
         } catch(SQLException e) { throw new IllegalStateException("No fue posible consultar la vivienda.", e); }
     }
 
-    public List<Resident> residents(int id) {
-        List<Resident> result=new ArrayList<>();
+    public List<Residente> residents(int id) {
+        List<Residente> result=new ArrayList<>();
         String sql="SELECT id_residente,id_miembro,nombre_completo,tipo_persona,es_representante FROM residente_vivienda WHERE id_vivienda=? ORDER BY es_representante DESC,nombre_completo";
         try(Connection c=DBConnection.getInstance().getConnection();PreparedStatement p=c.prepareStatement(sql)){
-            p.setInt(1,id);try(ResultSet rs=p.executeQuery()){while(rs.next())result.add(new Resident(rs.getInt(1),nullableInt(rs.getObject(2)),rs.getString(3),rs.getString(4),rs.getBoolean(5)));}
+            p.setInt(1,id);try(ResultSet rs=p.executeQuery()){while(rs.next())result.add(new Residente(rs.getInt(1),id,nullableInt(rs.getObject(2)),rs.getString(3),Residente.tipoDesde(rs.getString(4)),rs.getBoolean(5)));}
         }catch(SQLException e){throw new IllegalStateException("No fue posible consultar los residentes.",e);}
         return result;
     }
@@ -71,5 +72,4 @@ public class ViviendaDAO {
     private void insertResident(Connection c,int house,Integer member,String name,String type,boolean representative)throws SQLException{try(PreparedStatement p=c.prepareStatement("INSERT INTO residente_vivienda(id_vivienda,id_miembro,nombre_completo,tipo_persona,es_representante) VALUES(?,?,?,?,?)")){p.setInt(1,house);if(member==null)p.setNull(2,Types.INTEGER);else p.setInt(2,member);p.setString(3,name);p.setString(4,type);p.setBoolean(5,representative);p.executeUpdate();}}
     private Vivienda map(ResultSet rs)throws SQLException{return new Vivienda(rs.getInt("id_vivienda"),rs.getString("codigo"),rs.getString("sector"),rs.getString("direccion"),rs.getString("referencia"),nullableInt(rs.getObject("id_representante")),rs.getString("representante"),rs.getDate("fecha_registro").toLocalDate(),rs.getString("estado"),rs.getInt("adultos"),rs.getInt("menores"));}
     private Integer nullableInt(Object value){return value==null?null:((Number)value).intValue();}
-    public record Resident(int id,Integer memberId,String name,String type,boolean representative){}
 }
