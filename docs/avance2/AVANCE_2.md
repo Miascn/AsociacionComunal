@@ -225,10 +225,12 @@ Planificación **real y verificable**, reconstruida del historial de Git y de Ji
 | 9 | Justificación de colecciones | SCRUM-316 | Carlos Samayoa | 13-sep-2026 | `a075efc` |
 | 10 | Documentación de arquitectura por capas | SCRUM-318 | Carlos Samayoa | 13-sep-2026 | `448767d` |
 | 11 | **Documento del Avance 2 (este archivo)** | SCRUM-321 | Carlos Samayoa | 13-sep-2026 | — |
-| 12 | Revisión técnica de los 10 tickets | — | Josué J. Castillo | `[PENDIENTE]` | — |
+| 12 | Revisión técnica de los 10 tickets | — | Josué J. Castillo | **14-sep-2026** | — |
 | 13 | Integración a `develop` y entrega | — | Equipo | `[PENDIENTE]` | — |
 
-**Responsable de la revisión:** los 10 tickets están en estado *Technical Review* asignados a Josué Jeremías Castillo Nieves. La revisión aún no se ha ejecutado.
+**Responsable de la revisión:** los 10 tickets pasaron a *Technical Review* asignados a Josué Jeremías Castillo Nieves. **La revisión se ejecutó el 14-sep-2026 y Josué confirmó su aprobación por WhatsApp**, comunicada al Scrum Master.
+
+> **Alcance de lo que consta:** la aprobación quedó registrada como confirmación del revisor. **No consta una revisión de código línea por línea en GitHub** — el PR #28 no tiene *review* formal publicada. Se documenta la aprobación tal como ocurrió, sin atribuirle una forma que no podemos demostrar.
 
 ---
 
@@ -1035,6 +1037,8 @@ Además, **pendientes de la auditoría técnica previa** y del error ambiental:
 
 Resumen de todo lo marcado `[PENDIENTE MANUAL]`. **Nada de esto se inventó.**
 
+> **Estado al 14-sep-2026: 8 pendientes de 9.** El dato #9 quedó resuelto tras la revisión técnica. Los 8 restantes dependen de información organizativa del equipo y **no pueden derivarse del repositorio**. Mientras alguno siga abierto, SCRUM-321 permanece sin cerrar y no debe generarse el PDF ni el Word de entrega.
+
 | # | Dato | Sección | Por qué no puede derivarse |
 |---:|---|---|---|
 | 1 | Fotografías, nombres completos y CIF de los 8 integrantes | §1 | No existe en el repositorio ni en Jira |
@@ -1045,7 +1049,7 @@ Resumen de todo lo marcado `[PENDIENTE MANUAL]`. **Nada de esto se inventó.**
 | 6 | Las 15 historias de usuario | §6 | **No existe ningún archivo de HU en el repositorio** |
 | 7 | Bibliografía académica y formato de citación | §15 | Requisito del facilitador, no del código |
 | 8 | Cotejo de la rúbrica y los apartados contra el PDF oficial | Nota de fuentes | **El PDF de la guía no está versionado en el repositorio** |
-| 9 | Fecha real de la revisión técnica de Josué | §8 | Aún no ejecutada |
+| ~~9~~ | ~~Fecha real de la revisión técnica de Josué~~ | §8 | ✅ **RESUELTO 14-sep-2026** — aprobación confirmada por el revisor |
 
 **Recomendación:** versionar el PDF oficial de la guía del Avance 2 dentro de `docs/avance2/` antes de generar el entregable final, para que el cotejo quede trazable.
 
