@@ -9,6 +9,8 @@
 > **Estado del documento: FUENTE MANTENIBLE, NO ENTREGABLE FINAL.**
 > Este archivo consolida el estado técnico real y verificado del proyecto. Las secciones marcadas **`[PENDIENTE MANUAL]`** dependen de información organizativa que **no existe en el repositorio** y que debe completarla el equipo. **No se inventó ningún dato para rellenarlas.**
 > Antes de generar el PDF o el Word de entrega, resolver todos los `[PENDIENTE MANUAL]`.
+>
+> **Actualización 14-sep-2026 — resueltos 4 de 9 pendientes:** nombres completos de los 8 integrantes, columna de participación (3 de 8), coordinador y roles Scrum, y fecha de la revisión técnica. **Quedan 5:** fotografías, CIF, objetivo general del Avance 1, las 15 historias de usuario y la bibliografía — más versionar el PDF oficial de la guía. Detalle en el **Anexo B**.
 
 ---
 
@@ -16,10 +18,10 @@
 
 | # | Apartado | Estado |
 |---:|---|---|
-| 1 | Portada | `[PENDIENTE MANUAL]` |
-| 2 | Objetivo general | Borrador, requiere confirmación |
+| 1 | Portada | Nombres y participación completos · faltan **CIF y fotos** |
+| 2 | Objetivo general | Borrador, requiere el texto literal del Avance 1 |
 | 3 | Objetivos específicos del Avance 2 | Completo |
-| 4 | Distribución del equipo Scrum | `[PENDIENTE MANUAL]` parcial |
+| 4 | Distribución del equipo Scrum | Roles y coordinador completos · faltan **CIF** |
 | 5 | Roles y funciones del sistema | Completo, derivado del código |
 | 6 | Requerimientos e historias de usuario | `[PENDIENTE MANUAL]` |
 | 7 | Alcances, limitaciones y límites | Completo |
@@ -57,20 +59,36 @@ Todo lo que se afirma aquí proviene de una de estas fuentes, **verificadas el 1
 
 # 1. Portada
 
-`[PENDIENTE MANUAL]`
-
 La guía exige portada con **fotografía, nombre completo, CIF y participación (SÍ/NO)** de cada integrante.
 
-Esta información **no está en el repositorio** y no puede derivarse del código ni del historial de Git. El equipo debe completar:
+Nombres y participación confirmados por el equipo el **14-sep-2026**.
 
-| Campo | Estado |
-|---|---|
-| Fotografías de los 8 integrantes | `[PENDIENTE MANUAL]` |
-| Nombres completos | `[PENDIENTE MANUAL]` — solo constan dos (§4) |
-| CIF de cada integrante | `[PENDIENTE MANUAL]` |
-| Columna «¿Participó? SÍ/NO» | `[PENDIENTE MANUAL]` — **ver la advertencia de §4** |
+| # | Nombre completo | CIF | ¿Participó? | Fotografía |
+|---:|---|---|:---:|---|
+| 1 | **Carlos Josué Samayoa Contreras** | `[PENDIENTE MANUAL]` | **SÍ** | `[PENDIENTE MANUAL]` |
+| 2 | **Josué Jeremías Castillo Nieves** | `[PENDIENTE MANUAL]` | **SÍ** | `[PENDIENTE MANUAL]` |
+| 3 | **Jonathan Alexis Amaya Hernández** | `[PENDIENTE MANUAL]` | **SÍ** | `[PENDIENTE MANUAL]` |
+| 4 | Génesis Michelle Flores Cruz | `[PENDIENTE MANUAL]` | NO | `[PENDIENTE MANUAL]` |
+| 5 | David Rafael Coto Garza | `[PENDIENTE MANUAL]` | NO | `[PENDIENTE MANUAL]` |
+| 6 | Rodrigo Gilberto Sánchez Ávalos | `[PENDIENTE MANUAL]` | NO | `[PENDIENTE MANUAL]` |
+| 7 | Gerson Otoniel Bermúdez Ramírez | `[PENDIENTE MANUAL]` | NO | `[PENDIENTE MANUAL]` |
+| 8 | Edgard Antonio Mendoza Vaquero | `[PENDIENTE MANUAL]` | NO | `[PENDIENTE MANUAL]` |
 
-> **Advertencia sobre la columna de participación.** El historial del repositorio registra **dos autores en las 31 ramas**. Declarar participación de los ocho integrantes sería inconsistente con la evidencia que el propio repositorio expone y que el facilitador puede revisar. Esta decisión corresponde al equipo, no a este documento; se señala porque es un riesgo real para el criterio 10.
+**Participaron 3 de 8 integrantes.**
+
+### Coherencia con la evidencia del repositorio
+
+La declaración de participación **es consistente** con lo que el repositorio y Jira exponen, y eso es lo que la vuelve defendible:
+
+| Integrante | Participación declarada | Evidencia verificable |
+|---|:---:|---|
+| Carlos Josué Samayoa Contreras | SÍ | Autor de los 11 commits del Avance 2; reportero de SCRUM-310 y de sus tickets |
+| Josué Jeremías Castillo Nieves | SÍ | 96 commits como `MiasCN`; revisor técnico de los 10 tickets del avance |
+| Jonathan Alexis Amaya Hernández | SÍ | Reportó el defecto **SCRUM-159** (tamaño de ventana), 7-ago-2026 |
+
+**Salvedad que conviene conocer antes de la defensa:** el historial registra **2 commits** (`ff88470` y `49f0229`) de la cuenta `G3rze`, atribuible a **Gerson Otoniel Bermúdez Ramírez**, declarado como *NO participó*. Son aportes puntuales anteriores a este avance. **No se altera la declaración del equipo**; se deja constancia porque el facilitador puede revisar el historial y la diferencia debe poder explicarse.
+
+> **Nota sobre el criterio 10 (versionamiento).** Declarar 3 de 8 es coherente con la evidencia y **elimina el riesgo** que este documento señalaba cuando la columna estaba sin definir: no hay contradicción entre lo declarado y lo que el repositorio demuestra.
 
 ---
 
@@ -101,17 +119,20 @@ Estos sí se redactan para este avance, y corresponden exactamente al trabajo ej
 
 # 4. Distribución del equipo Scrum
 
-| Rol Scrum | Integrante | Evidencia |
-|---|---|---|
-| **Scrum Master** | Carlos Samayoa | Reportero de la épica SCRUM-310 y de los 12 tickets del avance |
-| **Desarrollador (implementación del Avance 2)** | Carlos Samayoa | Autor de los 9 commits de la rama |
-| **Revisor técnico** | Josué Jeremías Castillo Nieves | Asignado en los 9 tickets en *Technical Review* |
-| **Desarrollador (base del proyecto)** | Josué Jeremías Castillo Nieves (`MiasCN`) | 96 commits en el repositorio |
-| **Desarrollador (aportes puntuales)** | Gerson Bermúdez (`G3rze`) | 2 commits: `ff88470` y `49f0229` |
-| **Coordinador designado** | `[PENDIENTE MANUAL]` | La guía exige designarlo explícitamente |
-| Integrantes restantes | `[PENDIENTE MANUAL]` | Sin registro en el repositorio ni en Jira |
+**Coordinador y Scrum Master designado: Josué Jeremías Castillo Nieves**, conforme a lo confirmado por el equipo el 14-sep-2026. La guía exige designar al coordinador de forma explícita.
 
-`[PENDIENTE MANUAL]` — Nombres completos, CIF y rol Scrum de los integrantes no listados. **No se inventan.**
+| Rol Scrum | Integrante | Evidencia verificable |
+|---|---|---|
+| **Scrum Master / Coordinador** | **Josué Jeremías Castillo Nieves** | Designación del equipo; revisor técnico de los 10 tickets del avance |
+| **Desarrollador (base del proyecto)** | Josué Jeremías Castillo Nieves (`MiasCN`) | 96 commits en el repositorio |
+| **Desarrollador (Avance 2)** | Carlos Josué Samayoa Contreras | Autor de los 11 commits de la rama del avance |
+| **Gestión del backlog** | Carlos Josué Samayoa Contreras | Reportero de la épica SCRUM-310 y de sus tickets |
+| **QA / reporte de defectos** | Jonathan Alexis Amaya Hernández | Reportó SCRUM-159 el 7-ago-2026 |
+| Integrantes sin actividad registrada | Flores Cruz · Coto Garza · Sánchez Ávalos · Bermúdez Ramírez · Mendoza Vaquero | Declarados *NO participó* en §1 |
+
+> **Distinción deliberada entre rol y actividad.** La fila de *Scrum Master* recoge la **designación del equipo**; las demás recogen la **actividad demostrable** en Git y Jira. Son cosas distintas y el documento no las mezcla: quien coordina no es necesariamente quien más commits tiene, y presentarlo de otro modo sería inexacto ante un evaluador que revise el historial.
+
+**CIF de cada integrante:** `[PENDIENTE MANUAL]` — pendiente junto con las fotografías (§1). **No se inventan.**
 
 ---
 
@@ -772,7 +793,9 @@ Ver §13 para el desarrollo completo de la estrategia.
 
 **Requisito explícito de la guía:** *«deberán versionar el documento correspondiente al avance dentro de la raíz del proyecto»*. **Este documento y los cuatro de evidencia están versionados en `docs/avance2/`**, con su propio historial de commits.
 
-`[PENDIENTE MANUAL]` — **Riesgo declarado:** el historial registra **dos autores** en las 31 ramas del repositorio. La guía valora la participación del equipo en el versionamiento. Esta es una situación de hecho que el documento no puede corregir y que el equipo debe decidir cómo presentar.
+**Resuelto el 14-sep-2026.** El historial registra **dos autores** en las 31 ramas del repositorio, y el equipo declaró en §1 la participación de **3 de 8 integrantes**. Lo declarado y lo demostrable coinciden: Samayoa Contreras y Castillo Nieves con commits, Amaya Hernández con el reporte del defecto SCRUM-159.
+
+Ya no es un riesgo abierto: **la declaración es verificable contra el propio repositorio**, que es exactamente lo que el criterio 10 evalúa. La salvedad de los 2 commits de `G3rze`, atribuibles a un integrante declarado *NO participó*, queda registrada en §1.
 
 ---
 
@@ -833,7 +856,9 @@ Comando de verificación, ejecutable por cualquiera desde un clon limpio:
 
 **Cada documento contiene una sección «Cómo demostrarlo durante la defensa»** con 2 o 3 archivos concretos y el orden en que abrirlos. Esto responde directamente a la advertencia de la guía: *«se harán preguntas a miembros al azar para explicación de código»*.
 
-`[PENDIENTE MANUAL]` — **Riesgo declarado.** La guía advierte que se preguntará a integrantes al azar. **El 98 % del código lo escribió una sola persona.** Las secciones de defensa de los cuatro documentos existen precisamente para repartir el conocimiento, pero **repartir el conocimiento requiere que los integrantes los estudien**; el documento no puede hacerlo por ellos. Se recomienda al menos una sesión de repaso conjunta antes de la defensa.
+⚠️ **Riesgo declarado — no es un dato pendiente, es una acción del equipo.** La guía advierte que se preguntará a integrantes al azar. **El 98 % del código lo escribió una sola persona**, y la portada declara la participación de 3 de 8. Las secciones de defensa de los cuatro documentos existen precisamente para repartir el conocimiento, pero **repartir el conocimiento requiere que los integrantes los estudien**; el documento no puede hacerlo por ellos.
+
+Se recomienda al menos **una sesión de repaso conjunta** antes de la defensa, priorizando a los tres integrantes que constan como participantes.
 
 ---
 
@@ -1037,19 +1062,23 @@ Además, **pendientes de la auditoría técnica previa** y del error ambiental:
 
 Resumen de todo lo marcado `[PENDIENTE MANUAL]`. **Nada de esto se inventó.**
 
-> **Estado al 14-sep-2026: 8 pendientes de 9.** El dato #9 quedó resuelto tras la revisión técnica. Los 8 restantes dependen de información organizativa del equipo y **no pueden derivarse del repositorio**. Mientras alguno siga abierto, SCRUM-321 permanece sin cerrar y no debe generarse el PDF ni el Word de entrega.
+> **Estado al 14-sep-2026: 5 pendientes de 9.** Cuatro quedaron resueltos con los datos aportados por el equipo. Los 5 restantes **no pueden derivarse del repositorio** y su contenido todavía no se ha incorporado. Mientras alguno siga abierto, SCRUM-321 permanece sin cerrar y no debe generarse el PDF ni el Word de entrega.
 
-| # | Dato | Sección | Por qué no puede derivarse |
+| # | Dato | Sección | Estado |
 |---:|---|---|---|
-| 1 | Fotografías, nombres completos y CIF de los 8 integrantes | §1 | No existe en el repositorio ni en Jira |
-| 2 | Columna «¿Participó? SÍ/NO» | §1 | Decisión del equipo, con el riesgo de §12 criterio 10 declarado |
-| 3 | Coordinador Scrum designado | §4 | La guía exige designarlo; no consta |
-| 4 | Roles Scrum de los integrantes sin actividad registrada | §4 | Sin registro en Git ni en Jira |
-| 5 | Objetivo general literal del Avance 1 | §2 | El PDF del Avance 1 no está versionado |
-| 6 | Las 15 historias de usuario | §6 | **No existe ningún archivo de HU en el repositorio** |
-| 7 | Bibliografía académica y formato de citación | §15 | Requisito del facilitador, no del código |
-| 8 | Cotejo de la rúbrica y los apartados contra el PDF oficial | Nota de fuentes | **El PDF de la guía no está versionado en el repositorio** |
-| ~~9~~ | ~~Fecha real de la revisión técnica de Josué~~ | §8 | ✅ **RESUELTO 14-sep-2026** — aprobación confirmada por el revisor |
+| 1a | **Fotografías** de los 8 integrantes | §1 | 🔴 **PENDIENTE** — no disponibles |
+| 1b | **CIF** de cada integrante | §1, §4 | 🔴 **PENDIENTE** — el equipo los recuperó, falta incorporar los valores |
+| ~~1c~~ | ~~Nombres completos de los 8~~ | §1, §4 | ✅ **RESUELTO 14-sep-2026** |
+| ~~2~~ | ~~Columna «¿Participó? SÍ/NO»~~ | §1 | ✅ **RESUELTO 14-sep-2026** — 3 de 8, coherente con el historial |
+| ~~3~~ | ~~Coordinador Scrum designado~~ | §4 | ✅ **RESUELTO 14-sep-2026** — Josué Jeremías Castillo Nieves |
+| ~~4~~ | ~~Roles Scrum del equipo~~ | §4 | ✅ **RESUELTO 14-sep-2026** |
+| 5 | **Objetivo general** literal del Avance 1 | §2 | 🔴 **PENDIENTE** — recuperado por el equipo, falta el texto |
+| 6 | Las **15 historias de usuario** | §6 | 🔴 **PENDIENTE** — recuperadas por el equipo, falta transcribirlas |
+| 7 | **Bibliografía** académica y formato de citación | §15 | 🔴 **PENDIENTE** — recuperada por el equipo, falta incorporarla |
+| ~~8~~ | ~~Cotejo contra el PDF oficial de la guía~~ | Nota de fuentes | 🔴 **PENDIENTE** — el equipo lo tiene; falta versionarlo en `docs/avance2/` |
+| ~~9~~ | ~~Fecha real de la revisión técnica de Josué~~ | §8 | ✅ **RESUELTO 14-sep-2026** |
+
+**Nota sobre los pendientes 1b, 5, 6, 7 y 8:** el equipo confirmó el 14-sep-2026 que **ya recuperó esta información de las fuentes del Avance 1**. Lo que falta es incorporar el contenido literal al documento. **No se transcribió nada de memoria ni se reconstruyó por inferencia**, conforme a la regla que este documento sostiene desde su primera versión.
 
 **Recomendación:** versionar el PDF oficial de la guía del Avance 2 dentro de `docs/avance2/` antes de generar el entregable final, para que el cotejo quede trazable.
 
