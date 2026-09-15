@@ -6,6 +6,7 @@ import java.util.List;
 import sv.asociacion.dao.AportacionDAO;
 import sv.asociacion.dao.ProyectoDAO;
 import sv.asociacion.dao.UsuarioDAO;
+import sv.asociacion.dao.VotacionDAO;
 import sv.asociacion.domain.dto.ProyectoRequest;
 import sv.asociacion.domain.dto.ProyectoResponse;
 import sv.asociacion.domain.entity.Proyecto;
@@ -14,15 +15,14 @@ public class ProyectoService {
     private final ProyectoDAO proyectoDAO;
     private final UsuarioDAO usuarioDAO;
     private final AportacionDAO aportacionDAO;
+    private final VotacionDAO votacionDAO;
 
-    public ProyectoService(ProyectoDAO proyectoDAO) {
-        this(proyectoDAO, null, null);
-    }
-
-    public ProyectoService(ProyectoDAO proyectoDAO, UsuarioDAO usuarioDAO, AportacionDAO aportacionDAO) {
+    public ProyectoService(ProyectoDAO proyectoDAO, UsuarioDAO usuarioDAO,
+                           AportacionDAO aportacionDAO, VotacionDAO votacionDAO) {
         this.proyectoDAO = proyectoDAO;
         this.usuarioDAO = usuarioDAO;
         this.aportacionDAO = aportacionDAO;
+        this.votacionDAO = votacionDAO;
     }
 
     public List<ProyectoResponse> findAll() {
@@ -103,6 +103,13 @@ public class ProyectoService {
 
         if (existing.getEstado() != Proyecto.Estado.BORRADOR && existing.getEstado() != Proyecto.Estado.RECHAZADO) {
             throw new IllegalStateException("Solo se pueden eliminar proyectos en estado BORRADOR o RECHAZADO.");
+        }
+
+        // El historial de decisiones comunitarias no se borra: un proyecto sometido a
+        // votacion conserva su vinculo aunque despues se rechace. La base de datos
+        // respalda esta misma regla con fk_votacion_proyecto ON DELETE RESTRICT.
+        if (votacionDAO != null && !votacionDAO.findByProyecto(id).isEmpty()) {
+            throw new IllegalStateException("No es posible eliminar el proyecto porque tiene votaciones asociadas.");
         }
 
         if (aportacionDAO != null && aportacionDAO.countFiltered(null, id, null, null, null, null, null, null) > 0) {

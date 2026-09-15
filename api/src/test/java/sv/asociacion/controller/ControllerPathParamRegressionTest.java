@@ -266,7 +266,14 @@ class ControllerPathParamRegressionTest {
     private static final class StubProyectoService extends ProyectoService {
         Integer creadoPorRecibido;
 
-        StubProyectoService() { super(null); }
+        // Los cuatro DAO van deliberadamente a null: este doble verifica exclusivamente
+        // extraccion de parametros y ruteo HTTP, y sobrescribe las dos operaciones que
+        // las rutas registradas ejercitan (findFiltered y findById), de modo que ninguna
+        // logica heredada que use DAO llega a ejecutarse.
+        //
+        // Excepcion controlada a la regla general de no inyectar DAO nulos: NO debe
+        // copiarse a pruebas de servicio, donde anularlos deja guardas sin recorrer.
+        StubProyectoService() { super(null, null, null, null); }
 
         @Override
         public ProyectoResponse findById(Integer id) { return null; }

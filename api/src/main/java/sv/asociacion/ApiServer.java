@@ -45,7 +45,7 @@ public final class ApiServer {
         // implementacion JDBC que usa el resto del sistema: el origen de datos de
         // produccion no cambia.
         CensoMiembrosService censoMiembros = new CensoMiembrosService(miembroDAO);
-        ProyectoService proyectoService = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO);
+        ProyectoService proyectoService = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO, votacionDAO);
         UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
         RolService rolService = new RolService(rolDAO, usuarioDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
