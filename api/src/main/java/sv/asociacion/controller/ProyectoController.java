@@ -25,13 +25,13 @@ public class ProyectoController {
             } catch (Exception ignored) {}
         }
         String busqueda = context.queryParam("busqueda");
-        Integer creadoPor = context.queryParamAsClass("creadoPor", Integer.class).getOrDefault(null);
+        Integer creadoPor = context.queryParamAsClass("creadoPor", Integer.class).getOrNull();
 
         context.json(proyectoService.findFiltered(estado, creadoPor, busqueda));
     }
 
     public void getById(Context context) {
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
             return;
@@ -75,7 +75,7 @@ public class ProyectoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
             return;
@@ -98,7 +98,7 @@ public class ProyectoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
             return;
@@ -123,7 +123,7 @@ public class ProyectoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
             return;

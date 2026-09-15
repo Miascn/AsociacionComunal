@@ -15,7 +15,7 @@ public class AsistenciaController {
     }
 
     public void getByReunion(Context context) {
-        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrDefault(null);
+        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
         if (idReunion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
             return;
@@ -28,7 +28,7 @@ public class AsistenciaController {
     }
 
     public void convocar(Context context) {
-        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrDefault(null);
+        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
         if (idReunion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
             return;
@@ -49,7 +49,7 @@ public class AsistenciaController {
     }
 
     public void registrarOActualizar(Context context) {
-        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrDefault(null);
+        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
         if (idReunion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
             return;
@@ -65,7 +65,7 @@ public class AsistenciaController {
     }
 
     public void toggle(Context context) {
-        Long id = context.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asistencia inválido."));
             return;
@@ -84,7 +84,7 @@ public class AsistenciaController {
     }
 
     public void delete(Context context) {
-        Long id = context.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asistencia inválido."));
             return;

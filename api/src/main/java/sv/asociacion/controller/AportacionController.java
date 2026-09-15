@@ -21,8 +21,8 @@ public class AportacionController {
             return;
         }
 
-        Integer idMiembro = context.queryParamAsClass("idMiembro", Integer.class).getOrDefault(null);
-        Integer idProyecto = context.queryParamAsClass("idProyecto", Integer.class).getOrDefault(null);
+        Integer idMiembro = context.queryParamAsClass("idMiembro", Integer.class).getOrNull();
+        Integer idProyecto = context.queryParamAsClass("idProyecto", Integer.class).getOrNull();
         String periodo = context.queryParam("periodo");
         String desde = context.queryParam("desde");
         String hasta = context.queryParam("hasta");
@@ -44,7 +44,7 @@ public class AportacionController {
             return;
         }
 
-        Long id = context.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de aportación inválido."));
             return;
@@ -82,7 +82,7 @@ public class AportacionController {
             return;
         }
 
-        Long id = context.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de aportación inválido."));
             return;
@@ -105,7 +105,7 @@ public class AportacionController {
             return;
         }
 
-        Long id = context.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de aportación inválido."));
             return;

@@ -20,7 +20,7 @@ public class AsignacionCargoController {
     }
 
     public void getDirectivaPeriodo(Context context) {
-        Integer idPeriodo = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer idPeriodo = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (idPeriodo == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de período inválido."));
             return;
@@ -42,7 +42,7 @@ public class AsignacionCargoController {
     }
 
     public void getById(Context context) {
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asignación inválido."));
             return;
@@ -79,7 +79,7 @@ public class AsignacionCargoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asignación inválido."));
             return;
@@ -103,7 +103,7 @@ public class AsignacionCargoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asignación inválido."));
             return;
@@ -123,7 +123,7 @@ public class AsignacionCargoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asignación inválido."));
             return;
