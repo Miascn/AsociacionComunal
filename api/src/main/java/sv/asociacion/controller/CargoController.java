@@ -15,13 +15,13 @@ public class CargoController {
     }
 
     public void getAll(Context context) {
-        Boolean activo = context.queryParamAsClass("activo", Boolean.class).getOrDefault(null);
+        Boolean activo = context.queryParamAsClass("activo", Boolean.class).getOrNull();
         String busqueda = context.queryParam("busqueda");
         context.json(cargoService.findFiltered(activo, busqueda));
     }
 
     public void getById(Context context) {
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de cargo inválido."));
             return;
@@ -59,7 +59,7 @@ public class CargoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de cargo inválido."));
             return;
@@ -82,7 +82,7 @@ public class CargoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de cargo inválido."));
             return;
@@ -103,7 +103,7 @@ public class CargoController {
             return;
         }
 
-        Integer id = context.pathParamAsClass("id", Integer.class).getOrDefault(null);
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de cargo inválido."));
             return;
