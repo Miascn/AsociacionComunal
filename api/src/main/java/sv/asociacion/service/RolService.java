@@ -10,8 +10,20 @@ import sv.asociacion.domain.dto.RolResponse;
 import sv.asociacion.domain.entity.Rol;
 
 public class RolService {
+    /**
+     * Nombres de rol protegidos frente a renombrado y eliminacion.
+     *
+     * <p>Cubre los tres roles que siembra {@code schema.sql} —{@code ADMIN},
+     * {@code DIRECTIVO} y {@code MIEMBRO}— mas los nombres que la capa de
+     * autorizacion trata como privilegiados aunque la semilla no los cree.
+     *
+     * <p>Esos ultimos se conservan deliberadamente (SCRUM-329, criterio 8): si un rol
+     * con uno de esos nombres existiera y pudiera renombrarse, perderia sus permisos
+     * en silencio. La divergencia de fondo entre el modelo de roles y el de cargos
+     * queda registrada en SCRUM-179 y se resuelve por separado.
+     */
     public static final Set<String> ROLES_BASE = Set.of(
-        "ADMIN", "ADMINISTRADOR", "PRESIDENTE", "SECRETARIO", "TESORERO", "SINDICO", "MIEMBRO"
+        "ADMIN", "ADMINISTRADOR", "DIRECTIVO", "PRESIDENTE", "SECRETARIO", "TESORERO", "SINDICO", "MIEMBRO"
     );
 
     private final RolDAO rolDAO;
