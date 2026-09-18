@@ -1,5 +1,6 @@
 package sv.asociacion.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import sv.asociacion.dao.OpcionVotacionDAO;
@@ -78,8 +79,13 @@ public class VotacionService {
         Votacion existing = votacionDAO.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Votación no encontrada."));
 
-        if (existing.getEstado() == Votacion.Estado.CERRADA || existing.getEstado() == Votacion.Estado.CANCELADA) {
-            throw new IllegalStateException("No es posible modificar una votación en estado " + existing.getEstado() + ".");
+        // Solo se edita lo que no ha iniciado. Antes era una lista negra que bloqueaba
+        // CERRADA y CANCELADA pero dejaba pasar ABIERTA: se podian cambiar titulo,
+        // proyecto y fechas con la recepcion de votos en curso.
+        if (existing.getEstado() != Votacion.Estado.BORRADOR
+            && existing.getEstado() != Votacion.Estado.PROGRAMADA) {
+            throw new IllegalStateException(
+                "Solo es posible editar una votación no iniciada (estado actual: " + existing.getEstado() + ").");
         }
 
         validarDatos(req);
@@ -116,8 +122,24 @@ public class VotacionService {
             throw new IllegalStateException("Para abrir una votación se requieren al menos dos opciones registradas.");
         }
 
-        votacionDAO.updateEstado(id, Votacion.Estado.ABIERTA);
-        existing.setEstado(Votacion.Estado.ABIERTA);
+        // Las fechas gobiernan la transicion. No hay planificador: es esta misma
+        // operacion la que, segun el momento en que se invoque, deja la votacion
+        // PROGRAMADA o la activa. Asi PROGRAMADA resulta alcanzable sin introducir
+        // un endpoint ni una tarea periodica.
+        LocalDateTime ahora = LocalDateTime.now();
+
+        if (existing.getFechaFin() != null && !ahora.isBefore(existing.getFechaFin())) {
+            throw new IllegalStateException(
+                "No es posible abrir una votación cuya fecha de finalización ya transcurrió.");
+        }
+
+        Votacion.Estado destino =
+            existing.getFechaInicio() != null && ahora.isBefore(existing.getFechaInicio())
+                ? Votacion.Estado.PROGRAMADA
+                : Votacion.Estado.ABIERTA;
+
+        votacionDAO.updateEstado(id, destino);
+        existing.setEstado(destino);
         return mapToResponse(existing);
     }
 
@@ -130,6 +152,15 @@ public class VotacionService {
 
         if (existing.getEstado() == Votacion.Estado.CERRADA) {
             return mapToResponse(existing);
+        }
+
+        // Cerrar es el acto que publica los resultados, de modo que solo puede cerrarse
+        // lo que estuvo realmente abierto. Antes se aceptaba cerrar un BORRADOR o una
+        // votacion CANCELADA, lo que habria publicado resultados de algo que nunca
+        // recibio votos.
+        if (existing.getEstado() != Votacion.Estado.ABIERTA) {
+            throw new IllegalStateException(
+                "Solo es posible cerrar una votación ABIERTA (estado actual: " + existing.getEstado() + ").");
         }
 
         votacionDAO.updateEstado(id, Votacion.Estado.CERRADA);
@@ -203,12 +234,20 @@ public class VotacionService {
             nombreProyecto = proyectoDAO.findById(v.getIdProyecto()).map(Proyecto::getNombre).orElse(null);
         }
 
+        // CERRADA es la publicacion de resultados. Antes de ese momento el servicio no
+        // expone conteos: las opciones viajan con toda su informacion, pero con cero
+        // votos. Una votacion CANCELADA tampoco publica. Asi se evita que un proceso en
+        // curso muestre resultados parciales que influyan en quien aun no ha votado.
+        boolean resultadosPublicados = v.getEstado() == Votacion.Estado.CERRADA;
+
         List<OpcionVotacion> ops = opcionDAO != null ? opcionDAO.findByVotacion(v.getIdVotacion()) : List.of();
         List<VotacionResponse.OpcionDetalle> opcionesDetalle = new ArrayList<>();
         int totalVotos = 0;
 
         for (OpcionVotacion op : ops) {
-            int votosOp = votoDAO != null ? votoDAO.countByOpcion(op.getIdOpcion()) : 0;
+            int votosOp = resultadosPublicados && votoDAO != null
+                ? votoDAO.countByOpcion(op.getIdOpcion())
+                : 0;
             totalVotos += votosOp;
             opcionesDetalle.add(new VotacionResponse.OpcionDetalle(
                 op.getIdOpcion(), op.getDescripcion(), op.getOrden(), votosOp
