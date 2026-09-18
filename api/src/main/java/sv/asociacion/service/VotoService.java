@@ -6,6 +6,7 @@ import sv.asociacion.dao.MiembroDAO;
 import sv.asociacion.dao.OpcionVotacionDAO;
 import sv.asociacion.dao.VotacionDAO;
 import sv.asociacion.dao.VotoDAO;
+import sv.asociacion.dao.VotoDuplicadoException;
 import sv.asociacion.domain.dto.EmitirVotoRequest;
 import sv.asociacion.domain.dto.EmitirVotoResponse;
 import sv.asociacion.domain.dto.EstadoParticipacionResponse;
@@ -29,7 +30,14 @@ public class VotoService {
         this.miembroDAO = miembroDAO;
     }
 
-    public synchronized EmitirVotoResponse emitirVoto(EmitirVotoRequest req, Integer idMiembroSesion) {
+    /**
+     * Emite el voto del miembro de la sesion.
+     *
+     * <p>No lleva {@code synchronized}: la unicidad la garantizan la restriccion
+     * {@code uk_voto_votacion_miembro} y el registro atomico del DAO. Un cerrojo de JVM
+     * solo protegeria una instancia y daria una falsa sensacion de seguridad.
+     */
+    public EmitirVotoResponse emitirVoto(EmitirVotoRequest req, Integer idMiembroSesion) {
         if (req == null) {
             throw new IllegalArgumentException("La solicitud de voto es requerida.");
         }
@@ -40,10 +48,17 @@ public class VotoService {
             throw new IllegalArgumentException("Debe seleccionar una opción para votar.");
         }
 
-        Integer idMiembro = req.idMiembro() != null ? req.idMiembro() : idMiembroSesion;
-        if (idMiembro == null) {
-            throw new IllegalArgumentException("Se requiere la identificación de un miembro válido para emitir el voto.");
+        // La identidad del votante la fija SIEMPRE la sesion. El campo idMiembro del
+        // cuerpo se conserva por compatibilidad del contrato, pero no decide: antes lo
+        // sobrescribia, de modo que cualquier usuario autenticado podia votar en nombre
+        // de otro miembro.
+        if (idMiembroSesion == null) {
+            throw new IllegalArgumentException("Se requiere una sesión con miembro asociado para emitir el voto.");
         }
+        if (req.idMiembro() != null && !req.idMiembro().equals(idMiembroSesion)) {
+            throw new IllegalStateException("No es posible emitir un voto en nombre de otro miembro.");
+        }
+        Integer idMiembro = idMiembroSesion;
 
         // 1. Validar miembro activo
         Miembro m = miembroDAO.findById(idMiembro)
@@ -78,7 +93,16 @@ public class VotoService {
         nuevo.setIdMiembro(idMiembro);
         nuevo.setFechaHora(LocalDateTime.now());
 
-        Voto saved = votoDAO.save(nuevo);
+        // El registro es atomico y la restriccion de unicidad decide. Si otro voto del
+        // mismo miembro gana la carrera, la violacion llega como VotoDuplicadoException
+        // y se traduce a conflicto de negocio; una PersistenciaException se propaga tal
+        // cual, porque un fallo al guardar no puede presentarse como exito.
+        Voto saved;
+        try {
+            saved = votoDAO.registrarUnico(nuevo);
+        } catch (VotoDuplicadoException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
 
         String fechaStr = DateUtils.formatDateTime(saved.getFechaHora());
         return new EmitirVotoResponse(saved.getIdVoto(), saved.getIdVotacion(), fechaStr, "Voto registrado exitosamente.");
