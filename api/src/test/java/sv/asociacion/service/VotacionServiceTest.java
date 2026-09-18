@@ -419,6 +419,89 @@ class VotacionServiceTest {
     }
 
     // ------------------------------------------------------------------
+    // Porcentajes. Son una cuota del total publicado, de modo que dependen tanto
+    // del reparto de votos como de que la votación haya publicado resultados.
+    // ------------------------------------------------------------------
+
+    @Test
+    void elRepartoExactoDaPorcentajesQueSumanCien() {
+        VotacionResponse res = service.create(ventanaVigente("Reparto exacto"));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 3);
+        registrarVotosEn(res, 1, 1);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals(4, cerrada.totalVotos());
+        assertEquals(75.0, cerrada.opciones().get(0).porcentaje(), 0.001);
+        assertEquals(25.0, cerrada.opciones().get(1).porcentaje(), 0.001);
+        assertEquals(100.0,
+            cerrada.opciones().stream().mapToDouble(VotacionResponse.OpcionDetalle::porcentaje).sum(),
+            0.001);
+    }
+
+    @Test
+    void elPorcentajeSeRedondeaAUnDecimal() {
+        VotacionResponse res = service.create(new VotacionRequest(
+            "Tercios", "Descripción", null,
+            LocalDateTime.now().minusHours(1), LocalDateTime.now().plusDays(3),
+            List.of("A", "B", "C")));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 1);
+        registrarVotosEn(res, 1, 1);
+        registrarVotosEn(res, 2, 1);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        for (VotacionResponse.OpcionDetalle op : cerrada.opciones()) {
+            assertEquals(33.3, op.porcentaje(), 0.001,
+                "Un tercio se publica con un decimal, como en ReunionService.");
+        }
+    }
+
+    @Test
+    void laOpcionQueConcentraTodosLosVotosLlegaACien() {
+        VotacionResponse res = service.create(ventanaVigente("Unanimidad"));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 5);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals(100.0, cerrada.opciones().get(0).porcentaje(), 0.001);
+        assertEquals(0.0, cerrada.opciones().get(1).porcentaje(), 0.001);
+    }
+
+    @Test
+    void sinVotosLosPorcentajesSonCeroYNoHayDivisionEntreCero() {
+        VotacionResponse res = service.create(ventanaVigente("Desierta"));
+        service.abrir(res.id());
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals(0, cerrada.totalVotos());
+        for (VotacionResponse.OpcionDetalle op : cerrada.opciones()) {
+            assertEquals(0.0, op.porcentaje(), 0.001);
+        }
+    }
+
+    @Test
+    void laVotacionEnCursoNoPublicaPorcentajes() {
+        VotacionResponse res = service.create(ventanaVigente("En curso"));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 3);
+        registrarVotosEn(res, 1, 1);
+
+        VotacionResponse abierta = service.findById(res.id());
+
+        assertEquals("ABIERTA", abierta.estado());
+        assertEquals(0, abierta.totalVotos());
+        for (VotacionResponse.OpcionDetalle op : abierta.opciones()) {
+            assertEquals(0.0, op.porcentaje(), 0.001,
+                "Publicar porcentajes en curso influiría en quien aún no ha votado.");
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Utilidades de montaje. Las ventanas son amplias a propósito para que las
     // pruebas no dependan del instante exacto de ejecución.
     // ------------------------------------------------------------------
@@ -444,6 +527,17 @@ class VotacionServiceTest {
             Voto voto = new Voto();
             voto.setIdVotacion(votacion.id());
             voto.setIdOpcion(opciones.get(i % opciones.size()).getIdOpcion());
+            votoDAO.save(voto);
+        }
+    }
+
+    /** Dirige {@code cantidad} votos a una opción concreta, para repartos desiguales. */
+    private void registrarVotosEn(VotacionResponse votacion, int indiceOpcion, int cantidad) {
+        List<OpcionVotacion> opciones = opcionDAO.findByVotacion(votacion.id());
+        for (int i = 0; i < cantidad; i++) {
+            Voto voto = new Voto();
+            voto.setIdVotacion(votacion.id());
+            voto.setIdOpcion(opciones.get(indiceOpcion).getIdOpcion());
             votoDAO.save(voto);
         }
     }
