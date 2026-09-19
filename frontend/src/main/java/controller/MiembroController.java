@@ -29,6 +29,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.stage.Modality;
+import javafx.scene.Scene;
 import javafx.scene.input.MouseButton;
 import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
@@ -52,6 +55,7 @@ public class MiembroController {
     @FXML private Button btnNuevoMiembro;
     @FXML private Button btnEditar;
     @FXML private Button btnCambiarEstado;
+    @FXML private Button btnVerAsistencia;
 
     private final ObservableList<MiembroModel> miembros = FXCollections.observableArrayList();
     private FilteredList<MiembroModel> miembrosFiltrados;
@@ -70,6 +74,9 @@ public class MiembroController {
         tablaMiembros.setItems(miembrosFiltrados);
         campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
         btnVerDetalle.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
+        if (btnVerAsistencia != null) {
+            btnVerAsistencia.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
+        }
         boolean puedeGestionar = puedeGestionar(SessionManager.getInstance().requireCurrentUser().getRole());
         btnNuevoMiembro.setDisable(!puedeGestionar);
         if (puedeGestionar) {
@@ -160,6 +167,29 @@ public class MiembroController {
     private void verDetalle() {
         MiembroModel seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
         if (seleccionado != null) mostrarDetalle(seleccionado);
+    }
+
+    @FXML
+    private void verAsistencia() {
+        MiembroModel seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/historial-asistencia-modal.fxml"));
+            Parent content = loader.load();
+            HistorialAsistenciaModalController ctrl = loader.getController();
+            ctrl.setMiembro(seleccionado);
+
+            Stage stage = new Stage();
+            stage.setTitle("Historial de asistencia - " + seleccionado.getNombreCompleto());
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(tablaMiembros.getScene().getWindow());
+            stage.setScene(new Scene(content));
+            stage.setResizable(true);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+            mostrarError("No fue posible abrir el historial de asistencia: " + e.getMessage());
+        }
     }
 
     @FXML

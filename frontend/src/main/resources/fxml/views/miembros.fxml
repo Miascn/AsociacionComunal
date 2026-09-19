@@ -66,6 +66,9 @@
             <Button fx:id="btnCambiarEstado" text="Desactivar" styleClass="secondary-action" onAction="#cambiarEstado">
                 <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
             </Button>
+            <Button fx:id="btnVerAsistencia" text="Asistencia" styleClass="secondary-action" onAction="#verAsistencia">
+                <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
+            </Button>
             <Button text="Exportar" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-download"/></graphic>
             </Button>
