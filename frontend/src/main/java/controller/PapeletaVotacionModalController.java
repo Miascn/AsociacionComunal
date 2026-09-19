@@ -52,7 +52,7 @@ public class PapeletaVotacionModalController {
         Task<VotacionApiClient.ParticipacionDto> task = new Task<>() {
             @Override
             protected VotacionApiClient.ParticipacionDto call() throws Exception {
-                return apiClient.verificarParticipacion(votacion.getId(), null);
+                return apiClient.verificarParticipacion(votacion.getId());
             }
         };
 
@@ -66,8 +66,10 @@ public class PapeletaVotacionModalController {
         });
 
         task.setOnFailed(e -> {
-            // Si falla verificación, permitimos renderizar opciones y el backend validará
-            mostrarPapeletaActiva();
+            // Un fallo al verificar no puede leerse como "no ha votado": abrir la papeleta
+            // invitaría a emitir un voto que el servidor rechazará. Se dice lo que pasa.
+            Throwable ex = task.getException();
+            mostrarErrorDeVerificacion(ex != null ? ex.getMessage() : "No fue posible verificar tu participación.");
         });
 
         new Thread(task).start();
@@ -84,6 +86,23 @@ public class PapeletaVotacionModalController {
         secOpciones.setManaged(false);
         btnEmitirVoto.setVisible(false);
         btnEmitirVoto.setManaged(false);
+    }
+
+    /**
+     * No se pudo saber si el miembro ya votó. Se oculta la papeleta y se explica, en vez
+     * de dejarle emitir un voto a ciegas.
+     */
+    private void mostrarErrorDeVerificacion(String mensaje) {
+        bannerYaVoto.setVisible(false);
+        bannerYaVoto.setManaged(false);
+
+        secOpciones.setVisible(false);
+        secOpciones.setManaged(false);
+        btnEmitirVoto.setVisible(false);
+        btnEmitirVoto.setManaged(false);
+
+        lblError.setText("No fue posible verificar si ya emitiste tu voto: " + mensaje
+            + " Cierra y vuelve a intentarlo.");
     }
 
     private void mostrarPapeletaActiva() {

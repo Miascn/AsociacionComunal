@@ -243,12 +243,19 @@ public final class VotacionApiClient {
         }
     }
 
-    public ParticipacionDto verificarParticipacion(Integer idVotacion, Integer idMiembro) throws IOException, InterruptedException {
-        String path = "/api/votaciones/" + idVotacion + "/mi-participacion" + (idMiembro != null ? "?miembroId=" + idMiembro : "");
-        HttpRequest request = requestBuilder(path).GET().build();
+    /**
+     * Consulta si el miembro de la sesión ya votó.
+     *
+     * <p>La identidad la resuelve el servidor a partir del usuario autenticado; no se
+     * envía {@code miembroId}. Un fallo se propaga como excepción en lugar de devolver
+     * {@code yaVoto=false}: dar por hecho que alguien no ha votado porque la consulta
+     * falló es lo que permitiría ofrecerle una papeleta que el servidor rechazará.
+     */
+    public ParticipacionDto verificarParticipacion(Integer idVotacion) throws IOException, InterruptedException {
+        HttpRequest request = requestBuilder("/api/votaciones/" + idVotacion + "/mi-participacion").GET().build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
-            return new ParticipacionDto(idVotacion, idMiembro, false, null);
+            throw new IOException(error(response));
         }
         return objectMapper.readValue(response.body(), ParticipacionDto.class);
     }
@@ -293,7 +300,9 @@ public final class VotacionApiClient {
     ) {
         private VotacionModel toModel() {
             List<VotacionModel.OpcionModel> ops = opciones != null
-                ? opciones.stream().map(o -> new VotacionModel.OpcionModel(o.idOpcion, o.descripcion, o.orden, o.votos)).toList()
+                ? opciones.stream()
+                    .map(o -> new VotacionModel.OpcionModel(o.idOpcion, o.descripcion, o.orden, o.votos, o.porcentaje))
+                    .toList()
                 : List.of();
             return new VotacionModel(
                 id, titulo, descripcion, idProyecto, nombreProyecto, fechaInicio, fechaFin, estado, totalOpciones, totalVotos, ops
@@ -301,5 +310,5 @@ public final class VotacionApiClient {
         }
     }
 
-    private record OpcionDto(Integer idOpcion, String descripcion, int orden, int votos) {}
+    private record OpcionDto(Integer idOpcion, String descripcion, int orden, int votos, double porcentaje) {}
 }
