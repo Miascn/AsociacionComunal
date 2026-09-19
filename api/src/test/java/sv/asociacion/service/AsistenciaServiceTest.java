@@ -141,6 +141,20 @@ class AsistenciaServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.registrarOActualizar(1, req));
     }
 
+    @Test
+    void consultaAsistenciasPorMiembroExitosamente() {
+        service.registrarOActualizar(1, new AsistenciaRequest(10, true, "Presente"));
+        List<AsistenciaResponse> list = service.getByMiembro(10);
+        assertEquals(1, list.size());
+        assertEquals(10, list.get(0).idMiembro());
+        assertTrue(list.get(0).asistio());
+    }
+
+    @Test
+    void rechazaConsultaAsistenciasPorMiembroInexistente() {
+        assertThrows(IllegalArgumentException.class, () -> service.getByMiembro(9999));
+    }
+
     private static final class MemoryAsistenciaDAO extends AsistenciaDAO {
         private final List<Asistencia> store = new ArrayList<>();
         private long seq = 1L;
@@ -169,6 +183,11 @@ class AsistenciaServiceTest {
         @Override
         public List<Asistencia> findByReunion(Integer idReunion) {
             return store.stream().filter(a -> a.getIdReunion().equals(idReunion)).toList();
+        }
+
+        @Override
+        public List<Asistencia> findByMiembro(Integer idMiembro) {
+            return store.stream().filter(a -> a.getIdMiembro().equals(idMiembro)).toList();
         }
 
         @Override
