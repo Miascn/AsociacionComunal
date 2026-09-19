@@ -102,6 +102,54 @@ public class AsistenciaService {
         return toResponse(result);
     }
 
+    public List<AsistenciaResponse> registrarLote(Integer idReunion, List<AsistenciaRequest> lote) {
+        Reunion r = validarReunionExiste(idReunion);
+        if (r.getEstado() == Reunion.Estado.CANCELADA) {
+            throw new IllegalStateException("No se pueden registrar asistencias en una reunión en estado CANCELADA.");
+        }
+
+        if (lote == null || lote.isEmpty()) {
+            throw new IllegalArgumentException("La lista de asistencias no puede estar vacía.");
+        }
+
+        java.util.Set<Integer> vistos = new java.util.HashSet<>();
+        List<Asistencia> asistencias = new ArrayList<>();
+
+        for (AsistenciaRequest req : lote) {
+            if (req == null || req.idMiembro() == null) {
+                throw new IllegalArgumentException("El ID del miembro es obligatorio.");
+            }
+            if (!vistos.add(req.idMiembro())) {
+                throw new IllegalArgumentException("ID de miembro duplicado en el lote: " + req.idMiembro());
+            }
+
+            Optional<Miembro> mOpt = miembroDAO.findById(req.idMiembro());
+            if (mOpt.isEmpty()) {
+                throw new IllegalArgumentException("Miembro no encontrado con ID: " + req.idMiembro());
+            }
+
+            String obs = req.observacion() != null ? req.observacion().trim() : null;
+            if (obs != null && obs.length() > 200) {
+                throw new IllegalArgumentException("La observación no puede superar los 200 caracteres.");
+            }
+
+            Asistencia a = new Asistencia();
+            a.setIdReunion(idReunion);
+            a.setIdMiembro(req.idMiembro());
+            a.setAsistio(req.asistio());
+            a.setObservacion(obs);
+            asistencias.add(a);
+        }
+
+        try {
+            asistenciaDAO.saveLoteTransaccional(idReunion, asistencias);
+        } catch (java.sql.SQLException e) {
+            throw new RuntimeException("Error al guardar el lote de asistencias: " + e.getMessage(), e);
+        }
+
+        return getByReunion(idReunion);
+    }
+
     public AsistenciaResponse toggleAsistencia(Long idAsistencia, boolean asistio, String observacion) {
         Asistencia a = asistenciaDAO.findById(idAsistencia)
             .orElseThrow(() -> new IllegalArgumentException("Registro de asistencia no encontrado con ID: " + idAsistencia));

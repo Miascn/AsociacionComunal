@@ -195,6 +195,7 @@ public final class ApiServer {
             cfg.routes.get("/api/reuniones/{idReunion}/asistencias", asistencias::getByReunion);
             cfg.routes.post("/api/reuniones/{idReunion}/asistencias/convocar", asistencias::convocar);
             cfg.routes.post("/api/reuniones/{idReunion}/asistencias", asistencias::registrarOActualizar);
+            cfg.routes.post("/api/reuniones/{idReunion}/asistencias/lote", asistencias::registrarLote);
             cfg.routes.patch("/api/asistencias/{id}", asistencias::toggle);
             cfg.routes.delete("/api/asistencias/{id}", asistencias::delete);
 

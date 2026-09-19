@@ -141,9 +141,90 @@ class AsistenciaServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.registrarOActualizar(1, req));
     }
 
-    private static final class MemoryAsistenciaDAO extends AsistenciaDAO {
+    @Test
+    void registraLoteExitosamente() {
+        List<AsistenciaRequest> lote = List.of(
+            new AsistenciaRequest(10, true, "Presente lote"),
+            new AsistenciaRequest(20, false, "Ausente lote")
+        );
+        List<AsistenciaResponse> res = service.registrarLote(1, lote);
+
+        assertEquals(2, res.size());
+        assertEquals(2, asistenciaDAO.countByReunion(1));
+        assertEquals(1, asistenciaDAO.countAsistieronByReunion(1));
+    }
+
+    @Test
+    void rechazaLoteConMiembrosDuplicados() {
+        List<AsistenciaRequest> lote = List.of(
+            new AsistenciaRequest(10, true, "Primero"),
+            new AsistenciaRequest(10, false, "Duplicado")
+        );
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            service.registrarLote(1, lote));
+        assertTrue(ex.getMessage().contains("duplicado"));
+        assertEquals(0, asistenciaDAO.countByReunion(1));
+    }
+
+    @Test
+    void rechazaLoteConMiembroInexistente() {
+        List<AsistenciaRequest> lote = List.of(
+            new AsistenciaRequest(10, true, "Existe"),
+            new AsistenciaRequest(999, false, "No existe")
+        );
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            service.registrarLote(1, lote));
+        assertTrue(ex.getMessage().contains("Miembro no encontrado"));
+        assertEquals(0, asistenciaDAO.countByReunion(1));
+    }
+
+    @Test
+    void rechazaLoteEnReunionCancelada() {
+        List<AsistenciaRequest> lote = List.of(
+            new AsistenciaRequest(10, true, "Presente")
+        );
+        assertThrows(IllegalStateException.class, () -> service.registrarLote(3, lote));
+    }
+
+    @Test
+    void rechazaLoteVacioONulo() {
+        assertThrows(IllegalArgumentException.class, () -> service.registrarLote(1, null));
+        assertThrows(IllegalArgumentException.class, () -> service.registrarLote(1, List.of()));
+    }
+
+    @Test
+    void fallaTransaccionalNoGuardaNada() {
+        MemoryAsistenciaDAO failingDao = new MemoryAsistenciaDAO() {
+            @Override
+            public List<Asistencia> saveLoteTransaccional(Integer idReunion, List<Asistencia> asistencias) {
+                throw new RuntimeException("Error simulado en transacción");
+            }
+        };
+        AsistenciaService failingService = new AsistenciaService(failingDao, reunionDAO, miembroDAO);
+        List<AsistenciaRequest> lote = List.of(
+            new AsistenciaRequest(10, true, "Presente")
+        );
+        assertThrows(RuntimeException.class, () -> failingService.registrarLote(1, lote));
+        assertEquals(0, failingDao.countByReunion(1));
+    }
+
+    private static class MemoryAsistenciaDAO extends AsistenciaDAO {
         private final List<Asistencia> store = new ArrayList<>();
         private long seq = 1L;
+
+        @Override
+        public List<Asistencia> saveLoteTransaccional(Integer idReunion, List<Asistencia> asistencias) {
+            for (Asistencia a : asistencias) {
+                Optional<Asistencia> existing = findByReunionAndMiembro(idReunion, a.getIdMiembro());
+                if (existing.isPresent()) {
+                    existing.get().setAsistio(a.isAsistio());
+                    existing.get().setObservacion(a.getObservacion());
+                } else {
+                    save(a);
+                }
+            }
+            return findByReunion(idReunion);
+        }
 
         @Override
         public Asistencia save(Asistencia entity) {

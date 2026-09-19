@@ -64,6 +64,33 @@ public class AsistenciaController {
         }
     }
 
+    public void registrarLote(Context context) {
+        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
+        if (idReunion == null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
+            return;
+        }
+        try {
+            java.util.List<AsistenciaRequest> lote;
+            String body = context.body() != null ? context.body().trim() : "";
+            if (body.startsWith("[")) {
+                lote = java.util.Arrays.asList(context.bodyAsClass(AsistenciaRequest[].class));
+            } else {
+                sv.asociacion.domain.dto.AsistenciaLoteRequest loteReq = context.bodyAsClass(sv.asociacion.domain.dto.AsistenciaLoteRequest.class);
+                lote = loteReq != null ? loteReq.asistencias() : null;
+            }
+            context.json(service.registrarLote(idReunion, lote));
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Reunión no encontrada")) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+            } else {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            }
+        } catch (IllegalStateException e) {
+            context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
+        }
+    }
+
     public void toggle(Context context) {
         Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
