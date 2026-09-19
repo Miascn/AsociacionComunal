@@ -14,6 +14,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import sv.asociacion.ApiServer;
 import sv.asociacion.domain.dto.VotacionRequest;
 import sv.asociacion.domain.dto.VotacionResponse;
 import sv.asociacion.domain.entity.Votacion;
@@ -27,14 +28,11 @@ import sv.asociacion.service.VotacionService;
  * {@link VotacionController}, y el rol inyectado por un {@code before} que replica lo que
  * {@code JwtAuthMiddleware:41} hace en producción.
  *
- * <p>Las escrituras con cuerpo (POST y PUT) se afirman como "no 403" en lugar de un
- * código exacto. No es una comodidad del montaje: hoy devuelven 500 porque el
- * {@code ObjectMapper} por defecto no sabe leer {@code LocalDateTime} —falta el módulo
- * {@code jackson-datatype-jsr310}— y ese defecto alcanza por igual a producción, porque
- * {@code ApiServer} no personaliza el mapeador. Queda registrado aparte y fuera del
- * alcance de SCRUM-260; afirmar "no 403" prueba la guarda de autorización sin fijar como
- * correcto un código que es consecuencia de ese otro defecto. Las operaciones de ciclo de
- * vida no llevan cuerpo, de modo que ahí sí se afirma el código exacto.
+ * <p>El servidor se monta con {@link ApiServer#configurarJson} y
+ * {@link ApiServer#configurarManejoErrores}, la misma configuración que usa producción,
+ * de modo que las escrituras con cuerpo se afirman con su código exacto. Hasta SCRUM-331
+ * se afirmaban como "no 403", porque el mapeador por defecto no sabía leer
+ * {@code LocalDateTime} y devolvían 500; ese defecto ya está corregido.
  */
 class VotacionRoutesAuthorizationTest {
 
@@ -67,6 +65,8 @@ class VotacionRoutesAuthorizationTest {
         VotacionController controller = new VotacionController(service);
 
         app = Javalin.create(config -> {
+            ApiServer.configurarJson(config);
+            ApiServer.configurarManejoErrores(config);
             config.routes.before("/api/*", context -> {
                 String role = context.header("X-Test-Role");
                 if (role != null && !role.isBlank()) {
@@ -103,10 +103,10 @@ class VotacionRoutesAuthorizationTest {
             assertEquals(200, send("DELETE", "/api/votaciones/1", role, null).statusCode(),
                 "Eliminar debería permitirse al rol " + role);
 
-            assertNotEquals(403, send("POST", "/api/votaciones", role, cuerpoVotacion()).statusCode(),
-                "Crear no debería rechazarse por permisos al rol " + role);
-            assertNotEquals(403, send("PUT", "/api/votaciones/1", role, cuerpoVotacion()).statusCode(),
-                "Editar no debería rechazarse por permisos al rol " + role);
+            assertEquals(201, send("POST", "/api/votaciones", role, cuerpoVotacion()).statusCode(),
+                "Crear debería permitirse al rol " + role);
+            assertEquals(200, send("PUT", "/api/votaciones/1", role, cuerpoVotacion()).statusCode(),
+                "Editar debería permitirse al rol " + role);
         }
     }
 
