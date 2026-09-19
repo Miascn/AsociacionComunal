@@ -209,6 +209,33 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         return 0;
     }
 
+    public List<Asistencia> saveLoteTransaccional(Integer idReunion, List<Asistencia> asistencias) throws SQLException {
+        String sql = "INSERT INTO asistencia (id_reunion, id_miembro, asistio, observacion) VALUES (?, ?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE asistio = VALUES(asistio), observacion = VALUES(observacion)";
+        try (Connection conn = DBConnection.getInstance().getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (Asistencia a : asistencias) {
+                    ps.setInt(1, idReunion);
+                    ps.setInt(2, a.getIdMiembro());
+                    ps.setBoolean(3, a.isAsistio());
+                    ps.setString(4, a.getObservacion());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+                conn.commit();
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException ignored) {}
+            }
+        }
+        return findByReunion(idReunion);
+    }
+
     private Asistencia mapResultSet(ResultSet rs) throws SQLException {
         return new Asistencia(
             rs.getLong("id_asistencia"),
