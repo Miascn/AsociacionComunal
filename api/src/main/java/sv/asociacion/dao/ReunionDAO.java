@@ -112,6 +112,10 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
     }
 
     public List<Reunion> findFiltered(String search, Reunion.Tipo tipo, Reunion.Estado estado) {
+        return findFiltered(search, tipo, estado, null, null);
+    }
+
+    public List<Reunion> findFiltered(String search, Reunion.Tipo tipo, Reunion.Estado estado, String desde, String hasta) {
         List<Reunion> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM reunion WHERE 1=1");
         List<Object> params = new ArrayList<>();
@@ -129,6 +133,14 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
         if (estado != null) {
             sql.append(" AND estado = ?");
             params.add(estado.name());
+        }
+        if (desde != null && !desde.isBlank()) {
+            sql.append(" AND fecha_hora >= ?");
+            params.add(desde.trim().length() == 10 ? desde.trim() + " 00:00:00" : desde.trim());
+        }
+        if (hasta != null && !hasta.isBlank()) {
+            sql.append(" AND fecha_hora <= ?");
+            params.add(hasta.trim().length() == 10 ? hasta.trim() + " 23:59:59" : hasta.trim());
         }
         sql.append(" ORDER BY fecha_hora DESC");
 

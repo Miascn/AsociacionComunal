@@ -20,6 +20,10 @@ public class ReunionService {
     }
 
     public List<ReunionResponse> getAll(String search, String tipoStr, String estadoStr) {
+        return getAll(search, tipoStr, estadoStr, null, null);
+    }
+
+    public List<ReunionResponse> getAll(String search, String tipoStr, String estadoStr, String desde, String hasta) {
         Reunion.Tipo tipo = null;
         if (tipoStr != null && !tipoStr.isBlank()) {
             try {
@@ -34,7 +38,7 @@ public class ReunionService {
             } catch (Exception ignored) {}
         }
 
-        return reunionDAO.findFiltered(search, tipo, estado).stream()
+        return reunionDAO.findFiltered(search, tipo, estado, desde, hasta).stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
     }

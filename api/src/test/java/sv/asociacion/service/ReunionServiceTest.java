@@ -167,6 +167,26 @@ class ReunionServiceTest {
         assertEquals(75.0, res.porcentajeAsistencia());
     }
 
+    @Test
+    void filtersReunionesByDateRange() {
+        Reunion r1 = new Reunion(10, "Reunión Pasada", LocalDateTime.of(2026, 8, 10, 10, 0), "Salón", Reunion.Tipo.ORDINARIA, Reunion.Estado.REALIZADA);
+        Reunion r2 = new Reunion(11, "Reunión Septiembre", LocalDateTime.of(2026, 9, 15, 10, 0), "Salón", Reunion.Tipo.ORDINARIA, Reunion.Estado.PROGRAMADA);
+        Reunion r3 = new Reunion(12, "Reunión Futura", LocalDateTime.of(2026, 10, 20, 10, 0), "Salón", Reunion.Tipo.EXTRAORDINARIA, Reunion.Estado.PROGRAMADA);
+        reunionDAO.save(r1);
+        reunionDAO.save(r2);
+        reunionDAO.save(r3);
+
+        List<ReunionResponse> desdeSep = service.getAll(null, null, null, "2026-09-01", null);
+        assertEquals(2, desdeSep.size());
+
+        List<ReunionResponse> hastaSep = service.getAll(null, null, null, null, "2026-09-30");
+        assertEquals(2, hastaSep.size());
+
+        List<ReunionResponse> soloSep = service.getAll(null, null, null, "2026-09-01", "2026-09-30");
+        assertEquals(1, soloSep.size());
+        assertEquals("Reunión Septiembre", soloSep.get(0).titulo());
+    }
+
     private static final class MemoryReunionDAO extends ReunionDAO {
         private final List<Reunion> store = new ArrayList<>();
         private int seq = 1;
@@ -192,10 +212,24 @@ class ReunionServiceTest {
 
         @Override
         public List<Reunion> findFiltered(String search, Reunion.Tipo tipo, Reunion.Estado estado) {
+            return findFiltered(search, tipo, estado, null, null);
+        }
+
+        @Override
+        public List<Reunion> findFiltered(String search, Reunion.Tipo tipo, Reunion.Estado estado, String desde, String hasta) {
+            LocalDateTime d = (desde != null && !desde.isBlank())
+                ? (desde.trim().length() == 10 ? sv.asociacion.util.DateUtils.parseDateTime(desde.trim() + " 00:00:00") : sv.asociacion.util.DateUtils.parseDateTime(desde.trim()))
+                : null;
+            LocalDateTime h = (hasta != null && !hasta.isBlank())
+                ? (hasta.trim().length() == 10 ? sv.asociacion.util.DateUtils.parseDateTime(hasta.trim() + " 23:59:59") : sv.asociacion.util.DateUtils.parseDateTime(hasta.trim()))
+                : null;
+
             return store.stream()
                 .filter(r -> search == null || r.getTitulo().toLowerCase().contains(search.toLowerCase()))
                 .filter(r -> tipo == null || r.getTipo() == tipo)
                 .filter(r -> estado == null || r.getEstado() == estado)
+                .filter(r -> d == null || !r.getFechaHora().isBefore(d))
+                .filter(r -> h == null || !r.getFechaHora().isAfter(h))
                 .toList();
         }
 
