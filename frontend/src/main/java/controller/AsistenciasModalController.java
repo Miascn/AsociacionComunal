@@ -27,6 +27,8 @@ public class AsistenciasModalController {
 
     @FXML private TextField txtBuscar;
     @FXML private Button btnAutoConvocar;
+    @FXML private Label lblCambiosPendientes;
+    @FXML private Button btnGuardarLote;
 
     @FXML private TableView<AsistenciaModel> tablaAsistencias;
     @FXML private TableColumn<AsistenciaModel, String> colMiembro;
@@ -37,6 +39,7 @@ public class AsistenciasModalController {
 
     private final AsistenciaApiClient apiClient = new AsistenciaApiClient();
     private final ObservableList<AsistenciaModel> asistenciasList = FXCollections.observableArrayList();
+    private final java.util.Set<Integer> miembrosModificados = new java.util.HashSet<>();
     private FilteredList<AsistenciaModel> filteredList;
 
     private ReunionModel reunion;
@@ -44,6 +47,7 @@ public class AsistenciasModalController {
 
     @FXML
     public void initialize() {
+        btnGuardarLote.setDisable(true);
         filteredList = new FilteredList<>(asistenciasList, p -> true);
         txtBuscar.textProperty().addListener((obs, oldVal, newVal) -> {
             filteredList.setPredicate(a -> {
@@ -109,7 +113,9 @@ public class AsistenciasModalController {
                         AsistenciaModel a = getTableRow().getItem();
                         boolean nuevoValor = checkBox.isSelected();
                         a.setAsistio(nuevoValor);
-                        toggleAsistenciaServidor(a, nuevoValor);
+                        miembrosModificados.add(a.getIdMiembro());
+                        actualizarEstadoPendiente();
+                        actualizarMetricas();
                     }
                 });
             }
@@ -173,6 +179,8 @@ public class AsistenciasModalController {
 
         task.setOnSucceeded(e -> {
             asistenciasList.setAll(task.getValue());
+            miembrosModificados.clear();
+            actualizarEstadoPendiente();
             actualizarMetricas();
         });
 
@@ -183,6 +191,19 @@ public class AsistenciasModalController {
         });
 
         new Thread(task).start();
+    }
+
+    private void actualizarEstadoPendiente() {
+        int count = miembrosModificados.size();
+        if (count == 0) {
+            lblCambiosPendientes.setText("Sin cambios pendientes");
+            lblCambiosPendientes.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
+            btnGuardarLote.setDisable(true);
+        } else {
+            lblCambiosPendientes.setText("● " + count + " cambio" + (count > 1 ? "s" : "") + " pendiente" + (count > 1 ? "s" : ""));
+            lblCambiosPendientes.setStyle("-fx-text-fill: #d97706; -fx-font-weight: bold; -fx-font-size: 12px;");
+            btnGuardarLote.setDisable(reunion != null && reunion.isCancelada());
+        }
     }
 
     private void actualizarMetricas() {
@@ -219,6 +240,8 @@ public class AsistenciasModalController {
                 task.setOnSucceeded(e -> {
                     btnAutoConvocar.setDisable(false);
                     asistenciasList.setAll(task.getValue());
+                    miembrosModificados.clear();
+                    actualizarEstadoPendiente();
                     actualizarMetricas();
                     if (onCloseCallback != null) onCloseCallback.run();
                 });
@@ -234,25 +257,34 @@ public class AsistenciasModalController {
         });
     }
 
-    private void toggleAsistenciaServidor(AsistenciaModel a, boolean asistio) {
-        Task<Void> task = new Task<>() {
+    @FXML
+    public void guardarLote() {
+        if (reunion == null || asistenciasList.isEmpty()) return;
+        btnGuardarLote.setDisable(true);
+        lblCambiosPendientes.setText("Guardando cambios...");
+
+        Task<List<AsistenciaModel>> task = new Task<>() {
             @Override
-            protected Void call() throws Exception {
-                apiClient.toggle(a.getIdAsistencia(), asistio, a.getObservacion());
-                return null;
+            protected List<AsistenciaModel> call() throws Exception {
+                return apiClient.guardarLote(reunion.getId(), asistenciasList);
             }
         };
 
         task.setOnSucceeded(e -> {
+            asistenciasList.setAll(task.getValue());
+            miembrosModificados.clear();
+            actualizarEstadoPendiente();
             actualizarMetricas();
             if (onCloseCallback != null) onCloseCallback.run();
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Asistencia guardada",
+                "Se registraron exitosamente todas las asistencias en el servidor.");
         });
 
         task.setOnFailed(e -> {
-            // Revertir si falló
-            a.setAsistio(!asistio);
-            actualizarMetricas();
-            mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo actualizar la asistencia: " + task.getException().getMessage());
+            actualizarEstadoPendiente();
+            Throwable ex = task.getException();
+            mostrarAlerta(Alert.AlertType.ERROR, "Error al guardar lote",
+                "No se pudo guardar la lista de asistencia. Ningún registro fue persistido: " + (ex != null ? ex.getMessage() : "Desconocido"));
         });
 
         new Thread(task).start();
@@ -266,24 +298,25 @@ public class AsistenciasModalController {
 
         dialog.showAndWait().ifPresent(texto -> {
             String clean = texto != null ? texto.trim() : "";
-            Task<Void> task = new Task<>() {
-                @Override
-                protected Void call() throws Exception {
-                    apiClient.toggle(a.getIdAsistencia(), a.isAsistio(), clean);
-                    return null;
-                }
-            };
-            task.setOnSucceeded(e -> {
-                a.setObservacion(clean);
-                tablaAsistencias.refresh();
-            });
-            task.setOnFailed(e -> mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo guardar la nota: " + task.getException().getMessage()));
-            new Thread(task).start();
+            a.setObservacion(clean);
+            miembrosModificados.add(a.getIdMiembro());
+            tablaAsistencias.refresh();
+            actualizarEstadoPendiente();
         });
     }
 
     @FXML
     public void cerrar() {
+        if (!miembrosModificados.isEmpty()) {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Cambios pendientes");
+            confirm.setHeaderText("Hay " + miembrosModificados.size() + " cambio(s) sin guardar.");
+            confirm.setContentText("¿Deseas salir sin guardar los cambios de asistencia?");
+            java.util.Optional<ButtonType> res = confirm.showAndWait();
+            if (res.isEmpty() || res.get() != ButtonType.OK) {
+                return;
+            }
+        }
         if (onCloseCallback != null) onCloseCallback.run();
         Stage stage = (Stage) btnAutoConvocar.getScene().getWindow();
         if (stage != null) stage.close();

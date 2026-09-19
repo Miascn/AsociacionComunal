@@ -77,6 +77,11 @@
 
     <!-- Pie del modal -->
     <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Label fx:id="lblCambiosPendientes" text="Sin cambios pendientes" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+        <Region HBox.hgrow="ALWAYS"/>
         <Button text="Cerrar" onAction="#cerrar" styleClass="secondary-action"/>
+        <Button fx:id="btnGuardarLote" text="Guardar asistencia" onAction="#guardarLote" styleClass="primary-action">
+            <graphic><FontIcon iconLiteral="fth-save"/></graphic>
+        </Button>
     </HBox>
 </VBox>
