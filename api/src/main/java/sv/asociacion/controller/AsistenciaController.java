@@ -27,6 +27,19 @@ public class AsistenciaController {
         }
     }
 
+    public void getByMiembro(Context context) {
+        Integer idMiembro = context.pathParamAsClass("idMiembro", Integer.class).getOrNull();
+        if (idMiembro == null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de miembro inválido."));
+            return;
+        }
+        try {
+            context.json(service.getByMiembro(idMiembro));
+        } catch (IllegalArgumentException e) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+        }
+    }
+
     public void convocar(Context context) {
         Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
         if (idReunion == null) {
@@ -81,6 +94,10 @@ public class AsistenciaController {
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
+    }
+
+    public void update(Context context) {
+        toggle(context);
     }
 
     public void delete(Context context) {

@@ -32,6 +32,15 @@ public class AsistenciaService {
             .collect(Collectors.toList());
     }
 
+    public List<AsistenciaResponse> getByMiembro(Integer idMiembro) {
+        if (idMiembro == null) throw new IllegalArgumentException("El ID del miembro es obligatorio.");
+        miembroDAO.findById(idMiembro)
+            .orElseThrow(() -> new IllegalArgumentException("Miembro no encontrado con ID: " + idMiembro));
+        return asistenciaDAO.findByMiembro(idMiembro).stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+    }
+
     public List<AsistenciaResponse> convocarMiembros(Integer idReunion, ConvocatoriaMasivaRequest req) {
         Reunion r = validarReunionExiste(idReunion);
         if (r.getEstado() == Reunion.Estado.CANCELADA) {
