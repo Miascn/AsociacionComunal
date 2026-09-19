@@ -5,7 +5,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.AsistenciasModalController" spacing="16" prefWidth="760" prefHeight="600"
+      fx:controller="controller.AsistenciasModalController" spacing="16" prefWidth="780" prefHeight="620"
       style="-fx-background-color: white; -fx-background-radius: 12;">
     <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
 
@@ -20,6 +20,16 @@
             <Label fx:id="lblBadgeEstado" text="PROGRAMADA" style="-fx-background-color: #e0f2fe; -fx-text-fill: #0369a1; -fx-font-weight: bold; -fx-padding: 3 10 3 10; -fx-background-radius: 6;"/>
         </HBox>
     </VBox>
+
+    <!-- Banner de solo lectura / aviso de estado -->
+    <HBox fx:id="bannerSoloLectura" alignment="CENTER_LEFT" spacing="10" visible="false" managed="false"
+          style="-fx-padding: 10 14 10 14; -fx-background-radius: 8; -fx-border-radius: 8;">
+        <FontIcon fx:id="iconoAviso" iconLiteral="fth-info" iconSize="18"/>
+        <VBox spacing="1" HBox.hgrow="ALWAYS">
+            <Label fx:id="lblTituloAviso" text="Modo de consulta" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+            <Label fx:id="lblMensajeAviso" text="Esta lista se muestra en modo solo lectura." wrapText="true" style="-fx-font-size: 11px;"/>
+        </VBox>
+    </HBox>
 
     <Separator/>
 
@@ -44,9 +54,14 @@
             </VBox>
         </HBox>
         <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #eff6ff; -fx-border-color: #bfdbfe; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 14 8 14;" HBox.hgrow="ALWAYS">
-            <VBox spacing="2">
-                <Label text="QUÓRUM" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
-                <Label fx:id="lblQuorum" text="0.0%" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e40af;"/>
+            <VBox spacing="3" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT">
+                    <Label text="QUÓRUM" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblQuorum" text="0.0%" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1e40af;"/>
+                </HBox>
+                <ProgressBar fx:id="progresoQuorum" progress="0.0" prefHeight="6" maxWidth="Infinity" style="-fx-accent: #2563eb;"/>
+                <Label fx:id="lblQuorumDetalle" text="Sin convocatoria" style="-fx-font-size: 10px; -fx-text-fill: #64748b;"/>
             </VBox>
         </HBox>
     </HBox>
@@ -60,20 +75,26 @@
         </Button>
     </HBox>
 
-    <!-- Tabla de asistencias -->
-    <TableView fx:id="tablaAsistencias" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="colMiembro" text="Miembro convocado" prefWidth="220"/>
-            <TableColumn fx:id="colDui" text="DUI" prefWidth="110"/>
-            <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="100"/>
-            <TableColumn fx:id="colAsistio" text="Presente" prefWidth="90"/>
-            <TableColumn fx:id="colObservacion" text="Observación / Justificación" prefWidth="180"/>
-        </columns>
-        <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
-        <placeholder>
-            <Label text="No hay miembros convocados a esta reunión aún." styleClass="text-muted"/>
-        </placeholder>
-    </TableView>
+    <!-- Tabla de asistencias con estados -->
+    <StackPane VBox.vgrow="ALWAYS">
+        <TableView fx:id="tablaAsistencias">
+            <columns>
+                <TableColumn fx:id="colMiembro" text="Miembro convocado" prefWidth="220"/>
+                <TableColumn fx:id="colDui" text="DUI" prefWidth="110"/>
+                <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="100"/>
+                <TableColumn fx:id="colAsistio" text="Asistencia" prefWidth="140"/>
+                <TableColumn fx:id="colObservacion" text="Observación / Justificación" prefWidth="180"/>
+            </columns>
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+        </TableView>
+
+        <!-- Overlay de Carga -->
+        <VBox fx:id="boxCargando" alignment="CENTER" spacing="12" visible="false" managed="false"
+              style="-fx-background-color: rgba(255, 255, 255, 0.88); -fx-background-radius: 8;">
+            <ProgressIndicator prefWidth="40" prefHeight="40"/>
+            <Label fx:id="lblEstadoCarga" text="Cargando lista de asistencia..." style="-fx-font-weight: bold; -fx-text-fill: #475569; -fx-font-size: 13px;"/>
+        </VBox>
+    </StackPane>
 
     <!-- Pie del modal -->
     <HBox alignment="CENTER_RIGHT" spacing="12">
