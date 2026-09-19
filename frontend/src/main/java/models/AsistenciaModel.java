@@ -58,4 +58,20 @@ public class AsistenciaModel {
     public String getObservacion() { return observacion.get(); }
     public StringProperty observacionProperty() { return observacion; }
     public void setObservacion(String observacion) { this.observacion.set(observacion); }
+
+    private final StringProperty tituloReunion = new SimpleStringProperty();
+    private final StringProperty fechaHoraReunion = new SimpleStringProperty();
+    private final StringProperty tipoReunion = new SimpleStringProperty();
+
+    public String getTituloReunion() { return tituloReunion.get(); }
+    public StringProperty tituloReunionProperty() { return tituloReunion; }
+    public void setTituloReunion(String tituloReunion) { this.tituloReunion.set(tituloReunion != null ? tituloReunion : ""); }
+
+    public String getFechaHoraReunion() { return fechaHoraReunion.get(); }
+    public StringProperty fechaHoraReunionProperty() { return fechaHoraReunion; }
+    public void setFechaHoraReunion(String fechaHoraReunion) { this.fechaHoraReunion.set(fechaHoraReunion != null ? fechaHoraReunion : ""); }
+
+    public String getTipoReunion() { return tipoReunion.get(); }
+    public StringProperty tipoReunionProperty() { return tipoReunion; }
+    public void setTipoReunion(String tipoReunion) { this.tipoReunion.set(tipoReunion != null ? tipoReunion : ""); }
 }

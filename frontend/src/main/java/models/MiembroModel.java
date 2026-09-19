@@ -53,4 +53,12 @@ public class MiembroModel {
     public void setFechaIngreso(String fechaIngreso) { this.fechaIngreso = fechaIngreso; }
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getNombreCompleto() {
+        return ((nombres != null ? nombres : "") + " " + (apellidos != null ? apellidos : "")).trim();
+    }
+
+    public String getDocumento() {
+        return dui != null ? dui : "-";
+    }
 }

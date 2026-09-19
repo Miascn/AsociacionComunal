@@ -112,17 +112,34 @@ public class AsistenciaApiClient {
         }
     }
 
+    public List<AsistenciaModel> getByMiembro(Integer idMiembro) throws IOException, InterruptedException {
+        HttpRequest request = requestBuilder("/api/miembros/" + idMiembro + "/asistencias?_t=" + System.currentTimeMillis()).GET().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+
+        List<AsistenciaDto> dtos = objectMapper.readValue(response.body(), new TypeReference<>() {});
+        return dtos.stream().map(AsistenciaDto::toModel).collect(Collectors.toList());
+    }
+
     private record AsistenciaDto(
         Long idAsistencia, Integer idReunion, Integer idMiembro,
         String nombreMiembro, String duiMiembro, String telefonoMiembro,
-        boolean asistio, String observacion
+        boolean asistio, String observacion,
+        String tituloReunion, String fechaHoraReunion, String tipoReunion
     ) {
         private AsistenciaModel toModel() {
-            return new AsistenciaModel(
+            AsistenciaModel m = new AsistenciaModel(
                 idAsistencia, idReunion, idMiembro,
                 nombreMiembro, duiMiembro, telefonoMiembro,
                 asistio, observacion
             );
+            if (tituloReunion != null) m.setTituloReunion(tituloReunion);
+            if (fechaHoraReunion != null) m.setFechaHoraReunion(fechaHoraReunion);
+            if (tipoReunion != null) m.setTipoReunion(tipoReunion);
+            return m;
         }
     }
 

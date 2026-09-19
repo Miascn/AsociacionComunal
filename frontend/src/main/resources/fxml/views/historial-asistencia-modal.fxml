@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.HistorialAsistenciaModalController" spacing="16" prefWidth="750" prefHeight="580"
+      style="-fx-background-color: white; -fx-background-radius: 12;">
+    <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+
+    <!-- Encabezado del miembro -->
+    <VBox spacing="4">
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label text="HISTORIAL DE ASISTENCIA INDIVIDUAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #2563eb;"/>
+                <Label fx:id="lblNombreMiembro" text="Nombre del miembro" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                <Label fx:id="lblDuiMiembro" text="DUI: - | Tel: -" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+            </VBox>
+            <Label fx:id="lblEstadoMiembro" text="ACTIVO" style="-fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-font-weight: bold; -fx-padding: 4 10 4 10; -fx-background-radius: 6;"/>
+        </HBox>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Tarjetas de métricas de cumplimiento -->
+    <HBox spacing="10">
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 14 8 14;" HBox.hgrow="ALWAYS">
+            <VBox spacing="2">
+                <Label text="CONVOCATORIAS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                <Label fx:id="lblTotalConvocadas" text="0" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #ecfdf5; -fx-border-color: #a7f3d0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 14 8 14;" HBox.hgrow="ALWAYS">
+            <VBox spacing="2">
+                <Label text="ASISTENCIAS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #047857;"/>
+                <Label fx:id="lblAsistenciasConfirmadas" text="0" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #065f46;"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #fff1f2; -fx-border-color: #fecdd3; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 14 8 14;" HBox.hgrow="ALWAYS">
+            <VBox spacing="2">
+                <Label text="INASISTENCIAS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #be123c;"/>
+                <Label fx:id="lblInasistencias" text="0" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #9f1239;"/>
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #eff6ff; -fx-border-color: #bfdbfe; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 14 8 14;" HBox.hgrow="ALWAYS">
+            <VBox spacing="2">
+                <Label text="\% CUMPLIMIENTO" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
+                <Label fx:id="lblPorcentajeCumplimiento" text="0.0%" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e40af;"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <!-- Tabla de reuniones -->
+    <TableView fx:id="tablaHistorial" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colReunion" text="Reunión" prefWidth="230"/>
+            <TableColumn fx:id="colFechaHora" text="Fecha y Hora" prefWidth="150"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="110"/>
+            <TableColumn fx:id="colAsistio" text="Estado" prefWidth="100"/>
+            <TableColumn fx:id="colObservacion" text="Observación" prefWidth="160"/>
+        </columns>
+        <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+        <placeholder>
+            <Label text="El miembro no registra convocatorias a reuniones." styleClass="text-muted"/>
+        </placeholder>
+    </TableView>
+
+    <!-- Pie del diálogo -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button text="Cerrar" onAction="#cerrar" styleClass="secondary-action"/>
+    </HBox>
+</VBox>
