@@ -47,6 +47,14 @@ public final class UsuarioApiClient {
         return json.readValue(response.body(), UsuarioModel.class);
     }
 
+    public ResetPasswordResult resetPassword(int id) throws IOException, InterruptedException {
+        HttpResponse<String> response = send(request("/api/usuarios/" + id + "/restablecer-clave")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.noBody()).build());
+        ensure(response, 200);
+        return json.readValue(response.body(), ResetPasswordResult.class);
+    }
+
     private HttpRequest.Builder request(String path) {
         return HttpRequest.newBuilder(URI.create(config.baseUrl() + path)).timeout(Duration.ofSeconds(20))
             .header("Authorization", "Bearer " + SessionManager.getInstance().requireToken())
@@ -65,6 +73,7 @@ public final class UsuarioApiClient {
     }
 
     public record UsuarioRequest(String nombreUsuario, String clave, Integer idRol, Integer idMiembro, String estado) { }
+    public record ResetPasswordResult(Integer idUsuario, String nombreUsuario, String temporaryPassword) { }
     private record CreateRequest(String nombreUsuario, String clave, Integer idRol, Integer idMiembro) { }
     private record StateRequest(String estado) { }
 }
