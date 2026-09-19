@@ -129,6 +129,8 @@ public final class ApiServer {
             cfg.routes.post("/api/usuarios", usuarios::create);
             cfg.routes.put("/api/usuarios/{id}", usuarios::update);
             cfg.routes.patch("/api/usuarios/{id}/estado", usuarios::changeState);
+            cfg.routes.post("/api/usuarios/{id}/restablecer-clave", usuarios::resetPassword);
+            cfg.routes.post("/api/usuarios/{id}/reset-password", usuarios::resetPassword);
             cfg.routes.delete("/api/usuarios/{id}", usuarios::delete);
 
             cfg.routes.get("/api/bitacoras", bitacoras::getPage);

@@ -5,10 +5,12 @@ import sv.asociacion.dao.RolDAO;
 import sv.asociacion.dao.MiembroDAO;
 import sv.asociacion.domain.dto.CreateUsuarioRequest;
 import sv.asociacion.domain.dto.UpdateUsuarioRequest;
+import sv.asociacion.domain.dto.ResetPasswordResponse;
 import sv.asociacion.domain.dto.UsuarioResponse;
 import sv.asociacion.domain.entity.Usuario;
 import sv.asociacion.util.DateUtils;
 import sv.asociacion.util.PasswordHasher;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -118,6 +120,25 @@ public class UsuarioService {
 
     public boolean delete(Integer id) {
         return usuarioDAO.delete(id);
+    }
+
+    public ResetPasswordResponse resetPassword(Integer id) {
+        Usuario usuario = usuarioDAO.findById(id).orElseThrow(() -> new NoSuchElementException("Usuario no encontrado."));
+        String temporary = generateTemporaryPassword();
+        String hashed = PasswordHasher.hash(temporary);
+        usuario.setClaveHash(hashed);
+        usuarioDAO.resetPassword(id, hashed, true);
+        return new ResetPasswordResponse(usuario.getIdUsuario(), usuario.getNombreUsuario(), temporary);
+    }
+
+    private String generateTemporaryPassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder("Tmp#");
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private void validateRelations(Integer roleId, Integer memberId) {

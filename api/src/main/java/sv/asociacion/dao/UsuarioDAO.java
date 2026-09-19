@@ -103,6 +103,19 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
         }
     }
 
+    public boolean resetPassword(Integer id, String claveHash, boolean requiereCambioClave) {
+        String sql = "UPDATE usuario SET clave_hash = ?, requiere_cambio_clave = ? WHERE id_usuario = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, claveHash);
+            ps.setBoolean(2, requiereCambioClave);
+            ps.setInt(3, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No fue posible restablecer la contraseña.", e);
+        }
+    }
+
     public Usuario findByNombreUsuario(String nombreUsuario) {
         String sql = "SELECT * FROM usuario WHERE nombre_usuario = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();

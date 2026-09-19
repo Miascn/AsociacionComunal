@@ -14,18 +14,11 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import models.MiembroModel;
 import models.RolModel;
 import models.UsuarioModel;
+import security.SessionManager;
 import service.MiembroApiClient;
 import service.RolApiClient;
 import service.UsuarioApiClient;
@@ -43,6 +36,8 @@ public class UsuarioController {
     @FXML private Label lblEstadoModulo;
     @FXML private Button btnEditar;
     @FXML private Button btnCambiarEstado;
+    @FXML private Button btnBloquear;
+    @FXML private Button btnRestablecerClave;
 
     private final ObservableList<UsuarioModel> users = FXCollections.observableArrayList();
     private final Map<Integer, RolModel> roles = new HashMap<>();
@@ -53,16 +48,52 @@ public class UsuarioController {
         columnaUsuario.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombreUsuario()));
         columnaRol.setCellValueFactory(cell -> new SimpleStringProperty(roleName(cell.getValue().getIdRol())));
         columnaMiembro.setCellValueFactory(cell -> new SimpleStringProperty(memberName(cell.getValue().getIdMiembro())));
+        
         columnaEstado.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getEstado()));
+        columnaEstado.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String estado, boolean empty) {
+                super.updateItem(estado, empty);
+                if (empty || estado == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(estado);
+                    if ("ACTIVO".equalsIgnoreCase(estado)) {
+                        badge.setStyle("-fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-font-weight: bold; -fx-padding: 2 8 2 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                    } else if ("BLOQUEADO".equalsIgnoreCase(estado)) {
+                        badge.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-padding: 2 8 2 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                    } else {
+                        badge.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-font-weight: bold; -fx-padding: 2 8 2 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                    }
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
+
         columnaUltimoAcceso.setCellValueFactory(cell -> new SimpleStringProperty(
             cell.getValue().getUltimoAcceso() == null ? "Nunca" : cell.getValue().getUltimoAcceso()));
+        
         filtered = new FilteredList<>(users, value -> true);
         tablaUsuarios.setItems(filtered);
         campoBusqueda.textProperty().addListener((obs, previous, value) -> filter(value));
+        
         btnEditar.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
         btnCambiarEstado.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
-        tablaUsuarios.getSelectionModel().selectedItemProperty().addListener((obs, previous, selected) ->
-            btnCambiarEstado.setText(selected != null && "INACTIVO".equals(selected.getEstado()) ? "Reactivar" : "Desactivar"));
+        btnBloquear.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
+        btnRestablecerClave.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
+
+        tablaUsuarios.getSelectionModel().selectedItemProperty().addListener((obs, previous, selected) -> {
+            if (selected == null) {
+                btnCambiarEstado.setText("Desactivar");
+                btnBloquear.setText("Bloquear");
+            } else {
+                btnCambiarEstado.setText("INACTIVO".equalsIgnoreCase(selected.getEstado()) ? "Reactivar" : "Desactivar");
+                btnBloquear.setText("BLOQUEADO".equalsIgnoreCase(selected.getEstado()) ? "Desbloquear" : "Bloquear");
+            }
+        });
+
         loadData();
     }
 
@@ -73,15 +104,110 @@ public class UsuarioController {
         if (selected != null) openForm(selected);
     }
 
+    private boolean esMismoUsuario(UsuarioModel selected) {
+        if (selected == null || selected.getNombreUsuario() == null) return false;
+        return SessionManager.getInstance().getCurrentUser()
+            .map(u -> selected.getNombreUsuario().equalsIgnoreCase(u.getUsername()))
+            .orElse(false);
+    }
+
     @FXML private void changeState() {
         UsuarioModel selected = tablaUsuarios.getSelectionModel().getSelectedItem();
         if (selected == null) return;
-        String state = "INACTIVO".equals(selected.getEstado()) ? "ACTIVO" : "INACTIVO";
+
+        if (esMismoUsuario(selected)) {
+            showError("No puedes desactivar tu propia cuenta de usuario en sesión.");
+            return;
+        }
+
+        boolean inactivo = "INACTIVO".equalsIgnoreCase(selected.getEstado());
+        String state = inactivo ? "ACTIVO" : "INACTIVO";
+        String accion = inactivo ? "reactivar" : "desactivar";
+
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "La cuenta cambiará a " + state + ". El registro y su historial se conservarán.", ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("¿Confirmas el cambio de estado?");
+            "¿Confirmas que deseas " + accion + " al usuario '" + selected.getNombreUsuario() +
+            "'?\nLa cuenta cambiará a estado " + state + ". El registro y su historial se conservarán.",
+            ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Confirmar cambio de estado");
         if (alert.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
         runChangeState(selected, state);
+    }
+
+    @FXML private void bloquearUsuario() {
+        UsuarioModel selected = tablaUsuarios.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+
+        if (esMismoUsuario(selected)) {
+            showError("No puedes bloquear tu propia cuenta de usuario en sesión.");
+            return;
+        }
+
+        boolean bloqueado = "BLOQUEADO".equalsIgnoreCase(selected.getEstado());
+        String state = bloqueado ? "ACTIVO" : "BLOQUEADO";
+        String accion = bloqueado ? "desbloquear y reactivar" : "bloquear";
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+            "¿Confirmas que deseas " + accion + " al usuario '" + selected.getNombreUsuario() +
+            "'?\nEl estado pasará a " + state + ".",
+            ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Confirmar " + (bloqueado ? "desbloqueo" : "bloqueo") + " de usuario");
+        if (alert.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+        runChangeState(selected, state);
+    }
+
+    @FXML private void restablecerClave() {
+        UsuarioModel selected = tablaUsuarios.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+            "Se generará una contraseña temporal de un solo uso para el usuario '" + selected.getNombreUsuario() +
+            "'. El usuario deberá cambiarla obligatoriamente en su próximo inicio de sesión.\n\n¿Deseas continuar?",
+            ButtonType.YES, ButtonType.NO);
+        alert.setTitle("Restablecer Contraseña");
+        alert.setHeaderText("¿Confirmas el restablecimiento de contraseña?");
+
+        if (alert.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+
+        lblEstadoModulo.setText("Restableciendo contraseña...");
+        btnRestablecerClave.setDisable(true);
+
+        Task<UsuarioApiClient.ResetPasswordResult> task = new Task<>() {
+            @Override protected UsuarioApiClient.ResetPasswordResult call() throws Exception {
+                return new UsuarioApiClient().resetPassword(selected.getIdUsuario());
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            btnRestablecerClave.setDisable(false);
+            lblEstadoModulo.setText("Contraseña restablecida");
+            mostrarCredencialesRestablecidas(task.getValue());
+        });
+
+        task.setOnFailed(event -> {
+            btnRestablecerClave.setDisable(false);
+            lblEstadoModulo.setText("No fue posible restablecer");
+            showError("Error al restablecer la contraseña: " + message(task.getException()));
+        });
+
+        start(task, "restablecer-clave-api");
+    }
+
+    private void mostrarCredencialesRestablecidas(UsuarioApiClient.ResetPasswordResult result) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Contraseña Restablecida Exitosamente");
+        alert.setHeaderText("Entregue esta clave temporal al usuario");
+
+        TextArea credentials = new TextArea("Usuario: " + result.nombreUsuario()
+            + "\nContraseña temporal: " + result.temporaryPassword()
+            + "\n\n(El usuario deberá cambiar su clave al iniciar sesión)");
+        credentials.setEditable(false);
+        credentials.setWrapText(true);
+        credentials.setPrefRowCount(4);
+        credentials.setStyle("-fx-font-family: monospace; -fx-font-size: 13px;");
+
+        alert.getDialogPane().setContent(credentials);
+        alert.setContentText(null);
+        alert.showAndWait();
     }
 
     private void openForm(UsuarioModel original) {

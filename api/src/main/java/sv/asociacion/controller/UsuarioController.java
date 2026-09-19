@@ -118,6 +118,23 @@ public class UsuarioController {
         context.status(HttpStatus.NO_CONTENT);
     }
 
+    public void resetPassword(Context context) {
+        if (!requireAdministrator(context)) return;
+        Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
+        if (id == null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
+            return;
+        }
+        try {
+            var response = usuarioService.resetPassword(id);
+            context.json(response);
+        } catch (NoSuchElementException e) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            context.status(HttpStatus.INTERNAL_SERVER_ERROR).json(Map.of("error", e.getMessage()));
+        }
+    }
+
     private static boolean requireAdministrator(Context context) {
         String role = context.attribute("role");
         if ("ADMIN".equalsIgnoreCase(role) || "ADMINISTRADOR".equalsIgnoreCase(role)) return true;

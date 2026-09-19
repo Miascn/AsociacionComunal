@@ -35,6 +35,8 @@
             <HBox alignment="CENTER_LEFT" spacing="8" styleClass="search-box"><FontIcon iconLiteral="fth-search"/><TextField fx:id="campoBusqueda" promptText="Buscar usuario, rol o miembro" prefWidth="235" styleClass="search-field"/></HBox>
             <Button fx:id="btnEditar" text="Editar" onAction="#edit" styleClass="secondary-action"><graphic><FontIcon iconLiteral="fth-edit-2"/></graphic></Button>
             <Button fx:id="btnCambiarEstado" text="Desactivar" onAction="#changeState" styleClass="secondary-action"><graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic></Button>
+            <Button fx:id="btnBloquear" text="Bloquear" onAction="#bloquearUsuario" styleClass="secondary-action"><graphic><FontIcon iconLiteral="fth-slash"/></graphic></Button>
+            <Button fx:id="btnRestablecerClave" text="Restablecer clave" onAction="#restablecerClave" styleClass="secondary-action"><graphic><FontIcon iconLiteral="fth-key"/></graphic></Button>
         </HBox>
         <TableView fx:id="tablaUsuarios" VBox.vgrow="ALWAYS" styleClass="members-table">
             <columns>

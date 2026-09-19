@@ -74,6 +74,24 @@ class UsuarioServiceTest {
             () -> service.create(new CreateUsuarioRequest("valid.user", "short", 1, null)));
     }
 
+    @Test
+    void resetsPasswordSuccessfully() {
+        MemoryUsuarioDAO users = new MemoryUsuarioDAO();
+        UsuarioService service = new UsuarioService(users, new ExistingRolDAO(), new ExistingMiembroDAO());
+        var u = service.create(new CreateUsuarioRequest("carlos.test", "segura123", 1, null));
+        var result = service.resetPassword(u.idUsuario());
+        assertEquals("carlos.test", result.nombreUsuario());
+        assertTrue(result.temporaryPassword().startsWith("Tmp#"));
+        assertTrue(result.temporaryPassword().length() >= 12);
+    }
+
+    @Test
+    void throwsWhenResettingNonExistentUser() {
+        MemoryUsuarioDAO users = new MemoryUsuarioDAO();
+        UsuarioService service = new UsuarioService(users, new ExistingRolDAO(), new ExistingMiembroDAO());
+        assertThrows(java.util.NoSuchElementException.class, () -> service.resetPassword(999));
+    }
+
     private static final class MemoryUsuarioDAO extends UsuarioDAO {
         private final List<Usuario> values = new ArrayList<>();
         @Override public List<Usuario> findAll() { return new ArrayList<>(values); }
@@ -93,6 +111,14 @@ class UsuarioServiceTest {
             Optional<Usuario> value = findById(id);
             value.ifPresent(user -> user.setEstado(Usuario.Estado.INACTIVO));
             return value.isPresent();
+        }
+        @Override public boolean resetPassword(Integer id, String claveHash, boolean requiereCambioClave) {
+            Optional<Usuario> value = findById(id);
+            if (value.isPresent()) {
+                value.get().setClaveHash(claveHash);
+                return true;
+            }
+            return false;
         }
     }
 
