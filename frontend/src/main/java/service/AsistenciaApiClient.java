@@ -103,6 +103,29 @@ public class AsistenciaApiClient {
         return objectMapper.readValue(response.body(), AsistenciaDto.class).toModel();
     }
 
+    public List<AsistenciaModel> guardarLote(Integer idReunion, List<AsistenciaModel> items) throws IOException, InterruptedException {
+        List<Map<String, Object>> payload = items.stream().map(m -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("idMiembro", m.getIdMiembro());
+            map.put("asistio", m.isAsistio());
+            map.put("observacion", m.getObservacion());
+            return map;
+        }).collect(Collectors.toList());
+
+        HttpRequest request = requestBuilder("/api/reuniones/" + idReunion + "/asistencias/lote")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+
+        List<AsistenciaDto> dtos = objectMapper.readValue(response.body(), new TypeReference<>() {});
+        return dtos.stream().map(AsistenciaDto::toModel).collect(Collectors.toList());
+    }
+
     public void delete(Long idAsistencia) throws IOException, InterruptedException {
         HttpRequest request = requestBuilder("/api/asistencias/" + idAsistencia).DELETE().build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
