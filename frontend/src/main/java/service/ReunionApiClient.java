@@ -37,6 +37,10 @@ public class ReunionApiClient {
     }
 
     public List<ReunionModel> getAll(String search, String tipo, String estado) throws IOException, InterruptedException {
+        return getAll(search, tipo, estado, null, null);
+    }
+
+    public List<ReunionModel> getAll(String search, String tipo, String estado, String desde, String hasta) throws IOException, InterruptedException {
         StringBuilder path = new StringBuilder("/api/reuniones?_t=" + System.currentTimeMillis());
         if (search != null && !search.isBlank()) {
             path.append("&search=").append(encode(search.trim()));
@@ -46,6 +50,12 @@ public class ReunionApiClient {
         }
         if (estado != null && !estado.isBlank() && !"TODOS".equalsIgnoreCase(estado)) {
             path.append("&estado=").append(encode(estado.trim()));
+        }
+        if (desde != null && !desde.isBlank()) {
+            path.append("&desde=").append(encode(desde.trim()));
+        }
+        if (hasta != null && !hasta.isBlank()) {
+            path.append("&hasta=").append(encode(hasta.trim()));
         }
 
         HttpRequest request = requestBuilder(path.toString()).GET().build();

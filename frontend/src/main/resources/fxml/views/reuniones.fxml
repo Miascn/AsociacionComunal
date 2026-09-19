@@ -62,9 +62,10 @@
         <padding><Insets top="18" right="20" bottom="18" left="20"/></padding>
 
         <HBox alignment="CENTER_LEFT" spacing="12">
-            <TextField fx:id="txtBuscar" promptText="Buscar por título o lugar..." styleClass="search-field" prefWidth="300"/>
-            <ComboBox fx:id="cbFiltroTipo" promptText="Tipo de reunión" prefWidth="170"/>
-            <ComboBox fx:id="cbFiltroEstado" promptText="Estado" prefWidth="160"/>
+            <TextField fx:id="txtBuscar" promptText="Buscar por título o lugar..." styleClass="search-field" prefWidth="260"/>
+            <ComboBox fx:id="cbFiltroTipo" promptText="Tipo" prefWidth="150"/>
+            <ComboBox fx:id="cbFiltroEstado" promptText="Estado" prefWidth="150"/>
+            <ComboBox fx:id="cbFiltroTemporal" promptText="Período" prefWidth="150"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="Limpiar filtros" onAction="#limpiarFiltros" styleClass="secondary-action">
                 <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
