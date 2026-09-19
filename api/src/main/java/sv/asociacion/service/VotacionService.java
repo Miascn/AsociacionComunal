@@ -228,6 +228,16 @@ public class VotacionService {
         }
     }
 
+    /**
+     * Cuota de una opcion sobre el total, redondeada a un decimal como en
+     * {@code ReunionService}. Sin votos publicados devuelve {@code 0.0} en lugar de
+     * dividir entre cero.
+     */
+    private static double porcentaje(int votos, int total) {
+        if (total <= 0) return 0.0;
+        return Math.round((votos * 100.0 / total) * 10.0) / 10.0;
+    }
+
     private VotacionResponse mapToResponse(Votacion v) {
         String nombreProyecto = null;
         if (v.getIdProyecto() != null && proyectoDAO != null) {
@@ -241,16 +251,24 @@ public class VotacionService {
         boolean resultadosPublicados = v.getEstado() == Votacion.Estado.CERRADA;
 
         List<OpcionVotacion> ops = opcionDAO != null ? opcionDAO.findByVotacion(v.getIdVotacion()) : List.of();
-        List<VotacionResponse.OpcionDetalle> opcionesDetalle = new ArrayList<>();
-        int totalVotos = 0;
 
-        for (OpcionVotacion op : ops) {
-            int votosOp = resultadosPublicados && votoDAO != null
-                ? votoDAO.countByOpcion(op.getIdOpcion())
+        // El porcentaje es una cuota sobre el total, de modo que el total tiene que
+        // conocerse antes de repartirlo: primero se cuenta, despues se calcula.
+        int[] votosPorOpcion = new int[ops.size()];
+        int totalVotos = 0;
+        for (int i = 0; i < ops.size(); i++) {
+            votosPorOpcion[i] = resultadosPublicados && votoDAO != null
+                ? votoDAO.countByOpcion(ops.get(i).getIdOpcion())
                 : 0;
-            totalVotos += votosOp;
+            totalVotos += votosPorOpcion[i];
+        }
+
+        List<VotacionResponse.OpcionDetalle> opcionesDetalle = new ArrayList<>();
+        for (int i = 0; i < ops.size(); i++) {
+            OpcionVotacion op = ops.get(i);
             opcionesDetalle.add(new VotacionResponse.OpcionDetalle(
-                op.getIdOpcion(), op.getDescripcion(), op.getOrden(), votosOp
+                op.getIdOpcion(), op.getDescripcion(), op.getOrden(),
+                votosPorOpcion[i], porcentaje(votosPorOpcion[i], totalVotos)
             ));
         }
 
