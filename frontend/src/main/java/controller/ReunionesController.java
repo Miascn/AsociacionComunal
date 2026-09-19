@@ -29,6 +29,7 @@ public class ReunionesController {
     @FXML private TextField txtBuscar;
     @FXML private ComboBox<String> cbFiltroTipo;
     @FXML private ComboBox<String> cbFiltroEstado;
+    @FXML private ComboBox<String> cbFiltroTemporal;
 
     @FXML private TableView<ReunionModel> tablaReuniones;
     @FXML private TableColumn<ReunionModel, String> colTitulo;
@@ -50,12 +51,16 @@ public class ReunionesController {
         cbFiltroEstado.setItems(FXCollections.observableArrayList("TODOS", "PROGRAMADA", "REALIZADA", "CANCELADA"));
         cbFiltroEstado.getSelectionModel().select("TODOS");
 
+        cbFiltroTemporal.setItems(FXCollections.observableArrayList("TODAS", "PRÓXIMAS", "PASADAS"));
+        cbFiltroTemporal.getSelectionModel().select("TODAS");
+
         configurarTabla();
         configurarPermisos();
 
         txtBuscar.textProperty().addListener((obs, oldVal, newVal) -> cargarDatos());
         cbFiltroTipo.valueProperty().addListener((obs, oldVal, newVal) -> cargarDatos());
         cbFiltroEstado.valueProperty().addListener((obs, oldVal, newVal) -> cargarDatos());
+        cbFiltroTemporal.valueProperty().addListener((obs, oldVal, newVal) -> cargarDatos());
 
         cargarDatos();
     }
@@ -84,8 +89,13 @@ public class ReunionesController {
                     setText(null);
                     setGraphic(null);
                 } else {
+                    ReunionModel m = getTableRow() != null ? getTableRow().getItem() : null;
                     Label lbl = new Label(item);
-                    lbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b;");
+                    if (m != null && m.isCancelada()) {
+                        lbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+                    } else {
+                        lbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b;");
+                    }
                     lbl.setWrapText(true);
                     setGraphic(lbl);
                 }
@@ -143,12 +153,15 @@ public class ReunionesController {
                 if (empty || item == null) {
                     setGraphic(null);
                 } else {
-                    Label badge = new Label(item);
+                    Label badge = new Label();
                     if ("REALIZADA".equalsIgnoreCase(item)) {
-                        badge.setStyle("-fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                        badge.setText("✓ REALIZADA");
+                        badge.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 6; -fx-font-size: 11px;");
                     } else if ("PROGRAMADA".equalsIgnoreCase(item)) {
-                        badge.setStyle("-fx-background-color: #e0f2fe; -fx-text-fill: #0369a1; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                        badge.setText("● PROGRAMADA");
+                        badge.setStyle("-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 6; -fx-font-size: 11px;");
                     } else {
+                        badge.setText("✕ CANCELADA");
                         badge.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 6; -fx-font-size: 11px;");
                     }
                     setGraphic(badge);
@@ -219,11 +232,23 @@ public class ReunionesController {
         String search = txtBuscar.getText();
         String tipo = cbFiltroTipo.getValue();
         String estado = cbFiltroEstado.getValue();
+        String temporal = cbFiltroTemporal != null ? cbFiltroTemporal.getValue() : "TODAS";
+
+        String desde = null;
+        String hasta = null;
+        if ("PRÓXIMAS".equalsIgnoreCase(temporal)) {
+            desde = java.time.LocalDate.now().toString();
+        } else if ("PASADAS".equalsIgnoreCase(temporal)) {
+            hasta = java.time.LocalDate.now().minusDays(1).toString();
+        }
+
+        final String finalDesde = desde;
+        final String finalHasta = hasta;
 
         Task<List<ReunionModel>> task = new Task<>() {
             @Override
             protected List<ReunionModel> call() throws Exception {
-                return apiClient.getAll(search, tipo, estado);
+                return apiClient.getAll(search, tipo, estado, finalDesde, finalHasta);
             }
         };
 
@@ -258,6 +283,9 @@ public class ReunionesController {
         txtBuscar.clear();
         cbFiltroTipo.getSelectionModel().select("TODOS");
         cbFiltroEstado.getSelectionModel().select("TODOS");
+        if (cbFiltroTemporal != null) {
+            cbFiltroTemporal.getSelectionModel().select("TODAS");
+        }
     }
 
     @FXML
