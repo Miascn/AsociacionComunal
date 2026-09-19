@@ -34,7 +34,7 @@
         <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
             <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-edit"/></HBox>
             <VBox spacing="3">
-                <Label text="EN BORRADOR" styleClass="summary-label"/>
+                <Label text="SIN INICIAR" styleClass="summary-label"/>
                 <Label fx:id="lblTotalBorradores" text="0 procesos" styleClass="summary-value"/>
                 <Label text="Pendientes de apertura" styleClass="summary-label"/>
             </VBox>

@@ -21,14 +21,16 @@ public class VotacionModel {
         private String descripcion;
         private int orden;
         private int votos;
+        private double porcentaje;
 
         public OpcionModel() {}
 
-        public OpcionModel(Integer idOpcion, String descripcion, int orden, int votos) {
+        public OpcionModel(Integer idOpcion, String descripcion, int orden, int votos, double porcentaje) {
             this.idOpcion = idOpcion;
             this.descripcion = descripcion;
             this.orden = orden;
             this.votos = votos;
+            this.porcentaje = porcentaje;
         }
 
         public Integer getIdOpcion() { return idOpcion; }
@@ -42,6 +44,15 @@ public class VotacionModel {
 
         public int getVotos() { return votos; }
         public void setVotos(int votos) { this.votos = votos; }
+
+        /** Cuota sobre el total, calculada por el backend (SCRUM-260). No se recalcula aquí. */
+        public double getPorcentaje() { return porcentaje; }
+        public void setPorcentaje(double porcentaje) { this.porcentaje = porcentaje; }
+
+        /** Fracción 0..1 para la barra de progreso. */
+        public double getFraccion() {
+            return Math.max(0.0, Math.min(1.0, porcentaje / 100.0));
+        }
     }
 
     public VotacionModel() {}
@@ -103,12 +114,52 @@ public class VotacionModel {
         return "ABIERTA".equalsIgnoreCase(estado);
     }
 
+    /** Solo BORRADOR. PROGRAMADA es un estado distinto: ver {@link #isProgramada()}. */
     public boolean isBorrador() {
-        return "BORRADOR".equalsIgnoreCase(estado) || "PROGRAMADA".equalsIgnoreCase(estado);
+        return "BORRADOR".equalsIgnoreCase(estado);
+    }
+
+    public boolean isProgramada() {
+        return "PROGRAMADA".equalsIgnoreCase(estado);
     }
 
     public boolean isCerrada() {
         return "CERRADA".equalsIgnoreCase(estado);
+    }
+
+    public boolean isCancelada() {
+        return "CANCELADA".equalsIgnoreCase(estado);
+    }
+
+    // ------------------------------------------------------------------
+    // Reglas de negocio del backend, reflejadas para no ofrecer acciones que
+    // el servidor va a rechazar. No son restricciones nuevas de la interfaz:
+    // cada una espeja una guarda existente en VotacionService.
+    // ------------------------------------------------------------------
+
+    /** El cierre es el acto que publica los resultados (SCRUM-262). */
+    public boolean isResultadosPublicados() {
+        return isCerrada();
+    }
+
+    /** {@code VotacionService.update}: solo lo que no ha iniciado. */
+    public boolean isEditable() {
+        return isBorrador() || isProgramada();
+    }
+
+    /** {@code VotacionService.delete}: BORRADOR o CANCELADA, nunca PROGRAMADA. */
+    public boolean isEliminable() {
+        return isBorrador() || isCancelada();
+    }
+
+    /** {@code VotacionService.abrir}: no se reabre una cerrada ni se abre una cancelada. */
+    public boolean isAbrible() {
+        return isBorrador() || isProgramada();
+    }
+
+    /** {@code VotacionService.cerrar}: solo desde ABIERTA. */
+    public boolean isCerrable() {
+        return isAbierta();
     }
 
     public String getRangoFechas() {
