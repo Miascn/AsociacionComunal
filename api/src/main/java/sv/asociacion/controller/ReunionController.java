@@ -36,6 +36,10 @@ public class ReunionController {
     }
 
     public void create(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para crear reuniones."));
+            return;
+        }
         try {
             ReunionRequest req = context.bodyAsClass(ReunionRequest.class);
             context.status(HttpStatus.CREATED).json(service.create(req));
@@ -45,6 +49,10 @@ public class ReunionController {
     }
 
     public void update(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para actualizar reuniones."));
+            return;
+        }
         Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -54,13 +62,21 @@ public class ReunionController {
             ReunionRequest req = context.bodyAsClass(ReunionRequest.class);
             context.json(service.update(id, req));
         } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            if (e.getMessage() != null && e.getMessage().contains("no encontrada")) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+            } else {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            }
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
     }
 
     public void marcarRealizada(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para marcar reuniones como realizadas."));
+            return;
+        }
         Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -76,6 +92,10 @@ public class ReunionController {
     }
 
     public void cancelar(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para cancelar reuniones."));
+            return;
+        }
         Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -91,6 +111,10 @@ public class ReunionController {
     }
 
     public void delete(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para eliminar reuniones."));
+            return;
+        }
         Integer id = context.pathParamAsClass("id", Integer.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID inválido."));
@@ -104,5 +128,13 @@ public class ReunionController {
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
+    }
+
+    public static boolean canManage(Context context) {
+        String role = context.attribute("role");
+        if (role == null) return false;
+        String r = role.trim().toUpperCase();
+        return r.equals("ADMIN") || r.equals("ADMINISTRADOR") || r.equals("PRESIDENTE")
+            || r.equals("SECRETARIO") || r.equals("SECRETARIA");
     }
 }

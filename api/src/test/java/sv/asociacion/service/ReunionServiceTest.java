@@ -187,6 +187,41 @@ class ReunionServiceTest {
         assertEquals("Reunión Septiembre", soloSep.get(0).titulo());
     }
 
+    @Test
+    void rejectsGetByIdNonExistent() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.getById(999));
+        assertTrue(ex.getMessage().contains("no encontrada"));
+    }
+
+    @Test
+    void rejectsUpdateNonExistent() {
+        ReunionRequest updateReq = new ReunionRequest("Modificada", "2026-11-20 10:00:00", "Lugar", "ORDINARIA", null);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.update(999, updateReq));
+        assertTrue(ex.getMessage().contains("no encontrada"));
+    }
+
+    @Test
+    void rejectsDeleteNonExistent() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.delete(999));
+        assertTrue(ex.getMessage().contains("no encontrada"));
+    }
+
+    @Test
+    void rejectsMarcarRealizadaWhenCancelada() {
+        Reunion r = new Reunion(9, "Cancelada previamente", LocalDateTime.now().plusDays(1), "Cancha", Reunion.Tipo.ORDINARIA, Reunion.Estado.CANCELADA);
+        reunionDAO.save(r);
+
+        assertThrows(IllegalStateException.class, () -> service.marcarRealizada(9));
+    }
+
+    @Test
+    void rejectsDeleteWhenRealizada() {
+        Reunion r = new Reunion(10, "Reunión Realizada", LocalDateTime.now().minusDays(1), "Cancha", Reunion.Tipo.ORDINARIA, Reunion.Estado.REALIZADA);
+        reunionDAO.save(r);
+
+        assertThrows(IllegalStateException.class, () -> service.delete(10));
+    }
+
     private static final class MemoryReunionDAO extends ReunionDAO {
         private final List<Reunion> store = new ArrayList<>();
         private int seq = 1;
