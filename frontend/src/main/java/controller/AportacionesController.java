@@ -129,9 +129,15 @@ public class AportacionesController {
         campoFiltroPeriodo.textProperty().addListener((obs, o, n) -> { currentPage = 1; loadPage(); });
         campoBusqueda.textProperty().addListener((obs, o, n) -> { currentPage = 1; loadPage(); });
 
-        btnVerRecibo.disableProperty().bind(tablaAportaciones.getSelectionModel().selectedItemProperty().isNull());
-        btnEditar.disableProperty().bind(tablaAportaciones.getSelectionModel().selectedItemProperty().isNull());
-        btnAnular.disableProperty().bind(tablaAportaciones.getSelectionModel().selectedItemProperty().isNull());
+        if (btnVerRecibo != null) {
+            btnVerRecibo.disableProperty().bind(tablaAportaciones.getSelectionModel().selectedItemProperty().isNull());
+        }
+        if (btnEditar != null) {
+            btnEditar.disableProperty().bind(tablaAportaciones.getSelectionModel().selectedItemProperty().isNull());
+        }
+        if (btnAnular != null) {
+            btnAnular.disableProperty().bind(tablaAportaciones.getSelectionModel().selectedItemProperty().isNull());
+        }
 
         tablaAportaciones.setRowFactory(tv -> {
             TableRow<AportacionModel> row = new TableRow<>();

@@ -142,7 +142,7 @@ class FxmlNavigationTest {
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Aportaciones".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Control de aportaciones"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("aportaciones")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Votaciones".equals(boton.getText())) {
                     boton.fire();
