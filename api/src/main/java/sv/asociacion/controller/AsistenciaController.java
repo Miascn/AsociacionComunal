@@ -41,6 +41,10 @@ public class AsistenciaController {
     }
 
     public void convocar(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para convocar miembros."));
+            return;
+        }
         Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
         if (idReunion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
@@ -55,13 +59,21 @@ public class AsistenciaController {
             }
             context.status(HttpStatus.CREATED).json(service.convocarMiembros(idReunion, req));
         } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            if (e.getMessage() != null && e.getMessage().contains("Reunión no encontrada")) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+            } else {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            }
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
     }
 
     public void registrarOActualizar(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para registrar asistencia."));
+            return;
+        }
         Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
         if (idReunion == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
@@ -71,7 +83,11 @@ public class AsistenciaController {
             AsistenciaRequest req = context.bodyAsClass(AsistenciaRequest.class);
             context.json(service.registrarOActualizar(idReunion, req));
         } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            if (e.getMessage() != null && e.getMessage().contains("Reunión no encontrada")) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+            } else {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            }
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
@@ -105,6 +121,10 @@ public class AsistenciaController {
     }
 
     public void toggle(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para modificar asistencia."));
+            return;
+        }
         Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asistencia inválido."));
@@ -117,7 +137,11 @@ public class AsistenciaController {
 
             context.json(service.toggleAsistencia(id, asistio, observacion));
         } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            if (e.getMessage() != null && e.getMessage().contains("no encontrado")) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
+            } else {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+            }
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
@@ -128,6 +152,10 @@ public class AsistenciaController {
     }
 
     public void delete(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para eliminar asistencia."));
+            return;
+        }
         Long id = context.pathParamAsClass("id", Long.class).getOrNull();
         if (id == null) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de asistencia inválido."));
@@ -141,5 +169,13 @@ public class AsistenciaController {
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
         }
+    }
+
+    public static boolean canManage(Context context) {
+        String role = context.attribute("role");
+        if (role == null) return false;
+        String r = role.trim().toUpperCase();
+        return r.equals("ADMIN") || r.equals("ADMINISTRADOR") || r.equals("PRESIDENTE")
+            || r.equals("SECRETARIO") || r.equals("SECRETARIA");
     }
 }
