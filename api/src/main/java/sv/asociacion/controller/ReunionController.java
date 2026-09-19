@@ -17,7 +17,9 @@ public class ReunionController {
         String search = context.queryParam("search");
         String tipo = context.queryParam("tipo");
         String estado = context.queryParam("estado");
-        context.json(service.getAll(search, tipo, estado));
+        String desde = context.queryParam("desde");
+        String hasta = context.queryParam("hasta");
+        context.json(service.getAll(search, tipo, estado, desde, hasta));
     }
 
     public void getById(Context context) {
