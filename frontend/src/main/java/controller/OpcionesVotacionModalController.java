@@ -98,7 +98,10 @@ public class OpcionesVotacionModalController {
         if (v != null) {
             lblModalTitulo.setText("Opciones: " + v.getTitulo());
 
-            boolean editable = v.isBorrador();
+            // BORRADOR o PROGRAMADA, igual que OpcionVotacionService.validarVotacionModificable.
+            // Antes se usaba isBorrador(), que agrupaba ambos estados; al separarlos hay que
+            // nombrar la regla real para no bloquear la edición en una votación programada.
+            boolean editable = v.isEditable();
             bannerSoloLectura.setVisible(!editable);
             bannerSoloLectura.setManaged(!editable);
             if (!editable) {

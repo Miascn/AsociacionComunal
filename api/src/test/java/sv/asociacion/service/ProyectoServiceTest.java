@@ -2,6 +2,7 @@ package sv.asociacion.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,21 +15,30 @@ import org.junit.jupiter.api.Test;
 import sv.asociacion.dao.AportacionDAO;
 import sv.asociacion.dao.ProyectoDAO;
 import sv.asociacion.dao.UsuarioDAO;
+import sv.asociacion.dao.VotacionDAO;
 import sv.asociacion.domain.dto.ProyectoRequest;
 import sv.asociacion.domain.dto.ProyectoResponse;
 import sv.asociacion.domain.entity.Proyecto;
 import sv.asociacion.domain.entity.Usuario;
+import sv.asociacion.domain.entity.Votacion;
 
 class ProyectoServiceTest {
     private MemoryProyectoDAO proyectoDAO;
     private MemoryUsuarioDAO usuarioDAO;
+    private MemoryAportacionDAO aportacionDAO;
+    private MemoryVotacionDAO votacionDAO;
     private ProyectoService service;
 
     @BeforeEach
     void setUp() {
         proyectoDAO = new MemoryProyectoDAO();
         usuarioDAO = new MemoryUsuarioDAO();
-        service = new ProyectoService(proyectoDAO, usuarioDAO, null);
+        // Los cuatro DAO se montan de verdad. Inyectar null dejaba sin recorrer las
+        // guardas de aportaciones y votaciones de delete(): existian en produccion
+        // pero ninguna prueba las ejercitaba.
+        aportacionDAO = new MemoryAportacionDAO();
+        votacionDAO = new MemoryVotacionDAO();
+        service = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO, votacionDAO);
 
         Usuario u = new Usuario();
         u.setIdUsuario(1);
@@ -181,6 +191,207 @@ class ProyectoServiceTest {
         assertThrows(IllegalStateException.class, () -> service.delete(p.id()));
     }
 
+    @Test
+    void rejectsDeletingProjectWithVotaciones() {
+        ProyectoResponse p = service.create(new ProyectoRequest(
+            "Reglamento de Zonas Verdes", "Sometido a consulta", new BigDecimal("0.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        votacionDAO.registrar(p.id(), "Consulta sobre zonas verdes");
+
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> service.delete(p.id()));
+        assertTrue(error.getMessage().contains("votaciones"),
+            "El mensaje debe señalar las votaciones: " + error.getMessage());
+    }
+
+    @Test
+    void rejectsDeletingRejectedProjectWithVotaciones() {
+        // Escenario realmente alcanzable: la maquina de estados permite
+        // PROPUESTO -> RECHAZADO, y delete() admite RECHAZADO. Antes de SCRUM-253
+        // este proyecto se borraba y su votacion quedaba huerfana.
+        ProyectoResponse p = service.create(new ProyectoRequest(
+            "Mercado Municipal", "Propuesta sometida a votación", new BigDecimal("40000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        service.cambiarEstado(p.id(), Proyecto.Estado.PROPUESTO);
+        votacionDAO.registrar(p.id(), "¿Aprobar el mercado municipal?");
+        ProyectoResponse rechazado = service.cambiarEstado(p.id(), Proyecto.Estado.RECHAZADO);
+        assertEquals("RECHAZADO", rechazado.estado());
+
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> service.delete(p.id()));
+        assertTrue(error.getMessage().contains("votaciones"),
+            "El mensaje debe señalar las votaciones: " + error.getMessage());
+        assertTrue(proyectoDAO.findById(p.id()).isPresent(), "El proyecto no debe haberse eliminado.");
+    }
+
+    @Test
+    void rejectsDeletingProjectWithAportaciones() {
+        ProyectoResponse p = service.create(new ProyectoRequest(
+            "Techo del Salón", "Recaudación abierta", new BigDecimal("2500.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        aportacionDAO.registrar(p.id());
+
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> service.delete(p.id()));
+        assertTrue(error.getMessage().contains("aportaciones"),
+            "El mensaje debe señalar las aportaciones: " + error.getMessage());
+        assertTrue(proyectoDAO.findById(p.id()).isPresent(), "El proyecto no debe haberse eliminado.");
+    }
+
+    @Test
+    void deletesRejectedProjectWithoutReferences() {
+        // Contraparte de las dos anteriores: sin votaciones ni aportaciones el
+        // borrado sigue permitido. Evita que las guardas bloqueen de mas.
+        ProyectoResponse p = service.create(new ProyectoRequest(
+            "Kiosco Temporal", "Descartado sin votación", BigDecimal.ZERO, 1, Proyecto.Estado.BORRADOR
+        ));
+        service.cambiarEstado(p.id(), Proyecto.Estado.PROPUESTO);
+        service.cambiarEstado(p.id(), Proyecto.Estado.RECHAZADO);
+
+        assertTrue(service.delete(p.id()));
+        assertTrue(proyectoDAO.findById(p.id()).isEmpty());
+    }
+
+    @Test
+    void rejectsUnknownCreator() {
+        ProyectoRequest req = new ProyectoRequest(
+            "Proyecto sin autor", "Creador inexistente", new BigDecimal("100.00"), 999, Proyecto.Estado.BORRADOR
+        );
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> service.create(req));
+        assertTrue(error.getMessage().contains("creador"),
+            "El mensaje debe señalar al creador: " + error.getMessage());
+    }
+
+    // ------------------------------------------------------------------
+    // SCRUM-258 — elemento "detalle": operaciones de lectura
+    //
+    // findById y findFiltered solo se recorrían de forma indirecta, como valor de
+    // retorno de create(), update() y cambiarEstado(). Ninguna prueba las ejercitaba
+    // como consulta: ni el caso de no encontrado, ni el nombre del creador que el
+    // detalle debe mostrar, ni los filtros del listado.
+    // ------------------------------------------------------------------
+
+    @Test
+    void findByIdDevuelveElDetalleConNombreDelCreador() {
+        ProyectoResponse creado = service.create(new ProyectoRequest(
+            "Biblioteca Comunal", "Sala de lectura", new BigDecimal("7200.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+
+        ProyectoResponse detalle = service.findById(creado.id());
+
+        assertNotNull(detalle);
+        assertEquals(creado.id(), detalle.id());
+        assertEquals("Biblioteca Comunal", detalle.nombre());
+        assertEquals("Sala de lectura", detalle.descripcion());
+        assertEquals(new BigDecimal("7200.00"), detalle.presupuesto());
+        assertEquals("BORRADOR", detalle.estado());
+        assertEquals(1, detalle.creadoPor());
+        // El detalle resuelve el nombre del creador, que es lo que la pantalla muestra.
+        assertEquals("admin", detalle.nombreCreador());
+        assertNotNull(detalle.fechaCreacion());
+    }
+
+    @Test
+    void findByIdDevuelveNullSiNoExiste() {
+        assertNull(service.findById(9999));
+    }
+
+    @Test
+    void findByIdDevuelveNullConIdNulo() {
+        assertNull(service.findById(null));
+    }
+
+    @Test
+    void findFilteredPorEstado() {
+        ProyectoResponse borrador = service.create(new ProyectoRequest(
+            "Acera Norte", "Pavimento", new BigDecimal("1000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        ProyectoResponse propuesto = service.create(new ProyectoRequest(
+            "Acera Sur", "Pavimento", new BigDecimal("1000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        service.cambiarEstado(propuesto.id(), Proyecto.Estado.PROPUESTO);
+
+        List<ProyectoResponse> soloBorrador = service.findFiltered(Proyecto.Estado.BORRADOR, null, null);
+        assertEquals(1, soloBorrador.size());
+        assertEquals(borrador.id(), soloBorrador.get(0).id());
+
+        List<ProyectoResponse> soloPropuesto = service.findFiltered(Proyecto.Estado.PROPUESTO, null, null);
+        assertEquals(1, soloPropuesto.size());
+        assertEquals(propuesto.id(), soloPropuesto.get(0).id());
+
+        assertTrue(service.findFiltered(Proyecto.Estado.FINALIZADO, null, null).isEmpty());
+    }
+
+    @Test
+    void findFilteredPorCreador() {
+        Usuario otro = new Usuario();
+        otro.setIdUsuario(2);
+        otro.setNombreUsuario("secretaria");
+        usuarioDAO.save(otro);
+
+        service.create(new ProyectoRequest(
+            "Proyecto de admin", "Primero", new BigDecimal("100.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        ProyectoResponse delOtro = service.create(new ProyectoRequest(
+            "Proyecto de secretaria", "Segundo", new BigDecimal("200.00"), 2, Proyecto.Estado.BORRADOR
+        ));
+
+        List<ProyectoResponse> delUsuario2 = service.findFiltered(null, 2, null);
+        assertEquals(1, delUsuario2.size());
+        assertEquals(delOtro.id(), delUsuario2.get(0).id());
+    }
+
+    @Test
+    void findFilteredPorBusquedaEnNombreYDescripcion() {
+        service.create(new ProyectoRequest(
+            "Alumbrado Solar", "Luminarias LED", new BigDecimal("3000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        service.create(new ProyectoRequest(
+            "Cancha Multiusos", "Incluye alumbrado perimetral", new BigDecimal("9000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        service.create(new ProyectoRequest(
+            "Huerto Escolar", "Compostaje", new BigDecimal("400.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+
+        // La búsqueda alcanza nombre y descripción, y no distingue mayúsculas.
+        assertEquals(2, service.findFiltered(null, null, "alumbrado").size());
+        assertEquals(1, service.findFiltered(null, null, "Huerto").size());
+        assertTrue(service.findFiltered(null, null, "inexistente").isEmpty());
+    }
+
+    @Test
+    void findFilteredSinFiltrosDevuelveTodo() {
+        service.create(new ProyectoRequest(
+            "Uno", "Primero", new BigDecimal("100.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        service.create(new ProyectoRequest(
+            "Dos", "Segundo", new BigDecimal("200.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+
+        assertEquals(2, service.findFiltered(null, null, null).size());
+        assertEquals(2, service.findAll().size());
+    }
+
+    @Test
+    void findFilteredCombinaFiltros() {
+        ProyectoResponse objetivo = service.create(new ProyectoRequest(
+            "Drenaje Oriente", "Obra pluvial", new BigDecimal("5000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+        service.cambiarEstado(objetivo.id(), Proyecto.Estado.PROPUESTO);
+        service.create(new ProyectoRequest(
+            "Drenaje Poniente", "Obra pluvial", new BigDecimal("5000.00"), 1, Proyecto.Estado.BORRADOR
+        ));
+
+        List<ProyectoResponse> resultado =
+            service.findFiltered(Proyecto.Estado.PROPUESTO, 1, "drenaje");
+
+        assertEquals(1, resultado.size());
+        assertEquals(objetivo.id(), resultado.get(0).id());
+    }
+
+    @Test
+    void listadoVacioNoEsError() {
+        assertTrue(service.findAll().isEmpty());
+        assertTrue(service.findFiltered(null, null, null).isEmpty());
+    }
+
     private static final class MemoryProyectoDAO extends ProyectoDAO {
         private final List<Proyecto> store = new ArrayList<>();
         private int seq = 1;
@@ -263,6 +474,45 @@ class ProyectoServiceTest {
         @Override
         public Optional<Usuario> findById(Integer id) {
             return store.stream().filter(u -> u.getIdUsuario().equals(id)).findFirst();
+        }
+    }
+
+    private static final class MemoryVotacionDAO extends VotacionDAO {
+        private final List<Votacion> store = new ArrayList<>();
+        private int seq = 1;
+
+        void registrar(Integer idProyecto, String titulo) {
+            Votacion v = new Votacion();
+            v.setIdVotacion(seq++);
+            v.setIdProyecto(idProyecto);
+            v.setTitulo(titulo);
+            v.setEstado(Votacion.Estado.CERRADA);
+            store.add(v);
+        }
+
+        // Se sobrescribe findFiltered y no findByProyecto: asi la prueba recorre
+        // la delegacion real de VotacionDAO.findByProyecto, que es el metodo que
+        // ProyectoService invoca.
+        @Override
+        public List<Votacion> findFiltered(Votacion.Estado estado, Integer idProyecto, String busqueda) {
+            return store.stream()
+                .filter(v -> estado == null || v.getEstado() == estado)
+                .filter(v -> idProyecto == null || idProyecto.equals(v.getIdProyecto()))
+                .toList();
+        }
+    }
+
+    private static final class MemoryAportacionDAO extends AportacionDAO {
+        private final List<Integer> proyectosConAportacion = new ArrayList<>();
+
+        void registrar(Integer idProyecto) {
+            proyectosConAportacion.add(idProyecto);
+        }
+
+        @Override
+        public int countFiltered(Integer idMiembro, Integer idProyecto, String periodo,
+                                 String desde, String hasta, String metodo, String estado, String busqueda) {
+            return (int) proyectosConAportacion.stream().filter(id -> id.equals(idProyecto)).count();
         }
     }
 }

@@ -6,12 +6,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import sv.asociacion.dao.RolDAO;
@@ -110,6 +119,107 @@ class RolServiceTest {
         assertTrue(service.delete(created.idRol()));
         assertThrows(NoSuchElementException.class,
             () -> service.delete(created.idRol()));
+    }
+
+    // ------------------------------------------------------------------
+    // SCRUM-329 — proteger DIRECTIVO y alinear los roles sembrados
+    // ------------------------------------------------------------------
+
+    @Test
+    void protegeLosTresRolesSembrados() {
+        assertTrue(RolService.isBaseRole("ADMIN"), "ADMIN se siembra y debe estar protegido.");
+        assertTrue(RolService.isBaseRole("DIRECTIVO"), "DIRECTIVO se siembra y debe estar protegido.");
+        assertTrue(RolService.isBaseRole("MIEMBRO"), "MIEMBRO se siembra y debe estar protegido.");
+    }
+
+    @Test
+    void todoRolSembradoEnSchemaEstaProtegido() throws IOException {
+        // Lee la semilla real de schema.sql en lugar de repetirla aquí: si el catálogo
+        // inicial crece sin añadir el nombre a ROLES_BASE, esta prueba falla.
+        Set<String> sembrados = rolesSembradosEnSchemaSql();
+
+        // Comprobación del propio extractor: sin esto la prueba pasaría aunque el
+        // parseo devolviera un subconjunto y no verificara casi nada.
+        assertTrue(sembrados.containsAll(List.of("ADMIN", "DIRECTIVO", "MIEMBRO")),
+            "El extractor no recuperó la semilla conocida; leyó: " + sembrados);
+
+        for (String nombre : sembrados) {
+            assertTrue(RolService.isBaseRole(nombre),
+                "El rol '" + nombre + "' se siembra en schema.sql pero isBaseRole() no lo protege.");
+        }
+    }
+
+    @Test
+    void preventsRenamingDirectivo() {
+        rolDAO.save(new Rol(4, "DIRECTIVO", "Miembro de la junta directiva"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> service.update(4, new RolRequest("JUNTA_DIRECTIVA", "Intento de renombrar")));
+        assertTrue(ex.getMessage().contains("rol base"),
+            "El mensaje debe señalar que es un rol base: " + ex.getMessage());
+    }
+
+    @Test
+    void preventsDeletingDirectivo() {
+        rolDAO.save(new Rol(4, "DIRECTIVO", "Miembro de la junta directiva"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> service.delete(4));
+        assertTrue(ex.getMessage().contains("rol base"),
+            "El mensaje debe señalar que es un rol base: " + ex.getMessage());
+        assertTrue(rolDAO.findById(4).isPresent(), "El rol no debe haberse eliminado.");
+    }
+
+    @Test
+    void conservaLosDemasNombresProtegidos() {
+        // Criterio 8: este ticket no retira ningún nombre de ROLES_BASE. Varios
+        // participan en comprobaciones de permisos vigentes —por ejemplo SECRETARIO
+        // en ReunionesController del frontend—, de modo que retirarlos permitiría
+        // renombrarlos y perder permisos en silencio.
+        for (String nombre : List.of("ADMINISTRADOR", "PRESIDENTE", "SECRETARIO", "TESORERO", "SINDICO")) {
+            assertTrue(RolService.isBaseRole(nombre),
+                nombre + " no debe perder la protección en SCRUM-329.");
+        }
+    }
+
+    @Test
+    void nombreNoBaseSigueSiendoEditable() {
+        // Contraparte: la protección no debe extenderse a roles propios.
+        assertFalse(RolService.isBaseRole("COORDINADOR"));
+        var created = service.create(new RolRequest("COORDINADOR", "Coordina comisiones"));
+        assertEquals("COORDINADOR_GENERAL",
+            service.update(created.idRol(), new RolRequest("COORDINADOR_GENERAL", "Renombrado")).nombre());
+    }
+
+    /** Extrae los nombres del {@code INSERT INTO rol} de {@code schema.sql}. */
+    private static Set<String> rolesSembradosEnSchemaSql() throws IOException {
+        String sql = Files.readString(localizarSchemaSql(), StandardCharsets.UTF_8);
+
+        Matcher bloque = Pattern
+            .compile("INSERT\\s+INTO\\s+rol\\s*\\([^)]*\\)\\s*VALUES(.*?);",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
+            .matcher(sql);
+        assertTrue(bloque.find(), "No se encontró la sentencia INSERT INTO rol en schema.sql.");
+
+        Matcher nombres = Pattern.compile("\\(\\s*'([^']+)'").matcher(bloque.group(1));
+        Set<String> resultado = new LinkedHashSet<>();
+        while (nombres.find()) {
+            resultado.add(nombres.group(1).trim().toUpperCase(Locale.ROOT));
+        }
+        return resultado;
+    }
+
+    /** {@code schema.sql} vive en la raíz del repositorio, por encima del módulo api. */
+    private static Path localizarSchemaSql() {
+        Path dir = Path.of("").toAbsolutePath();
+        for (int i = 0; i < 4 && dir != null; i++, dir = dir.getParent()) {
+            Path candidato = dir.resolve("schema.sql");
+            if (Files.isRegularFile(candidato)) {
+                return candidato;
+            }
+        }
+        throw new IllegalStateException(
+            "No se encontró schema.sql subiendo desde " + Path.of("").toAbsolutePath());
     }
 
     private static final class MemoryRolDAO extends RolDAO {

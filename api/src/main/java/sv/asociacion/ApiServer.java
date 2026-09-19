@@ -1,7 +1,12 @@
 package sv.asociacion;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.HttpStatus;
+import io.javalin.json.JavalinJackson;
 import java.util.Map;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -21,6 +26,58 @@ public final class ApiServer {
     private static final String HOST = "0.0.0.0";
 
     private ApiServer() { }
+
+    /**
+     * Configura el mapeador JSON.
+     *
+     * <p>Sin el modulo JSR-310 el {@code ObjectMapper} por defecto no sabe leer
+     * {@code LocalDate} ni {@code LocalDateTime}, de modo que toda peticion cuyo DTO
+     * lleve fechas fallaba con 500 aunque la fecha fuese valida.
+     *
+     * <p>Es publico y estatico a proposito: las pruebas de ruta deben montar
+     * exactamente esta configuracion, no una equivalente. Una copia divergente
+     * validaria un servidor que no es el de produccion.
+     */
+    public static void configurarJson(JavalinConfig cfg) {
+        cfg.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
+            mapper.registerModule(new JavaTimeModule());
+            // Las fechas viajan en ISO-8601, no como arreglo numerico. Hoy ninguna
+            // respuesta emite java.time -todas pasan por DateUtils-, pero deja el
+            // formato fijado para cuando alguna lo haga.
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        }));
+    }
+
+    /**
+     * Registra el manejo de errores: un valor mal formado en la peticion y el
+     * respaldo para lo que no se previo.
+     *
+     * <p>Va junto a {@link #configurarJson} y por el mismo motivo: si las pruebas
+     * registrasen su propio manejador, mediarian un comportamiento que no es el de
+     * produccion. Ambos registros viven aqui para que no puedan divergir.
+     */
+    public static void configurarManejoErrores(JavalinConfig cfg) {
+        // Un valor con formato invalido es un error del cliente, no del servidor.
+        // Se captura InvalidFormatException y no un tipo mas general a proposito: es
+        // exactamente lo que Jackson lanza al leer, medido con ambos tipos de fecha,
+        // y no puede originarse al serializar una respuesta. Capturar
+        // JsonProcessingException convertiria en 400 fallos que si son del servidor.
+        cfg.routes.exception(InvalidFormatException.class, (exception, context) -> {
+            String campo = exception.getPath().isEmpty()
+                ? null
+                : exception.getPath().get(exception.getPath().size() - 1).getFieldName();
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error",
+                campo == null
+                    ? "El cuerpo de la solicitud contiene un valor con formato inválido."
+                    : "El valor del campo '" + campo + "' no tiene un formato válido."));
+        });
+
+        cfg.routes.exception(Exception.class, (exception, context) -> {
+            exception.printStackTrace(System.err);
+            context.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .json(Map.of("error", "No fue posible procesar la solicitud."));
+        });
+    }
 
     public static void main(String[] args) {
         AppConfig config = AppConfig.load();
@@ -44,7 +101,11 @@ public final class ApiServer {
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
         MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
-        ProyectoService proyectoService = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO);
+        // Lecturas del padron a traves del contrato generico. Se inyecta la misma
+        // implementacion JDBC que usa el resto del sistema: el origen de datos de
+        // produccion no cambia.
+        CensoMiembrosService censoMiembros = new CensoMiembrosService(miembroDAO);
+        ProyectoService proyectoService = new ProyectoService(proyectoDAO, usuarioDAO, aportacionDAO, votacionDAO);
         UsuarioService usuarioService = new UsuarioService(usuarioDAO, rolDAO, miembroDAO);
         RolService rolService = new RolService(rolDAO, usuarioDAO);
         ViviendaService viviendaService = new ViviendaService(viviendaDAO);
@@ -61,7 +122,7 @@ public final class ApiServer {
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
-        MiembroController miembros = new MiembroController(miembroService);
+        MiembroController miembros = new MiembroController(miembroService, censoMiembros);
         ProyectoController proyectos = new ProyectoController(proyectoService);
         UsuarioController usuarios = new UsuarioController(usuarioService);
         RolController roles = new RolController(rolService);
@@ -87,6 +148,8 @@ public final class ApiServer {
         AuthRoutes mobileAuth = new AuthRoutes(mobileAuthService);
 
         Javalin app = Javalin.create(cfg -> {
+            configurarJson(cfg);
+            configurarManejoErrores(cfg);
             cfg.jetty.host = HOST;
             cfg.jetty.port = config.apiPort;
             cfg.http.maxRequestSize = 268_435_456L;
@@ -226,12 +289,6 @@ public final class ApiServer {
             cfg.routes.get("/api/mobile/updates/android/package", androidUpdates::packageFile);
             cfg.routes.post("/api/updates/android/publish", androidUpdates::publish);
             mobileAuth.register(cfg.routes);
-
-            cfg.routes.exception(Exception.class, (exception, context) -> {
-                exception.printStackTrace(System.err);
-                context.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .json(Map.of("error", "No fue posible procesar la solicitud."));
-            });
         });
         app.start();
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, config.apiPort);

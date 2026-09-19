@@ -96,13 +96,18 @@ class VotacionServiceTest {
         assertThrows(IllegalStateException.class, () -> service.abrir(res.id()));
     }
 
+    // Las cinco pruebas que siguen necesitan alcanzar ABIERTA, de modo que su ventana
+    // de fechas debe estar vigente. Antes usaban fechaInicio en el futuro como relleno
+    // arbitrario, porque las fechas no gobernaban ninguna transición. Solo cambia el
+    // montaje: las aserciones y el propósito son los originales.
+
     @Test
     void opensVotacionWhenAtLeastTwoOptionsExist() {
         VotacionResponse res = service.create(new VotacionRequest(
             "Votación Válida",
             "Con dos opciones",
             null,
-            LocalDateTime.now().plusDays(1),
+            LocalDateTime.now().minusHours(1),
             LocalDateTime.now().plusDays(3),
             List.of("Opción A", "Opción B")
         ));
@@ -117,7 +122,7 @@ class VotacionServiceTest {
             "Votación para Cerrar",
             "Descripción",
             null,
-            LocalDateTime.now().plusDays(1),
+            LocalDateTime.now().minusHours(1),
             LocalDateTime.now().plusDays(3),
             List.of("Sí", "No")
         ));
@@ -133,7 +138,7 @@ class VotacionServiceTest {
             "Votación Concluida",
             "Descripción",
             null,
-            LocalDateTime.now().plusDays(1),
+            LocalDateTime.now().minusHours(1),
             LocalDateTime.now().plusDays(3),
             List.of("Opción 1", "Opción 2")
         ));
@@ -149,7 +154,7 @@ class VotacionServiceTest {
             "Votación Inmutable",
             "Descripción",
             null,
-            LocalDateTime.now().plusDays(1),
+            LocalDateTime.now().minusHours(1),
             LocalDateTime.now().plusDays(3),
             List.of("Opción 1", "Opción 2")
         ));
@@ -202,7 +207,7 @@ class VotacionServiceTest {
             "Votación No Borrable",
             "Descripción",
             null,
-            LocalDateTime.now().plusDays(1),
+            LocalDateTime.now().minusHours(1),
             LocalDateTime.now().plusDays(3),
             List.of("Opción 1", "Opción 2")
         ));
@@ -227,6 +232,314 @@ class VotacionServiceTest {
         votoDAO.save(v);
 
         assertThrows(IllegalStateException.class, () -> service.delete(res.id()));
+    }
+
+    // ==================================================================
+    // SCRUM-262 — edición solo de lo no iniciado
+    // ==================================================================
+
+    @Test
+    void permiteEditarVotacionEnBorrador() {
+        VotacionResponse res = service.create(programadaEnElFuturo("Editable en borrador"));
+        assertEquals("BORRADOR", res.estado());
+
+        VotacionResponse editada = service.update(res.id(), new VotacionRequest(
+            "Título corregido", "Descripción nueva", null,
+            LocalDateTime.now().plusDays(2), LocalDateTime.now().plusDays(6), null));
+
+        assertEquals("Título corregido", editada.titulo());
+    }
+
+    @Test
+    void permiteEditarVotacionProgramada() {
+        VotacionResponse res = service.create(programadaEnElFuturo("Editable programada"));
+        VotacionResponse programada = service.abrir(res.id());
+        assertEquals("PROGRAMADA", programada.estado());
+
+        VotacionResponse editada = service.update(res.id(), new VotacionRequest(
+            "Programada corregida", "Otra descripción", null,
+            LocalDateTime.now().plusDays(2), LocalDateTime.now().plusDays(6), null));
+
+        assertEquals("Programada corregida", editada.titulo());
+        assertEquals("PROGRAMADA", editada.estado());
+    }
+
+    @Test
+    void rechazaEditarVotacionAbierta() {
+        // El hueco principal del criterio: antes se podían cambiar título, proyecto y
+        // fechas con la recepción de votos en curso.
+        VotacionResponse res = service.create(ventanaVigente("Abierta inmutable"));
+        service.abrir(res.id());
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+            () -> service.update(res.id(), new VotacionRequest(
+                "Intento de cambio", "Descripción", null,
+                LocalDateTime.now().minusHours(1), LocalDateTime.now().plusDays(3), null)));
+        assertTrue(error.getMessage().contains("no iniciada"),
+            "El mensaje debe señalar que solo se edita lo no iniciado: " + error.getMessage());
+    }
+
+    @Test
+    void rechazaEditarVotacionCancelada() {
+        VotacionResponse res = service.create(programadaEnElFuturo("Cancelada inmutable"));
+        service.cancelar(res.id());
+
+        assertThrows(IllegalStateException.class, () -> service.update(res.id(), new VotacionRequest(
+            "Intento de cambio", "Descripción", null,
+            LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(3), null)));
+    }
+
+    // ==================================================================
+    // SCRUM-262 — las fechas gobiernan las transiciones
+    // ==================================================================
+
+    @Test
+    void abrirAntesDelInicioDejaVotacionProgramada() {
+        VotacionResponse res = service.create(programadaEnElFuturo("Aún no comienza"));
+
+        VotacionResponse abierta = service.abrir(res.id());
+
+        assertEquals("PROGRAMADA", abierta.estado(),
+            "Antes de la fecha de inicio la apertura debe dejarla programada, no activa.");
+    }
+
+    @Test
+    void abrirDentroDeLaVentanaActivaLaVotacion() {
+        VotacionResponse res = service.create(ventanaVigente("En curso"));
+
+        assertEquals("ABIERTA", service.abrir(res.id()).estado());
+    }
+
+    @Test
+    void programadaPasaAAbiertaCuandoLlegaLaVentana() {
+        // No se puede esperar en tiempo real. Se traslada la ventana al presente
+        // editando la votación, algo legítimo porque PROGRAMADA es editable, y se
+        // vuelve a invocar la apertura.
+        VotacionResponse res = service.create(programadaEnElFuturo("Llega su momento"));
+        assertEquals("PROGRAMADA", service.abrir(res.id()).estado());
+
+        service.update(res.id(), new VotacionRequest(
+            "Llega su momento", "Descripción", null,
+            LocalDateTime.now().minusHours(1), LocalDateTime.now().plusDays(3), null));
+
+        assertEquals("ABIERTA", service.abrir(res.id()).estado());
+    }
+
+    @Test
+    void abrirProgramadaAntesDeTiempoEsIdempotente() {
+        VotacionResponse res = service.create(programadaEnElFuturo("Sigue esperando"));
+        assertEquals("PROGRAMADA", service.abrir(res.id()).estado());
+
+        assertEquals("PROGRAMADA", service.abrir(res.id()).estado(),
+            "Reintentar la apertura antes de tiempo no debe cambiar el estado.");
+    }
+
+    @Test
+    void rechazaAbrirVotacionVencida() {
+        VotacionResponse res = service.create(new VotacionRequest(
+            "Ventana agotada", "Descripción", null,
+            LocalDateTime.now().minusDays(5), LocalDateTime.now().minusDays(1),
+            List.of("Opción 1", "Opción 2")));
+
+        IllegalStateException error =
+            assertThrows(IllegalStateException.class, () -> service.abrir(res.id()));
+        assertTrue(error.getMessage().contains("finalización"),
+            "El mensaje debe señalar la fecha de finalización: " + error.getMessage());
+    }
+
+    // ==================================================================
+    // SCRUM-262 — cierre y publicación de resultados
+    // ==================================================================
+
+    @Test
+    void rechazaCerrarVotacionQueNoEstaAbierta() {
+        VotacionResponse borrador = service.create(programadaEnElFuturo("Nunca abierta"));
+        assertThrows(IllegalStateException.class, () -> service.cerrar(borrador.id()));
+
+        VotacionResponse programada = service.create(programadaEnElFuturo("Solo programada"));
+        service.abrir(programada.id());
+        assertThrows(IllegalStateException.class, () -> service.cerrar(programada.id()));
+
+        VotacionResponse cancelada = service.create(programadaEnElFuturo("Descartada"));
+        service.cancelar(cancelada.id());
+        assertThrows(IllegalStateException.class, () -> service.cerrar(cancelada.id()));
+    }
+
+    @Test
+    void laVotacionAbiertaNoExponeConteos() {
+        VotacionResponse res = service.create(ventanaVigente("Con votos en curso"));
+        service.abrir(res.id());
+        registrarVotos(res, 3);
+
+        VotacionResponse enCurso = service.findById(res.id());
+        assertEquals(0, enCurso.totalVotos(),
+            "Una votación abierta no debe publicar el total de votos.");
+        assertTrue(enCurso.opciones().stream().allMatch(o -> o.votos() == 0),
+            "Ninguna opción debe exponer su conteo antes del cierre.");
+        assertEquals(2, enCurso.totalOpciones(),
+            "Las opciones siguen visibles: lo que se oculta es el resultado, no la papeleta.");
+    }
+
+    @Test
+    void laVotacionProgramadaNoExponeConteos() {
+        VotacionResponse res = service.create(programadaEnElFuturo("Programada sin resultados"));
+        service.abrir(res.id());
+        registrarVotos(res, 2);
+
+        VotacionResponse programada = service.findById(res.id());
+        assertEquals("PROGRAMADA", programada.estado());
+        assertEquals(0, programada.totalVotos());
+    }
+
+    @Test
+    void laVotacionCanceladaNoExponeConteos() {
+        VotacionResponse res = service.create(ventanaVigente("Anulada con votos"));
+        service.abrir(res.id());
+        registrarVotos(res, 4);
+        service.cancelar(res.id());
+
+        VotacionResponse cancelada = service.findById(res.id());
+        assertEquals("CANCELADA", cancelada.estado());
+        assertEquals(0, cancelada.totalVotos(),
+            "Una votación cancelada no publica resultados.");
+    }
+
+    @Test
+    void laVotacionCerradaExponeConteosReales() {
+        VotacionResponse res = service.create(ventanaVigente("Concluida"));
+        service.abrir(res.id());
+        registrarVotos(res, 5);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals("CERRADA", cerrada.estado());
+        assertEquals(5, cerrada.totalVotos(),
+            "El cierre publica los resultados reales.");
+        assertEquals(5, cerrada.opciones().stream().mapToInt(VotacionResponse.OpcionDetalle::votos).sum());
+    }
+
+    // ------------------------------------------------------------------
+    // Porcentajes. Son una cuota del total publicado, de modo que dependen tanto
+    // del reparto de votos como de que la votación haya publicado resultados.
+    // ------------------------------------------------------------------
+
+    @Test
+    void elRepartoExactoDaPorcentajesQueSumanCien() {
+        VotacionResponse res = service.create(ventanaVigente("Reparto exacto"));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 3);
+        registrarVotosEn(res, 1, 1);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals(4, cerrada.totalVotos());
+        assertEquals(75.0, cerrada.opciones().get(0).porcentaje(), 0.001);
+        assertEquals(25.0, cerrada.opciones().get(1).porcentaje(), 0.001);
+        assertEquals(100.0,
+            cerrada.opciones().stream().mapToDouble(VotacionResponse.OpcionDetalle::porcentaje).sum(),
+            0.001);
+    }
+
+    @Test
+    void elPorcentajeSeRedondeaAUnDecimal() {
+        VotacionResponse res = service.create(new VotacionRequest(
+            "Tercios", "Descripción", null,
+            LocalDateTime.now().minusHours(1), LocalDateTime.now().plusDays(3),
+            List.of("A", "B", "C")));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 1);
+        registrarVotosEn(res, 1, 1);
+        registrarVotosEn(res, 2, 1);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        for (VotacionResponse.OpcionDetalle op : cerrada.opciones()) {
+            assertEquals(33.3, op.porcentaje(), 0.001,
+                "Un tercio se publica con un decimal, como en ReunionService.");
+        }
+    }
+
+    @Test
+    void laOpcionQueConcentraTodosLosVotosLlegaACien() {
+        VotacionResponse res = service.create(ventanaVigente("Unanimidad"));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 5);
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals(100.0, cerrada.opciones().get(0).porcentaje(), 0.001);
+        assertEquals(0.0, cerrada.opciones().get(1).porcentaje(), 0.001);
+    }
+
+    @Test
+    void sinVotosLosPorcentajesSonCeroYNoHayDivisionEntreCero() {
+        VotacionResponse res = service.create(ventanaVigente("Desierta"));
+        service.abrir(res.id());
+
+        VotacionResponse cerrada = service.cerrar(res.id());
+
+        assertEquals(0, cerrada.totalVotos());
+        for (VotacionResponse.OpcionDetalle op : cerrada.opciones()) {
+            assertEquals(0.0, op.porcentaje(), 0.001);
+        }
+    }
+
+    @Test
+    void laVotacionEnCursoNoPublicaPorcentajes() {
+        VotacionResponse res = service.create(ventanaVigente("En curso"));
+        service.abrir(res.id());
+        registrarVotosEn(res, 0, 3);
+        registrarVotosEn(res, 1, 1);
+
+        VotacionResponse abierta = service.findById(res.id());
+
+        assertEquals("ABIERTA", abierta.estado());
+        assertEquals(0, abierta.totalVotos());
+        for (VotacionResponse.OpcionDetalle op : abierta.opciones()) {
+            assertEquals(0.0, op.porcentaje(), 0.001,
+                "Publicar porcentajes en curso influiría en quien aún no ha votado.");
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Utilidades de montaje. Las ventanas son amplias a propósito para que las
+    // pruebas no dependan del instante exacto de ejecución.
+    // ------------------------------------------------------------------
+
+    /** Ventana futura: la apertura debe dejar la votación PROGRAMADA. */
+    private static VotacionRequest programadaEnElFuturo(String titulo) {
+        return new VotacionRequest(titulo, "Descripción", null,
+            LocalDateTime.now().plusDays(2), LocalDateTime.now().plusDays(6),
+            List.of("Opción 1", "Opción 2"));
+    }
+
+    /** Ventana vigente: la apertura debe activar la votación. */
+    private static VotacionRequest ventanaVigente(String titulo) {
+        return new VotacionRequest(titulo, "Descripción", null,
+            LocalDateTime.now().minusHours(1), LocalDateTime.now().plusDays(3),
+            List.of("Opción 1", "Opción 2"));
+    }
+
+    /** Reparte votos entre las opciones de la votación, directamente en el almacén. */
+    private void registrarVotos(VotacionResponse votacion, int cantidad) {
+        List<OpcionVotacion> opciones = opcionDAO.findByVotacion(votacion.id());
+        for (int i = 0; i < cantidad; i++) {
+            Voto voto = new Voto();
+            voto.setIdVotacion(votacion.id());
+            voto.setIdOpcion(opciones.get(i % opciones.size()).getIdOpcion());
+            votoDAO.save(voto);
+        }
+    }
+
+    /** Dirige {@code cantidad} votos a una opción concreta, para repartos desiguales. */
+    private void registrarVotosEn(VotacionResponse votacion, int indiceOpcion, int cantidad) {
+        List<OpcionVotacion> opciones = opcionDAO.findByVotacion(votacion.id());
+        for (int i = 0; i < cantidad; i++) {
+            Voto voto = new Voto();
+            voto.setIdVotacion(votacion.id());
+            voto.setIdOpcion(opciones.get(indiceOpcion).getIdOpcion());
+            votoDAO.save(voto);
+        }
     }
 
     private static final class MemoryVotacionDAO extends VotacionDAO {

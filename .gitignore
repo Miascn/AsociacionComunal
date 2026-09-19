@@ -53,3 +53,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Datos locales de persistencia .dat (SCRUM-312)
+datos/
+*.dat
