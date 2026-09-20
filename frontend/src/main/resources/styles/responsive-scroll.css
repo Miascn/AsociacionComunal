@@ -1,0 +1,18 @@
+/*
+ * Envoltorio de desplazamiento que añade ResponsiveWindowService cuando el contenido
+ * de un modal no cabe en el área visible.
+ *
+ * Es transparente a propósito: el formulario que va dentro ya trae su propio fondo,
+ * y sin esto el ScrollPane pintaría el gris de Modena alrededor, cambiando el aspecto
+ * de diálogos que hoy se ven blancos.
+ */
+.responsive-scroll {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.responsive-scroll > .viewport {
+    -fx-background-color: transparent;
+}
