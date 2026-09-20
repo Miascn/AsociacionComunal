@@ -230,6 +230,7 @@ public final class ResponsiveWindowService {
     }
 
     public static void fit(Stage stage, double preferredWidth, double preferredHeight, boolean dashboard) {
+        if (stage == null) return;
         Rectangle2D bounds = visualBounds(stage);
         double availableWidth = presupuestoAncho(bounds, 0, WINDOW_MARGIN);
         double availableHeight = presupuestoAlto(bounds, 0, WINDOW_MARGIN);
@@ -240,19 +241,34 @@ public final class ResponsiveWindowService {
 
         stage.setMinWidth(minimoSeguro(960, availableWidth));
         stage.setMinHeight(minimoSeguro(640, availableHeight));
-        stage.setMaxWidth(bounds.getWidth());
-        stage.setMaxHeight(bounds.getHeight());
+        // La ventana principal no debe limitar su tamaño máximo al área visible;
+        // en Windows esto bloquea la maximización nativa por DWM y descuadra el Title Bar.
+        stage.setMaxWidth(Double.MAX_VALUE);
+        stage.setMaxHeight(Double.MAX_VALUE);
 
-        if (!userMaximized) {
+        boolean shouldMaximize = userMaximized || (dashboard && (bounds.getWidth() <= 1366 || bounds.getHeight() <= 768));
+
+        if (shouldMaximize) {
+            if (!stage.isMaximized()) {
+                // Pre-establecer dimensiones centradas de restauración por si el usuario des-maximiza
+                stage.setWidth(width);
+                stage.setHeight(height);
+                Rectangle2D destino = centrar(bounds, width, height);
+                stage.setX(destino.getMinX());
+                stage.setY(destino.getMinY());
+                if (stage.isShowing()) {
+                    Platform.runLater(() -> stage.setMaximized(true));
+                } else {
+                    stage.setMaximized(true);
+                }
+            }
+        } else {
+            stage.setMaximized(false);
             stage.setWidth(width);
             stage.setHeight(height);
             Rectangle2D destino = centrar(bounds, width, height);
             stage.setX(destino.getMinX());
             stage.setY(destino.getMinY());
-        }
-
-        if (userMaximized || (dashboard && (bounds.getWidth() <= 1366 || bounds.getHeight() <= 768))) {
-            stage.setMaximized(true);
         }
     }
 
