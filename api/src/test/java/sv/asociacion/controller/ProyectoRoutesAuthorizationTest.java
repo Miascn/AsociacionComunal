@@ -62,6 +62,7 @@ class ProyectoRoutesAuthorizationTest {
             sv.asociacion.ApiServer.configurarJson(config);
             sv.asociacion.ApiServer.configurarManejoErrores(config);
             config.routes.before("/api/*", context -> {
+                context.body();
                 String role = context.header("X-Test-Role");
                 if (role != null && !role.isBlank()) {
                     context.attribute("role", role);

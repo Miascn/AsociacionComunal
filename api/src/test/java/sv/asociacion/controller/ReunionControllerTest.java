@@ -35,7 +35,10 @@ class ReunionControllerTest {
         ReunionController controller = new ReunionController(service);
 
         app = Javalin.create(config -> {
+            sv.asociacion.ApiServer.configurarJson(config);
+            sv.asociacion.ApiServer.configurarManejoErrores(config);
             config.routes.before(ctx -> {
+                ctx.body();
                 String role = ctx.header("X-Role");
                 if (role != null) {
                     ctx.attribute("role", role);
@@ -204,6 +207,11 @@ class ReunionControllerTest {
         @Override
         public int countByReunion(Integer idReunion) {
             return (int) store.stream().filter(a -> a.getIdReunion().equals(idReunion)).count();
+        }
+
+        @Override
+        public int countAsistieronByReunion(Integer idReunion) {
+            return (int) store.stream().filter(a -> a.getIdReunion().equals(idReunion) && a.isAsistio()).count();
         }
     }
 }

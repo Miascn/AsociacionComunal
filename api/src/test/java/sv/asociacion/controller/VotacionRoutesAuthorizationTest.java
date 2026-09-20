@@ -56,7 +56,6 @@ class VotacionRoutesAuthorizationTest {
         List.of("MIEMBRO", "DIRECTIVO", "SECRETARIO", "SINDICO", "TESORERO");
 
     private Javalin app;
-    private HttpClient client;
     private StubVotacionService service;
 
     @BeforeEach
@@ -68,6 +67,7 @@ class VotacionRoutesAuthorizationTest {
             ApiServer.configurarJson(config);
             ApiServer.configurarManejoErrores(config);
             config.routes.before("/api/*", context -> {
+                context.body();
                 String role = context.header("X-Test-Role");
                 if (role != null && !role.isBlank()) {
                     context.attribute("role", role);
@@ -82,8 +82,6 @@ class VotacionRoutesAuthorizationTest {
             config.routes.patch("/api/votaciones/{id}/cancelar", controller::cancelar);
             config.routes.delete("/api/votaciones/{id}", controller::delete);
         }).start("127.0.0.1", 0);
-
-        client = HttpClient.newHttpClient();
     }
 
     @AfterEach
@@ -186,13 +184,20 @@ class VotacionRoutesAuthorizationTest {
 
         HttpRequest.Builder request = HttpRequest
             .newBuilder(URI.create("http://127.0.0.1:" + app.port() + path))
+            .version(HttpClient.Version.HTTP_1_1)
             .method(method, publisher)
             .header("Content-Type", "application/json");
 
         if (role != null) {
             request.header("X-Test-Role", role);
         }
-        return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+
+        HttpClient requestClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(java.time.Duration.ofSeconds(5))
+            .build();
+
+        return requestClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     /**

@@ -53,7 +53,10 @@ class AsistenciaControllerTest {
         miembroDAO.save(m1);
 
         app = Javalin.create(config -> {
+            sv.asociacion.ApiServer.configurarJson(config);
+            sv.asociacion.ApiServer.configurarManejoErrores(config);
             config.routes.before(ctx -> {
+                ctx.body();
                 String role = ctx.header("X-Role");
                 if (role != null) {
                     ctx.attribute("role", role);
