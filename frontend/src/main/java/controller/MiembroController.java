@@ -174,6 +174,7 @@ public class MiembroController {
             stage.initOwner(tablaMiembros.getScene().getWindow());
             stage.setScene(new Scene(content));
             stage.setResizable(true);
+            ResponsiveWindowService.fitModalStage(stage, tablaMiembros.getScene().getWindow());
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
