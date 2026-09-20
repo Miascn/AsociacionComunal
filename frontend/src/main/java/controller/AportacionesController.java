@@ -25,6 +25,7 @@ import javafx.stage.Stage;
 import models.AportacionModel;
 import models.AuthUser;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.AportacionApiClient;
 
 public class AportacionesController {
@@ -171,7 +172,7 @@ public class AportacionesController {
                 dialogStage.initOwner(tablaAportaciones.getScene().getWindow());
             }
             dialogStage.setScene(new Scene(root));
-            dialogStage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(dialogStage);
             dialogStage.showAndWait();
         } catch (IOException e) {
             new Alert(Alert.AlertType.ERROR, "Error al abrir formulario: " + e.getMessage(), ButtonType.OK).showAndWait();

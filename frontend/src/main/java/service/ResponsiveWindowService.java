@@ -169,11 +169,19 @@ public final class ResponsiveWindowService {
      * del que no se puede rescatar el contenido cuando no cabe, así que aquí
      * {@code resizable} pasa a verdadero de forma deliberada.
      */
+    public static void fitModalStage(Stage stage) {
+        fitModalStage(stage, null);
+    }
+
     public static void fitModalStage(Stage stage, Window owner) {
         if (owner != null && stage.getOwner() == null) {
             stage.initOwner(owner);
         }
-        Rectangle2D bounds = visualBounds(owner != null ? owner : stage);
+        // Si el llamador ya asignó propietario con initOwner, esa es la referencia:
+        // indica en qué pantalla debe medirse el modal.
+        Window referencia = owner != null ? owner
+            : stage.getOwner() != null ? stage.getOwner() : stage;
+        Rectangle2D bounds = visualBounds(referencia);
         Scene scene = stage.getScene();
         if (scene == null) return;
 

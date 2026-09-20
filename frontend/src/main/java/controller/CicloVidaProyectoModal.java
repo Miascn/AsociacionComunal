@@ -20,6 +20,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.ProyectoModel;
 import org.kordamp.ikonli.javafx.FontIcon;
+import service.ResponsiveWindowService;
 import service.ProyectoApiClient;
 
 public final class CicloVidaProyectoModal {
@@ -31,7 +32,6 @@ public final class CicloVidaProyectoModal {
         stage.initModality(Modality.WINDOW_MODAL);
         if (owner != null) stage.initOwner(owner);
         stage.setTitle("Ciclo de vida - " + proyecto.getNombre());
-        stage.setResizable(false);
 
         VBox root = new VBox(16);
         root.setPadding(new Insets(24, 28, 24, 28));
@@ -183,6 +183,7 @@ public final class CicloVidaProyectoModal {
         root.getChildren().addAll(header, new Separator(), descCard, stepperBox, lblStatusMsg, new Separator(), actionsRow);
 
         stage.setScene(new Scene(root));
+        ResponsiveWindowService.fitModalStage(stage, owner);
         stage.showAndWait();
     }
 

@@ -29,6 +29,7 @@ import models.AsignacionCargoModel;
 import models.AuthUser;
 import models.PeriodoDirectivaModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.DirectivaApiClient;
 import service.PeriodoApiClient;
 
@@ -280,7 +281,7 @@ public class DirectivaController {
                 dialogStage.initOwner(tablaDirectiva.getScene().getWindow());
             }
             dialogStage.setScene(new Scene(root));
-            dialogStage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(dialogStage);
             dialogStage.showAndWait();
         } catch (IOException e) {
             new Alert(Alert.AlertType.ERROR, "Error al abrir formulario de asignación: " + e.getMessage(), ButtonType.OK).showAndWait();
@@ -306,7 +307,7 @@ public class DirectivaController {
                 dialogStage.initOwner(tablaDirectiva.getScene().getWindow());
             }
             dialogStage.setScene(new Scene(root));
-            dialogStage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(dialogStage);
             dialogStage.showAndWait();
         } catch (IOException e) {
             new Alert(Alert.AlertType.ERROR, "Error al abrir modal de revocación: " + e.getMessage(), ButtonType.OK).showAndWait();

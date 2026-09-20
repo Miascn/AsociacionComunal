@@ -29,6 +29,7 @@ import javafx.stage.Stage;
 import models.AuthUser;
 import models.CargoModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.CargoApiClient;
 
 public class CargosController {
@@ -210,7 +211,7 @@ public class CargosController {
                 dialogStage.initOwner(tablaCargos.getScene().getWindow());
             }
             dialogStage.setScene(new Scene(root));
-            dialogStage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(dialogStage);
             dialogStage.showAndWait();
         } catch (IOException e) {
             new Alert(Alert.AlertType.ERROR, "Error al abrir formulario de cargo: " + e.getMessage(), ButtonType.OK).showAndWait();

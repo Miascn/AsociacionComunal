@@ -23,6 +23,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import models.RolModel;
+import service.ResponsiveWindowService;
 import service.RolApiClient;
 import service.RolApiClient.RolRequest;
 
@@ -123,7 +124,7 @@ public class RolController {
             }
             dialog.getDialogPane().setContent(content);
             dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
-            dialog.getDialogPane().setPrefWidth(480);
+            ResponsiveWindowService.fitDialog(dialog, tablaRoles.getScene().getWindow(), 480);
 
             Button save = (Button) dialog.getDialogPane().lookupButton(saveType);
             save.addEventFilter(ActionEvent.ACTION, event -> {

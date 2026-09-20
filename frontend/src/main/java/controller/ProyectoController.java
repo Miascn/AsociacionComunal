@@ -29,6 +29,7 @@ import javafx.stage.Stage;
 import models.AuthUser;
 import models.ProyectoModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.ProyectoApiClient;
 
 public class ProyectoController {
@@ -224,7 +225,7 @@ public class ProyectoController {
                 dialogStage.initOwner(tablaProyectos.getScene().getWindow());
             }
             dialogStage.setScene(new Scene(root));
-            dialogStage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(dialogStage);
             dialogStage.showAndWait();
         } catch (IOException e) {
             new Alert(Alert.AlertType.ERROR, "Error al abrir formulario: " + e.getMessage(), ButtonType.OK).showAndWait();

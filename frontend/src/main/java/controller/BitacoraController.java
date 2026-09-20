@@ -21,6 +21,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import models.BitacoraModel;
+import service.ResponsiveWindowService;
 import service.BitacoraApiClient;
 
 public class BitacoraController {
@@ -142,6 +143,7 @@ public class BitacoraController {
 
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        ResponsiveWindowService.fitDialog(dialog, tablaBitacora.getScene().getWindow(), 620);
         dialog.showAndWait();
     }
 

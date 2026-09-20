@@ -16,6 +16,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import service.ResponsiveWindowService;
 import models.AportacionModel;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -133,7 +134,7 @@ public final class ReciboAportacionModal {
 
         Scene scene = new Scene(container);
         dialog.setScene(scene);
-        dialog.setResizable(false);
+        ResponsiveWindowService.fitModalStage(dialog);
         dialog.showAndWait();
     }
 
