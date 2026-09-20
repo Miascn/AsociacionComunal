@@ -17,6 +17,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.ReunionModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.ReunionApiClient;
 
 public class ReunionesController {
@@ -311,7 +312,7 @@ public class ReunionesController {
             stage.setTitle(m == null ? "Nueva Reunión Comunal" : "Editar Reunión Comunal");
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            stage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(stage);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -402,7 +403,7 @@ public class ReunionesController {
             stage.setTitle("Control de Asistencia: " + m.getTitulo());
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            stage.setResizable(true);
+            ResponsiveWindowService.fitModalStage(stage);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();

@@ -23,17 +23,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.geometry.Rectangle2D;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
-import javafx.stage.Modality;
-import javafx.scene.Scene;
-import javafx.scene.input.MouseButton;
 import service.MiembroApiClient;
+import service.ResponsiveWindowService;
 import service.MiembroApiClient.CreateMemberRequest;
 import service.MiembroApiClient.CreateMemberResult;
 import service.ViviendaApiClient;
@@ -131,16 +124,7 @@ public class MiembroController {
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Registrar miembro");
             dialog.initOwner(tablaMiembros.getScene().getWindow());
-            Rectangle2D screen = Screen.getScreensForRectangle(
-                tablaMiembros.getScene().getWindow().getX(), tablaMiembros.getScene().getWindow().getY(),
-                tablaMiembros.getScene().getWindow().getWidth(), tablaMiembros.getScene().getWindow().getHeight()
-            ).stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
-            ScrollPane formScroll = new ScrollPane(content);
-            formScroll.setFitToWidth(true);
-            formScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            formScroll.setMaxHeight(Math.max(360, screen.getHeight() - 180));
-            formScroll.getStyleClass().add("member-form-scroll");
-            dialog.getDialogPane().setContent(formScroll);
+            dialog.getDialogPane().setContent(content);
             dialog.getDialogPane().getButtonTypes().addAll(guardarType, ButtonType.CANCEL);
             Button guardar = (Button) dialog.getDialogPane().lookupButton(guardarType);
             guardar.addEventFilter(ActionEvent.ACTION, event -> {
@@ -156,7 +140,7 @@ public class MiembroController {
             if (memberDialogCss != null) {
                 dialog.getDialogPane().getStylesheets().add(memberDialogCss.toExternalForm());
             }
-            dialog.getDialogPane().setPrefWidth(Math.min(720, screen.getWidth() - 40));
+            ResponsiveWindowService.fitDialog(dialog, tablaMiembros.getScene().getWindow(), 720);
             dialog.show();
         } catch (Exception exception) {
             mostrarError("No fue posible abrir el formulario de registro: " + exception.getMessage());
@@ -262,21 +246,12 @@ public class MiembroController {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle(title);
         dialog.initOwner(tablaMiembros.getScene().getWindow());
-        Rectangle2D screen = Screen.getScreensForRectangle(
-            tablaMiembros.getScene().getWindow().getX(), tablaMiembros.getScene().getWindow().getY(),
-            tablaMiembros.getScene().getWindow().getWidth(), tablaMiembros.getScene().getWindow().getHeight()
-        ).stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
-        ScrollPane formScroll = new ScrollPane(content);
-        formScroll.setFitToWidth(true);
-        formScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        formScroll.setMaxHeight(Math.max(360, screen.getHeight() - 180));
-        formScroll.getStyleClass().add("member-form-scroll");
-        dialog.getDialogPane().setContent(formScroll);
+        dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(actionType, ButtonType.CANCEL);
         dialog.getDialogPane().getStyleClass().add("member-dialog");
         java.net.URL css = MiembroController.class.getResource("/styles/member-dialog.css");
         if (css != null) dialog.getDialogPane().getStylesheets().add(css.toExternalForm());
-        dialog.getDialogPane().setPrefWidth(Math.min(720, screen.getWidth() - 40));
+        ResponsiveWindowService.fitDialog(dialog, tablaMiembros.getScene().getWindow(), 720);
         return dialog;
     }
 
@@ -332,11 +307,7 @@ public class MiembroController {
             dialog.getDialogPane().getStyleClass().addAll("member-dialog", "member-detail-dialog");
             java.net.URL css = MiembroController.class.getResource("/styles/member-dialog.css");
             if (css != null) dialog.getDialogPane().getStylesheets().add(css.toExternalForm());
-            double available = Screen.getScreensForRectangle(
-                tablaMiembros.getScene().getWindow().getX(), tablaMiembros.getScene().getWindow().getY(),
-                tablaMiembros.getScene().getWindow().getWidth(), tablaMiembros.getScene().getWindow().getHeight()
-            ).stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds().getWidth();
-            dialog.getDialogPane().setPrefWidth(Math.min(660, available - 40));
+            ResponsiveWindowService.fitDialog(dialog, tablaMiembros.getScene().getWindow(), 660);
             dialog.showAndWait();
         } catch (IOException exception) {
             mostrarError("No fue posible abrir el detalle del miembro.");

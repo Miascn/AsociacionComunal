@@ -19,6 +19,7 @@ import models.MiembroModel;
 import models.RolModel;
 import models.UsuarioModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.MiembroApiClient;
 import service.RolApiClient;
 import service.UsuarioApiClient;
@@ -223,7 +224,7 @@ public class UsuarioController {
             dialog.initOwner(tablaUsuarios.getScene().getWindow());
             dialog.getDialogPane().setContent(content);
             dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
-            dialog.getDialogPane().setPrefWidth(560);
+            ResponsiveWindowService.fitDialog(dialog, tablaUsuarios.getScene().getWindow(), 560);
             Button save = (Button) dialog.getDialogPane().lookupButton(saveType);
             save.addEventFilter(ActionEvent.ACTION, event -> {
                 event.consume();

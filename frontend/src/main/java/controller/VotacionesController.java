@@ -20,6 +20,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.VotacionModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.VotacionApiClient;
 
 public class VotacionesController {
@@ -382,7 +383,7 @@ public class VotacionesController {
             stage.setTitle(model == null ? "Nueva votación comunal" : "Editar votación comunal");
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            stage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(stage);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -404,7 +405,7 @@ public class VotacionesController {
             stage.setTitle("Opciones de votación: " + v.getTitulo());
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            stage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(stage);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -426,7 +427,7 @@ public class VotacionesController {
             stage.setTitle("Emitir voto: " + v.getTitulo());
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            stage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(stage);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
