@@ -16,3 +16,115 @@
 .responsive-scroll > .viewport {
     -fx-background-color: transparent;
 }
+
+/* ==========================================================================
+ * MODO COMPACTO AUTOMÁTICO (Resoluciones bajas / laptops / 720p / 768p / 125% DPI)
+ * Reduce paddings, alturas y espaciados para asegurar visibilidad de campos y botones.
+ * ========================================================================== */
+.modal-compact {
+    -fx-font-size: 12px;
+}
+
+.modal-compact.form-dialog,
+.modal-compact .form-dialog,
+.modal-compact.member-form-dialog,
+.modal-compact .member-form-dialog {
+    -fx-padding: 12px 18px 12px 18px !important;
+    -fx-spacing: 8px !important;
+}
+
+.modal-compact .member-form-hero {
+    -fx-padding: 12px 18px 10px 18px !important;
+    -fx-spacing: 6px !important;
+}
+
+.modal-compact .member-form-hero .dialog-title {
+    -fx-font-size: 17px !important;
+}
+
+.modal-compact .member-form-hero .member-form-description {
+    -fx-font-size: 11px !important;
+}
+
+.modal-compact .member-form-body {
+    -fx-padding: 10px 18px 8px 18px !important;
+    -fx-spacing: 10px !important;
+}
+
+.modal-compact .member-form-icon {
+    -fx-min-width: 34px !important;
+    -fx-min-height: 34px !important;
+    -fx-pref-width: 34px !important;
+    -fx-pref-height: 34px !important;
+}
+
+.modal-compact .member-form-icon .font-icon {
+    -fx-icon-size: 18px !important;
+}
+
+.modal-compact .dialog-title {
+    -fx-font-size: 17px !important;
+}
+
+.modal-compact .dialog-subtitle {
+    -fx-font-size: 11px !important;
+}
+
+.modal-compact .form-section-heading {
+    -fx-padding: 0 0 4px 0 !important;
+}
+
+.modal-compact .form-section-title {
+    -fx-font-size: 12px !important;
+}
+
+.modal-compact .field-caption,
+.modal-compact .form-field-label {
+    -fx-font-size: 10.5px !important;
+}
+
+.modal-compact .member-field,
+.modal-compact .form-field-input,
+.modal-compact .text-field,
+.modal-compact .combo-box,
+.modal-compact .date-picker {
+    -fx-pref-height: 34px !important;
+    -fx-min-height: 32px !important;
+    -fx-padding: 4px 10px !important;
+    -fx-font-size: 12px !important;
+}
+
+.modal-compact .text-area {
+    -fx-pref-row-count: 2 !important;
+    -fx-font-size: 12px !important;
+}
+
+.modal-compact .privacy-note {
+    -fx-padding: 6px 10px !important;
+}
+
+.modal-compact .button,
+.modal-compact .primary-action,
+.modal-compact .secondary-action {
+    -fx-min-height: 34px !important;
+    -fx-pref-height: 34px !important;
+    -fx-padding: 5px 16px !important;
+    -fx-font-size: 11.5px !important;
+}
+
+.modal-compact > .button-bar > .container {
+    -fx-padding: 10px 18px 12px 18px !important;
+}
+
+/* ==========================================================================
+ * MODO ESPACIOSO AUTOMÁTICO (Pantallas grandes / 1080p / 1440p / 4K)
+ * ========================================================================== */
+.modal-spacious .dialog-title {
+    -fx-font-size: 24px;
+}
+
+.modal-spacious .form-field-input,
+.modal-spacious .member-field {
+    -fx-pref-height: 44px;
+}
+
