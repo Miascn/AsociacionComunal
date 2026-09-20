@@ -57,3 +57,7 @@ build/
 ### Datos locales de persistencia .dat (SCRUM-312)
 datos/
 *.dat
+
+### Archivos y revisiones temporales
+tmp/
+__pycache__/

@@ -288,14 +288,26 @@ public final class UpdateService {
     }
 
     static int compare(String a, String b) {
-        String[] left = a.split("\\.");
-        String[] right = b.split("\\.");
+        if (a == null || b == null) return 0;
+        String[] left = a.trim().split("\\.");
+        String[] right = b.trim().split("\\.");
         for (int i = 0; i < Math.max(left.length, right.length); i++) {
-            int l = i < left.length ? Integer.parseInt(left[i]) : 0;
-            int r = i < right.length ? Integer.parseInt(right[i]) : 0;
+            int l = i < left.length ? parseSegment(left[i]) : 0;
+            int r = i < right.length ? parseSegment(right[i]) : 0;
             if (l != r) return Integer.compare(l, r);
         }
         return 0;
+    }
+
+    private static int parseSegment(String segment) {
+        if (segment == null || segment.isBlank()) return 0;
+        String clean = segment.replaceAll("[^0-9].*$", "");
+        if (clean.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(clean);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private record Manifest(String version, String sha256, long size) {}

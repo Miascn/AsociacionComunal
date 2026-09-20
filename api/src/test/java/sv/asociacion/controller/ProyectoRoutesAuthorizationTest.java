@@ -51,7 +51,6 @@ class ProyectoRoutesAuthorizationTest {
         List.of("MIEMBRO", "DIRECTIVO", "SECRETARIO", "SINDICO");
 
     private Javalin app;
-    private HttpClient client;
     private StubProyectoService service;
 
     @BeforeEach
@@ -60,6 +59,8 @@ class ProyectoRoutesAuthorizationTest {
         ProyectoController controller = new ProyectoController(service);
 
         app = Javalin.create(config -> {
+            sv.asociacion.ApiServer.configurarJson(config);
+            sv.asociacion.ApiServer.configurarManejoErrores(config);
             config.routes.before("/api/*", context -> {
                 String role = context.header("X-Test-Role");
                 if (role != null && !role.isBlank()) {
@@ -73,8 +74,6 @@ class ProyectoRoutesAuthorizationTest {
             config.routes.patch("/api/proyectos/{id}/estado", controller::changeState);
             config.routes.delete("/api/proyectos/{id}", controller::delete);
         }).start("127.0.0.1", 0);
-
-        client = HttpClient.newHttpClient();
     }
 
     @AfterEach
@@ -163,13 +162,20 @@ class ProyectoRoutesAuthorizationTest {
 
         HttpRequest.Builder request = HttpRequest
             .newBuilder(URI.create("http://127.0.0.1:" + app.port() + path))
+            .version(HttpClient.Version.HTTP_1_1)
             .method(method, publisher)
             .header("Content-Type", "application/json");
 
         if (role != null) {
             request.header("X-Test-Role", role);
         }
-        return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+
+        HttpClient requestClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(java.time.Duration.ofSeconds(5))
+            .build();
+
+        return requestClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     /**

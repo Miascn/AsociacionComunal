@@ -149,13 +149,27 @@ public class UpdateService {
         return HexFormat.of().formatHex(digest.digest());
     }
 
-    private static int compareVersions(String left, String right) {
-        String[] a = left.split("\\.");
-        String[] b = right.split("\\.");
-        for (int index = 0; index < 3; index++) {
-            int comparison = Integer.compare(Integer.parseInt(a[index]), Integer.parseInt(b[index]));
+    static int compareVersions(String left, String right) {
+        if (left == null || right == null) return 0;
+        String[] a = left.trim().split("\\.");
+        String[] b = right.trim().split("\\.");
+        for (int index = 0; index < Math.max(a.length, b.length); index++) {
+            int valA = index < a.length ? parseSegment(a[index]) : 0;
+            int valB = index < b.length ? parseSegment(b[index]) : 0;
+            int comparison = Integer.compare(valA, valB);
             if (comparison != 0) return comparison;
         }
         return 0;
+    }
+
+    private static int parseSegment(String segment) {
+        if (segment == null || segment.isBlank()) return 0;
+        String clean = segment.replaceAll("[^0-9].*$", "");
+        if (clean.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(clean);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }
