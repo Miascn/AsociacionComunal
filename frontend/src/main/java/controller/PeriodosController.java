@@ -28,6 +28,7 @@ import javafx.stage.Stage;
 import models.AuthUser;
 import models.PeriodoDirectivaModel;
 import security.SessionManager;
+import service.ResponsiveWindowService;
 import service.PeriodoApiClient;
 
 public class PeriodosController {
@@ -231,7 +232,7 @@ public class PeriodosController {
                 dialogStage.initOwner(tablaPeriodos.getScene().getWindow());
             }
             dialogStage.setScene(new Scene(root));
-            dialogStage.setResizable(false);
+            ResponsiveWindowService.fitModalStage(dialogStage);
             dialogStage.showAndWait();
         } catch (IOException e) {
             new Alert(Alert.AlertType.ERROR, "Error al abrir formulario de período: " + e.getMessage(), ButtonType.OK).showAndWait();

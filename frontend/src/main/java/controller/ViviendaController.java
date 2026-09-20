@@ -13,6 +13,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import models.MiembroModel;
 import models.ViviendaModel;
+import service.ResponsiveWindowService;
 import service.MiembroApiClient;
 import service.ViviendaApiClient;
 
@@ -73,6 +74,7 @@ public class ViviendaController {
                 Dialog<Void> dialog=new Dialog<>(); dialog.initOwner(tablaViviendas.getScene().getWindow());
                 dialog.setTitle("Detalle de vivienda "+house.getCodigo()); dialog.getDialogPane().setContent(content);
                 dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE); style(dialog); lblEstadoModulo.setText("Conectado al servidor");
+                ResponsiveWindowService.fitDialog(dialog, tablaViviendas.getScene().getWindow(), 660);
                 dialog.showAndWait();
             }catch(Exception exception){error("No fue posible mostrar el detalle: "+exception.getMessage());}
         });
@@ -88,6 +90,7 @@ public class ViviendaController {
             Dialog<Void> dialog=new Dialog<>();dialog.initOwner(tablaViviendas.getScene().getWindow());
             dialog.setTitle(house==null?"Nueva vivienda":"Editar vivienda");dialog.getDialogPane().setContent(content);
             dialog.getDialogPane().getButtonTypes().addAll(save,ButtonType.CANCEL);style(dialog);
+            ResponsiveWindowService.fitDialog(dialog, tablaViviendas.getScene().getWindow(), 680);
             Button button=(Button)dialog.getDialogPane().lookupButton(save);
             button.addEventFilter(ActionEvent.ACTION,event->{
                 event.consume();var request=form.request();if(request==null)return;button.setDisable(true);

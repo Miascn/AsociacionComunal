@@ -1,8 +1,9 @@
 .member-dialog {
     -fx-background-color: -color-bg-default;
     -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    /* Sin -fx-min-width: un mínimo fijo impide que el diálogo encoja en pantallas
+       estrechas. El ancho lo acota ResponsiveWindowService contra el área visible. */
     -fx-pref-width: 720px;
-    -fx-min-width: 720px;
     -fx-border-color: -color-border-default;
     -fx-border-width: 1px;
 }
