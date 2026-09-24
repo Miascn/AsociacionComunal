@@ -40,11 +40,20 @@
                         <Button fx:id="btnNavMiembros" text="Miembros" onAction="#mostrarMiembros" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-users"/></graphic>
                         </Button>
-                        <Button fx:id="btnUsuarios" text="Usuarios" onAction="#mostrarUsuarios" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-shield"/></graphic>
+                        <Button fx:id="btnNavViviendas" text="Viviendas" onAction="#mostrarViviendas" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-map-pin"/></graphic>
                         </Button>
-                        <Button fx:id="btnRoles" text="Roles" onAction="#mostrarRoles" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-key"/></graphic>
+                        <Button fx:id="btnNavAportaciones" text="Aportaciones" onAction="#mostrarAportaciones" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-dollar-sign"/></graphic>
+                        </Button>
+                        <Button fx:id="btnNavProyectos" text="Proyectos" onAction="#mostrarProyectos" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-briefcase"/></graphic>
+                        </Button>
+                        <Button fx:id="btnNavVotaciones" text="Votaciones" onAction="#mostrarVotaciones" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
+                        </Button>
+                        <Button fx:id="btnNavReuniones" text="Reuniones" onAction="#mostrarReuniones" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
                         </Button>
                         <Button fx:id="btnNavCargos" text="Cargos" onAction="#mostrarCargos" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-award"/></graphic>
@@ -58,23 +67,14 @@
                         <Button fx:id="btnBitacora" text="Bitácora" onAction="#mostrarBitacora" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
                         </Button>
-                        <Button fx:id="btnNavViviendas" text="Viviendas" onAction="#mostrarViviendas" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-map-pin"/></graphic>
-                        </Button>
-                        <Button fx:id="btnNavAportaciones" text="Aportaciones" onAction="#mostrarAportaciones" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-dollar-sign"/></graphic>
-                        </Button>
-                        <Button fx:id="btnNavProyectos" text="Proyectos" onAction="#mostrarProyectos" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-briefcase"/></graphic>
-                        </Button>
-                        <Button fx:id="btnNavReuniones" text="Reuniones" onAction="#mostrarReuniones" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
-                        </Button>
-                        <Button fx:id="btnNavVotaciones" text="Votaciones" onAction="#mostrarVotaciones" maxWidth="Infinity" styleClass="nav-button">
-                            <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
-                        </Button>
                         <Button fx:id="btnNavReportes" text="Reportes" onAction="#mostrarReportes" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-bar-chart-2"/></graphic>
+                        </Button>
+                        <Button fx:id="btnUsuarios" text="Usuarios" onAction="#mostrarUsuarios" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-shield"/></graphic>
+                        </Button>
+                        <Button fx:id="btnRoles" text="Roles" onAction="#mostrarRoles" maxWidth="Infinity" styleClass="nav-button">
+                            <graphic><FontIcon iconLiteral="fth-key"/></graphic>
                         </Button>
                     </VBox>
                 </content>
