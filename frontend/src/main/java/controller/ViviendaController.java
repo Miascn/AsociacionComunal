@@ -7,23 +7,27 @@ import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.*;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.HBox;
 import models.MiembroModel;
 import models.ViviendaModel;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.MiembroApiClient;
 import service.ViviendaApiClient;
 
 public class ViviendaController {
     @FXML private TableView<ViviendaModel> tablaViviendas;
-    @FXML private TableColumn<ViviendaModel,String> colCodigo,colSector,colDireccion,colEstado;
+    @FXML private TableColumn<ViviendaModel,String>  colCodigo,colSector,colDireccion,colEstado;
     @FXML private TableColumn<ViviendaModel,Integer> colAdultos,colMenores;
+    @FXML private TableColumn<ViviendaModel,Void>    colAcciones;
     @FXML private Label lblTotal,lblHabitantes,lblEstadoModulo;
     @FXML private TextField campoBusqueda;
-    @FXML private Button btnVerDetalle,btnEditar,btnDesactivar;
+    @FXML private Button btnVerDetalle, btnEditar, btnDesactivar; // opcionales
 
     private final ObservableList<ViviendaModel> viviendas=FXCollections.observableArrayList();
     private final List<MiembroModel> miembros=new ArrayList<>();
@@ -41,9 +45,9 @@ public class ViviendaController {
         filtered=new FilteredList<>(viviendas,value->true);
         tablaViviendas.setItems(filtered);
         campoBusqueda.textProperty().addListener((observable,oldValue,value)->filter(value));
-        btnVerDetalle.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
-        btnEditar.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
-        btnDesactivar.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
+        if (btnVerDetalle != null) btnVerDetalle.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
+        if (btnEditar     != null) btnEditar.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
+        if (btnDesactivar != null) btnDesactivar.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
         tablaViviendas.setRowFactory(table->{
             TableRow<ViviendaModel> row=new TableRow<>();
             row.setOnMouseClicked(event->{
@@ -51,6 +55,37 @@ public class ViviendaController {
             });
             return row;
         });
+
+        // Columna ACCIONES inline
+        if (colAcciones != null) {
+            colAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnVer  = new Button();
+                private final Button btnEdit = new Button();
+                private final Button btnDes  = new Button();
+                private final HBox box = new HBox(8, btnVer, btnEdit, btnDes);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+                    btnVer.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnVer.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.BLUE_600, 18));
+                    btnVer.setTooltip(new Tooltip("Ver detalle"));
+                    btnVer.setOnAction(e -> { ViviendaModel item = getTableView().getItems().get(getIndex()); if (item != null) showDetail(item); });
+                    btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEdit.setTooltip(new Tooltip("Editar vivienda"));
+                    btnEdit.setOnAction(e -> { ViviendaModel item = getTableView().getItems().get(getIndex()); if (item != null) openForm(item); });
+                    btnDes.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDes.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDes.setTooltip(new Tooltip("Desactivar vivienda"));
+                    btnDes.setOnAction(e -> { ViviendaModel item = getTableView().getItems().get(getIndex()); if (item != null) { tablaViviendas.getSelectionModel().select(item); desactivar(); } });
+                }
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() ? null : box);
+                }
+            });
+        }
         load();
     }
 

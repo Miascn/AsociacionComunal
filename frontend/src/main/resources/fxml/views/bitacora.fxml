@@ -28,12 +28,6 @@
                     </HBox>
                     <ComboBox fx:id="comboEntidad" prefWidth="120" promptText="Entidad"/>
                     <ComboBox fx:id="comboAccion" prefWidth="110" promptText="Acción"/>
-                    <Button fx:id="btnVerDetalle" text="Ver detalle" onAction="#verDetalle" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-info"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
                 </HBox>
             </HBox>
 
@@ -41,12 +35,13 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaBitacora" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaFecha" text="FECHA Y HORA" prefWidth="160"/>
-                        <TableColumn fx:id="columnaUsuario" text="USUARIO" prefWidth="140"/>
-                        <TableColumn fx:id="columnaAccion" text="ACCIÓN" prefWidth="110"/>
-                        <TableColumn fx:id="columnaEntidad" text="ENTIDAD" prefWidth="110"/>
-                        <TableColumn fx:id="columnaIdRegistro" text="ID REGISTRO" prefWidth="95"/>
-                        <TableColumn fx:id="columnaDetalle" text="DETALLE DEL EVENTO" prefWidth="320"/>
+                        <TableColumn fx:id="columnaFecha"      text="FECHA Y HORA"        prefWidth="150"/>
+                        <TableColumn fx:id="columnaUsuario"    text="USUARIO"             prefWidth="130"/>
+                        <TableColumn fx:id="columnaAccion"     text="ACCIÓN"              prefWidth="100"/>
+                        <TableColumn fx:id="columnaEntidad"    text="ENTIDAD"             prefWidth="100"/>
+                        <TableColumn fx:id="columnaIdRegistro" text="ID REGISTRO"         prefWidth="90"/>
+                        <TableColumn fx:id="columnaDetalle"    text="DETALLE DEL EVENTO"  prefWidth="300"/>
+                        <TableColumn fx:id="columnaAcciones"   text="ACCIONES"            prefWidth="90" sortable="false"/>
                     </columns>
                     <placeholder><Label text="No hay eventos registrados en la bitácora" styleClass="page-subtitle"/></placeholder>
                 </TableView>

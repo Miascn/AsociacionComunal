@@ -27,21 +27,6 @@
                                    styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
                     </HBox>
                     <ComboBox fx:id="comboEstado" prefWidth="120" promptText="Estado"/>
-                    <Button fx:id="btnActivar" text="Activar" onAction="#activarPeriodo" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-play"/></graphic>
-                    </Button>
-                    <Button fx:id="btnFinalizar" text="Finalizar" onAction="#finalizarPeriodo" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarPeriodo" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
                     <Button fx:id="btnNuevoPeriodo" text="+ Nuevo período" onAction="#abrirFormularioCrear"
                             styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
@@ -51,11 +36,12 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaPeriodos" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaNombre" text="PERÍODO DIRECTIVO" prefWidth="220"/>
-                        <TableColumn fx:id="columnaInicio" text="FECHA INICIO" prefWidth="120"/>
-                        <TableColumn fx:id="columnaFin" text="FECHA FIN" prefWidth="120"/>
-                        <TableColumn fx:id="columnaRango" text="VIGENCIA TEMPORAL" prefWidth="240"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
+                        <TableColumn fx:id="columnaNombre"   text="PERÍODO DIRECTIVO" prefWidth="220"/>
+                        <TableColumn fx:id="columnaInicio"   text="FECHA INICIO"      prefWidth="110"/>
+                        <TableColumn fx:id="columnaFin"      text="FECHA FIN"         prefWidth="110"/>
+                        <TableColumn fx:id="columnaRango"    text="VIGENCIA TEMPORAL" prefWidth="220"/>
+                        <TableColumn fx:id="columnaEstado"   text="ESTADO"            prefWidth="110"/>
+                        <TableColumn fx:id="columnaAcciones" text="ACCIONES"          prefWidth="130" sortable="false"/>
                     </columns>
                     <placeholder><Label text="No hay períodos directivos registrados" styleClass="page-subtitle"/></placeholder>
                 </TableView>

@@ -184,41 +184,70 @@ public class ReunionesController {
         });
 
         colAcciones.setCellFactory(col -> new TableCell<>() {
+            private final Button btnAsistencias = new Button();
+            private final Button btnRealizada   = new Button();
+            private final Button btnEditar      = new Button();
+            private final Button btnCancelar    = new Button();
+            private final Button btnEliminar    = new Button();
+            private final HBox box = new HBox(8);
+
+            {
+                box.getStyleClass().add("row-actions-box");
+                box.setAlignment(Pos.CENTER);
+
+                btnAsistencias.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                btnAsistencias.setGraphic(service.HeroIcon.create(service.HeroIcon.USERS, service.HeroIcon.BLUE_600, 18));
+                btnAsistencias.setTooltip(new Tooltip("Gestionar asistencias / Quórum"));
+                btnAsistencias.setOnAction(e -> {
+                    ReunionModel m = getTableView().getItems().get(getIndex());
+                    if (m != null) abrirGestionAsistencias(m);
+                });
+
+                btnRealizada.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                btnRealizada.setGraphic(service.HeroIcon.create(service.HeroIcon.CHECK_CIRCLE, service.HeroIcon.GREEN_600, 18));
+                btnRealizada.setTooltip(new Tooltip("Marcar como realizada"));
+                btnRealizada.setOnAction(e -> {
+                    ReunionModel m = getTableView().getItems().get(getIndex());
+                    if (m != null) marcarRealizada(m);
+                });
+
+                btnEditar.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                btnEditar.setGraphic(service.HeroIcon.create(service.HeroIcon.PENCIL, service.HeroIcon.AMBER_600, 18));
+                btnEditar.setTooltip(new Tooltip("Editar reunión"));
+                btnEditar.setOnAction(e -> {
+                    ReunionModel m = getTableView().getItems().get(getIndex());
+                    if (m != null) abrirFormularioEditar(m);
+                });
+
+                btnCancelar.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                btnCancelar.setGraphic(service.HeroIcon.create(service.HeroIcon.BAN, service.HeroIcon.SLATE_700, 18));
+                btnCancelar.setTooltip(new Tooltip("Cancelar reunión"));
+                btnCancelar.setOnAction(e -> {
+                    ReunionModel m = getTableView().getItems().get(getIndex());
+                    if (m != null) cancelarReunion(m);
+                });
+
+                btnEliminar.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                btnEliminar.setGraphic(service.HeroIcon.create(service.HeroIcon.TRASH, service.HeroIcon.RED_600, 18));
+                btnEliminar.setTooltip(new Tooltip("Eliminar reunión"));
+                btnEliminar.setOnAction(e -> {
+                    ReunionModel m = getTableView().getItems().get(getIndex());
+                    if (m != null) eliminarReunion(m);
+                });
+            }
+
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                     setGraphic(null);
                 } else {
-                    ReunionModel m = getTableRow().getItem();
-                    HBox box = new HBox(6);
-                    box.setAlignment(Pos.CENTER_LEFT);
+                    ReunionModel m = getTableView().getItems().get(getIndex());
+                    box.getChildren().clear();
 
-                    if (canManage()) {
-                        if (m.isProgramada()) {
-                            Button btnRealizada = new Button("Realizada");
-                            btnRealizada.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnRealizada.setOnAction(e -> marcarRealizada(m));
-
-                            Button btnEditar = new Button("Editar");
-                            btnEditar.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnEditar.setOnAction(e -> abrirFormularioEditar(m));
-
-                            Button btnCancelar = new Button("Cancelar");
-                            btnCancelar.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #b91c1c; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnCancelar.setOnAction(e -> cancelarReunion(m));
-
-                            Button btnEliminar = new Button("Eliminar");
-                            btnEliminar.setStyle("-fx-background-color: #f87171; -fx-text-fill: white; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnEliminar.setOnAction(e -> eliminarReunion(m));
-
-                            box.getChildren().addAll(btnRealizada, btnEditar, btnCancelar, btnEliminar);
-                        }
+                    if (canManage() && m.isProgramada()) {
+                        box.getChildren().addAll(btnRealizada, btnEditar, btnCancelar, btnEliminar);
                     }
-
-                    Button btnAsistencias = new Button("Asistencias");
-                    btnAsistencias.setStyle("-fx-background-color: #e0e7ff; -fx-text-fill: #4338ca; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                    btnAsistencias.setOnAction(e -> abrirGestionAsistencias(m));
                     box.getChildren().add(btnAsistencias);
 
                     setGraphic(box);

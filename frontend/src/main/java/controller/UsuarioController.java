@@ -13,12 +13,15 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import models.MiembroModel;
 import models.RolModel;
 import models.UsuarioModel;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.MiembroApiClient;
 import service.RolApiClient;
@@ -32,13 +35,14 @@ public class UsuarioController {
     @FXML private TableColumn<UsuarioModel, String> columnaMiembro;
     @FXML private TableColumn<UsuarioModel, String> columnaEstado;
     @FXML private TableColumn<UsuarioModel, String> columnaUltimoAcceso;
+    @FXML private TableColumn<UsuarioModel, Void> columnaAcciones;
     @FXML private TextField campoBusqueda;
     @FXML private Label lblTotalUsuarios;
     @FXML private Label lblEstadoModulo;
-    @FXML private Button btnEditar;
-    @FXML private Button btnCambiarEstado;
-    @FXML private Button btnBloquear;
-    @FXML private Button btnRestablecerClave;
+    @FXML private Button btnEditar;         // opcional, puede no estar en FXML
+    @FXML private Button btnCambiarEstado;  // opcional
+    @FXML private Button btnBloquear;       // opcional
+    @FXML private Button btnRestablecerClave; // opcional
 
     private final ObservableList<UsuarioModel> users = FXCollections.observableArrayList();
     private final Map<Integer, RolModel> roles = new HashMap<>();
@@ -79,21 +83,92 @@ public class UsuarioController {
         filtered = new FilteredList<>(users, value -> true);
         tablaUsuarios.setItems(filtered);
         campoBusqueda.textProperty().addListener((obs, previous, value) -> filter(value));
-        
-        btnEditar.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
-        btnCambiarEstado.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
-        btnBloquear.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
-        btnRestablecerClave.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
+
+        // Botones del hero son opcionales (pueden no estar en el FXML si se usan inline)
+        if (btnEditar != null) btnEditar.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
+        if (btnCambiarEstado != null) btnCambiarEstado.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
+        if (btnBloquear != null) btnBloquear.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
+        if (btnRestablecerClave != null) btnRestablecerClave.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
 
         tablaUsuarios.getSelectionModel().selectedItemProperty().addListener((obs, previous, selected) -> {
+            if (btnCambiarEstado == null && btnBloquear == null) return;
             if (selected == null) {
-                btnCambiarEstado.setText("Desactivar");
-                btnBloquear.setText("Bloquear");
+                if (btnCambiarEstado != null) btnCambiarEstado.setText("Desactivar");
+                if (btnBloquear != null) btnBloquear.setText("Bloquear");
             } else {
-                btnCambiarEstado.setText("INACTIVO".equalsIgnoreCase(selected.getEstado()) ? "Reactivar" : "Desactivar");
-                btnBloquear.setText("BLOQUEADO".equalsIgnoreCase(selected.getEstado()) ? "Desbloquear" : "Bloquear");
+                if (btnCambiarEstado != null) btnCambiarEstado.setText("INACTIVO".equalsIgnoreCase(selected.getEstado()) ? "Reactivar" : "Desactivar");
+                if (btnBloquear != null) btnBloquear.setText("BLOQUEADO".equalsIgnoreCase(selected.getEstado()) ? "Desbloquear" : "Bloquear");
             }
         });
+
+        // Columna ACCIONES inline: Edit (amber pencil), ChangeState (refresh/archive), Block (trash/refresh)
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnEdit   = new Button();
+                private final Button btnKey    = new Button();
+                private final Button btnToggle = new Button();
+                private final Button btnLock   = new Button();
+                private final HBox box = new HBox(8, btnEdit, btnKey, btnToggle, btnLock);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEdit.setTooltip(new Tooltip("Editar usuario"));
+                    btnEdit.setOnAction(e -> {
+                        UsuarioModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) openForm(item);
+                    });
+
+                    btnKey.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnKey.setGraphic(HeroIcon.create(HeroIcon.KEY, HeroIcon.BLUE_600, 18));
+                    btnKey.setTooltip(new Tooltip("Restablecer contraseña"));
+                    btnKey.setOnAction(e -> {
+                        UsuarioModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) { tablaUsuarios.getSelectionModel().select(item); restablecerClave(); }
+                    });
+
+                    btnToggle.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnToggle.setTooltip(new Tooltip("Cambiar estado"));
+                    btnToggle.setOnAction(e -> {
+                        UsuarioModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) { tablaUsuarios.getSelectionModel().select(item); changeState(); }
+                    });
+
+                    btnLock.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnLock.setTooltip(new Tooltip("Bloquear / Desbloquear"));
+                    btnLock.setOnAction(e -> {
+                        UsuarioModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) { tablaUsuarios.getSelectionModel().select(item); bloquearUsuario(); }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        UsuarioModel u = getTableView().getItems().get(getIndex());
+                        boolean inactivo = "INACTIVO".equalsIgnoreCase(u.getEstado());
+                        boolean bloqueado = "BLOQUEADO".equalsIgnoreCase(u.getEstado());
+
+                        btnToggle.setGraphic(inactivo
+                            ? HeroIcon.create(HeroIcon.REFRESH, HeroIcon.GREEN_600, 18)
+                            : HeroIcon.create(HeroIcon.ARCHIVE, HeroIcon.SLATE_700, 18));
+                        btnToggle.setTooltip(new Tooltip(inactivo ? "Reactivar usuario" : "Desactivar usuario"));
+
+                        btnLock.setGraphic(bloqueado
+                            ? HeroIcon.create(HeroIcon.REFRESH, HeroIcon.GREEN_600, 18)
+                            : HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                        btnLock.setTooltip(new Tooltip(bloqueado ? "Desbloquear usuario" : "Bloquear usuario"));
+
+                        setGraphic(box);
+                    }
+                }
+            });
+        }
 
         loadData();
     }
@@ -170,7 +245,7 @@ public class UsuarioController {
         if (alert.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
 
         lblEstadoModulo.setText("Restableciendo contraseña...");
-        btnRestablecerClave.setDisable(true);
+        if (btnRestablecerClave != null) btnRestablecerClave.setDisable(true);
 
         Task<UsuarioApiClient.ResetPasswordResult> task = new Task<>() {
             @Override protected UsuarioApiClient.ResetPasswordResult call() throws Exception {
@@ -179,13 +254,13 @@ public class UsuarioController {
         };
 
         task.setOnSucceeded(event -> {
-            btnRestablecerClave.setDisable(false);
+            if (btnRestablecerClave != null) btnRestablecerClave.setDisable(false);
             lblEstadoModulo.setText("Contraseña restablecida");
             mostrarCredencialesRestablecidas(task.getValue());
         });
 
         task.setOnFailed(event -> {
-            btnRestablecerClave.setDisable(false);
+            if (btnRestablecerClave != null) btnRestablecerClave.setDisable(false);
             lblEstadoModulo.setText("No fue posible restablecer");
             showError("Error al restablecer la contraseña: " + message(task.getException()));
         });

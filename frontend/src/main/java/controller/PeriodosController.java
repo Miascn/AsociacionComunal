@@ -11,6 +11,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -23,11 +24,14 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.AuthUser;
 import models.PeriodoDirectivaModel;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.PeriodoApiClient;
 
@@ -38,6 +42,7 @@ public class PeriodosController {
     @FXML private TableColumn<PeriodoDirectivaModel, String> columnaFin;
     @FXML private TableColumn<PeriodoDirectivaModel, String> columnaRango;
     @FXML private TableColumn<PeriodoDirectivaModel, String> columnaEstado;
+    @FXML private TableColumn<PeriodoDirectivaModel, Void>   columnaAcciones;
 
     @FXML private Label lblPeriodoActivo;
     @FXML private Label lblVigenciaActiva;
@@ -64,16 +69,26 @@ public class PeriodosController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         puedeGestionar = isAdministrator(user.getRole()) || "PRESIDENTE".equalsIgnoreCase(user.getRole());
 
-        btnNuevoPeriodo.setVisible(puedeGestionar);
-        btnNuevoPeriodo.setManaged(puedeGestionar);
-        btnActivar.setVisible(puedeGestionar);
-        btnActivar.setManaged(puedeGestionar);
-        btnFinalizar.setVisible(puedeGestionar);
-        btnFinalizar.setManaged(puedeGestionar);
-        btnEditar.setVisible(puedeGestionar);
-        btnEditar.setManaged(puedeGestionar);
-        btnEliminar.setVisible(puedeGestionar);
-        btnEliminar.setManaged(puedeGestionar);
+        if (btnNuevoPeriodo != null) {
+            btnNuevoPeriodo.setVisible(puedeGestionar);
+            btnNuevoPeriodo.setManaged(puedeGestionar);
+        }
+        if (btnActivar != null) {
+            btnActivar.setVisible(puedeGestionar);
+            btnActivar.setManaged(puedeGestionar);
+        }
+        if (btnFinalizar != null) {
+            btnFinalizar.setVisible(puedeGestionar);
+            btnFinalizar.setManaged(puedeGestionar);
+        }
+        if (btnEditar != null) {
+            btnEditar.setVisible(puedeGestionar);
+            btnEditar.setManaged(puedeGestionar);
+        }
+        if (btnEliminar != null) {
+            btnEliminar.setVisible(puedeGestionar);
+            btnEliminar.setManaged(puedeGestionar);
+        }
 
         columnaNombre.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombre()));
         columnaInicio.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getFechaInicio()));
@@ -100,6 +115,92 @@ public class PeriodosController {
             }
         });
 
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnPlay  = new Button();
+                private final Button btnCheck = new Button();
+                private final Button btnEdit  = new Button();
+                private final Button btnDel   = new Button();
+                private final HBox box = new HBox(8);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnPlay.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnPlay.setGraphic(HeroIcon.create(HeroIcon.PLAY, HeroIcon.GREEN_600, 18));
+                    btnPlay.setTooltip(new Tooltip("Activar período"));
+                    btnPlay.setOnAction(e -> {
+                        PeriodoDirectivaModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaPeriodos.getSelectionModel().select(p);
+                            activarPeriodo();
+                        }
+                    });
+
+                    btnCheck.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnCheck.setGraphic(HeroIcon.create(HeroIcon.CHECK_CIRCLE, HeroIcon.BLUE_600, 18));
+                    btnCheck.setTooltip(new Tooltip("Finalizar período"));
+                    btnCheck.setOnAction(e -> {
+                        PeriodoDirectivaModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaPeriodos.getSelectionModel().select(p);
+                            finalizarPeriodo();
+                        }
+                    });
+
+                    btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEdit.setTooltip(new Tooltip("Editar período"));
+                    btnEdit.setOnAction(e -> {
+                        PeriodoDirectivaModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaPeriodos.getSelectionModel().select(p);
+                            abrirFormularioEditar();
+                        }
+                    });
+
+                    btnDel.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDel.setTooltip(new Tooltip("Eliminar período"));
+                    btnDel.setOnAction(e -> {
+                        PeriodoDirectivaModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaPeriodos.getSelectionModel().select(p);
+                            eliminarPeriodo();
+                        }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() || !puedeGestionar) {
+                        setGraphic(null);
+                    } else {
+                        PeriodoDirectivaModel p = getTableView().getItems().get(getIndex());
+                        String st = p.getEstado() != null ? p.getEstado().toUpperCase() : "";
+                        box.getChildren().clear();
+
+                        if ("PLANIFICADO".equals(st)) {
+                            box.getChildren().add(btnPlay);
+                        } else if ("ACTIVO".equals(st)) {
+                            box.getChildren().add(btnCheck);
+                        }
+
+                        if (!"FINALIZADO".equals(st)) {
+                            box.getChildren().add(btnEdit);
+                        }
+
+                        if ("PLANIFICADO".equals(st)) {
+                            box.getChildren().add(btnDel);
+                        }
+
+                        setGraphic(box.getChildren().isEmpty() ? null : box);
+                    }
+                }
+            });
+        }
+
         periodosFiltrados = new FilteredList<>(periodos, p -> true);
         tablaPeriodos.setItems(periodosFiltrados);
 
@@ -111,16 +212,16 @@ public class PeriodosController {
 
         tablaPeriodos.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
             if (selected == null) {
-                btnActivar.setDisable(true);
-                btnFinalizar.setDisable(true);
-                btnEditar.setDisable(true);
-                btnEliminar.setDisable(true);
+                if (btnActivar != null) btnActivar.setDisable(true);
+                if (btnFinalizar != null) btnFinalizar.setDisable(true);
+                if (btnEditar != null) btnEditar.setDisable(true);
+                if (btnEliminar != null) btnEliminar.setDisable(true);
             } else {
                 String st = selected.getEstado() != null ? selected.getEstado().toUpperCase() : "";
-                btnActivar.setDisable("ACTIVO".equals(st) || "FINALIZADO".equals(st));
-                btnFinalizar.setDisable(!"ACTIVO".equals(st));
-                btnEditar.setDisable("FINALIZADO".equals(st));
-                btnEliminar.setDisable(!"PLANIFICADO".equals(st));
+                if (btnActivar != null) btnActivar.setDisable("ACTIVO".equals(st) || "FINALIZADO".equals(st));
+                if (btnFinalizar != null) btnFinalizar.setDisable(!"ACTIVO".equals(st));
+                if (btnEditar != null) btnEditar.setDisable("FINALIZADO".equals(st));
+                if (btnEliminar != null) btnEliminar.setDisable(!"PLANIFICADO".equals(st));
             }
         });
 

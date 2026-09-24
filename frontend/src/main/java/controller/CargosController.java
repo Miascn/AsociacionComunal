@@ -12,6 +12,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -24,21 +25,25 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.AuthUser;
 import models.CargoModel;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.CargoApiClient;
 
 public class CargosController {
     @FXML private TableView<CargoModel> tablaCargos;
-    @FXML private TableColumn<CargoModel, String> columnaJerarquia;
-    @FXML private TableColumn<CargoModel, String> columnaNombre;
-    @FXML private TableColumn<CargoModel, String> columnaDescripcion;
+    @FXML private TableColumn<CargoModel, String>  columnaJerarquia;
+    @FXML private TableColumn<CargoModel, String>  columnaNombre;
+    @FXML private TableColumn<CargoModel, String>  columnaDescripcion;
     @FXML private TableColumn<CargoModel, Integer> columnaAsignaciones;
-    @FXML private TableColumn<CargoModel, String> columnaEstado;
+    @FXML private TableColumn<CargoModel, String>  columnaEstado;
+    @FXML private TableColumn<CargoModel, Void>    columnaAcciones;
 
     @FXML private Label lblCargosActivos;
     @FXML private Label lblTotalCargos;
@@ -48,11 +53,11 @@ public class CargosController {
     @FXML private ComboBox<String> comboEstado;
     @FXML private TextField campoBusqueda;
 
-    @FXML private Button btnNuevoCargo;
-    @FXML private Button btnEditar;
-    @FXML private Button btnToggleActivo;
-    @FXML private Button btnEliminar;
-    @FXML private Button btnRefrescar;
+    @FXML private Button btnNuevoCargo;    // opcional
+    @FXML private Button btnEditar;        // opcional
+    @FXML private Button btnToggleActivo;  // opcional
+    @FXML private Button btnEliminar;      // opcional
+    @FXML private Button btnRefrescar;     // opcional
 
     private final ObservableList<CargoModel> cargos = FXCollections.observableArrayList();
     private FilteredList<CargoModel> cargosFiltrados;
@@ -105,14 +110,14 @@ public class CargosController {
         comboEstado.valueProperty().addListener((obs, o, n) -> aplicarFiltro());
         campoBusqueda.textProperty().addListener((obs, o, n) -> aplicarFiltro());
 
-        btnEditar.disableProperty().bind(tablaCargos.getSelectionModel().selectedItemProperty().isNull());
-        btnToggleActivo.disableProperty().bind(tablaCargos.getSelectionModel().selectedItemProperty().isNull());
-        btnEliminar.disableProperty().bind(tablaCargos.getSelectionModel().selectedItemProperty().isNull());
+        if (btnEditar      != null) btnEditar.disableProperty().bind(tablaCargos.getSelectionModel().selectedItemProperty().isNull());
+        if (btnToggleActivo!= null) btnToggleActivo.disableProperty().bind(tablaCargos.getSelectionModel().selectedItemProperty().isNull());
+        if (btnEliminar    != null) btnEliminar.disableProperty().bind(tablaCargos.getSelectionModel().selectedItemProperty().isNull());
 
         tablaCargos.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
+            if (newVal != null && btnToggleActivo != null) {
                 btnToggleActivo.setText(newVal.isActivo() ? "Desactivar" : "Activar");
-            } else {
+            } else if (btnToggleActivo != null) {
                 btnToggleActivo.setText("Desactivar");
             }
         });
@@ -126,6 +131,50 @@ public class CargosController {
             });
             return row;
         });
+
+        // Columna ACCIONES inline (solo si el usuario puede gestionar)
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnEdit   = new Button();
+                private final Button btnToggle = new Button();
+                private final Button btnDel    = new Button();
+                private final HBox box = new HBox(8, btnEdit, btnToggle, btnDel);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEdit.setTooltip(new Tooltip("Editar cargo"));
+                    btnEdit.setOnAction(e -> { CargoModel item = getTableView().getItems().get(getIndex()); if (item != null) abrirFormulario(item); });
+
+                    btnToggle.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnToggle.setTooltip(new Tooltip("Activar / Desactivar"));
+                    btnToggle.setOnAction(e -> { CargoModel item = getTableView().getItems().get(getIndex()); if (item != null) { tablaCargos.getSelectionModel().select(item); toggleActivo(); } });
+
+                    btnDel.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDel.setTooltip(new Tooltip("Eliminar cargo"));
+                    btnDel.setOnAction(e -> { CargoModel item = getTableView().getItems().get(getIndex()); if (item != null) { tablaCargos.getSelectionModel().select(item); eliminarCargo(); } });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        if (!puedeGestionar) { setGraphic(null); return; }
+                        CargoModel cargo = getTableView().getItems().get(getIndex());
+                        btnToggle.setGraphic(cargo.isActivo()
+                            ? HeroIcon.create(HeroIcon.ARCHIVE, HeroIcon.SLATE_700, 18)
+                            : HeroIcon.create(HeroIcon.REFRESH, HeroIcon.GREEN_600, 18));
+                        btnToggle.setTooltip(new Tooltip(cargo.isActivo() ? "Desactivar cargo" : "Activar cargo"));
+                        setGraphic(box);
+                    }
+                }
+            });
+        }
 
         cargarCargos();
     }

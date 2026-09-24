@@ -17,14 +17,18 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.geometry.Pos;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.AportacionModel;
 import models.AuthUser;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.AportacionApiClient;
 
@@ -39,6 +43,7 @@ public class AportacionesController {
     @FXML private TableColumn<AportacionModel, String> columnaProyecto;
     @FXML private TableColumn<AportacionModel, String> columnaReferencia;
     @FXML private TableColumn<AportacionModel, String> columnaEstado;
+    @FXML private TableColumn<AportacionModel, Void>   columnaAcciones;
 
     @FXML private Label lblTotalRecaudado;
     @FXML private Label lblTotalRegistros;
@@ -116,6 +121,56 @@ public class AportacionesController {
                 }
             }
         });
+
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnRecibo = new Button();
+                private final Button btnAnular = new Button();
+                private final HBox box = new HBox(8);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnRecibo.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnRecibo.setGraphic(HeroIcon.create(HeroIcon.DOCUMENT_TEXT, HeroIcon.BLUE_600, 18));
+                    btnRecibo.setTooltip(new Tooltip("Ver comprobante / recibo"));
+                    btnRecibo.setOnAction(e -> {
+                        AportacionModel a = getTableView().getItems().get(getIndex());
+                        if (a != null) {
+                            tablaAportaciones.getSelectionModel().select(a);
+                            verRecibo();
+                        }
+                    });
+
+                    btnAnular.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnAnular.setGraphic(HeroIcon.create(HeroIcon.BAN, HeroIcon.RED_600, 18));
+                    btnAnular.setTooltip(new Tooltip("Anular aportación"));
+                    btnAnular.setOnAction(e -> {
+                        AportacionModel a = getTableView().getItems().get(getIndex());
+                        if (a != null) {
+                            tablaAportaciones.getSelectionModel().select(a);
+                            anularAportacion();
+                        }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        AportacionModel a = getTableView().getItems().get(getIndex());
+                        box.getChildren().clear();
+                        box.getChildren().add(btnRecibo);
+                        if (puedeGestionar && "REGISTRADA".equalsIgnoreCase(a.getEstado())) {
+                            box.getChildren().add(btnAnular);
+                        }
+                        setGraphic(box);
+                    }
+                }
+            });
+        }
 
         tablaAportaciones.setItems(aportaciones);
 

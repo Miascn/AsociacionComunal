@@ -2,7 +2,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="controller.RolController"
@@ -26,12 +25,6 @@
                         <TextField fx:id="campoBusqueda" promptText="Buscar rol o descripción..." HBox.hgrow="ALWAYS"
                                    styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
                     </HBox>
-                    <Button fx:id="btnEditar" text="Editar" onAction="#edit" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#delete" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-                    </Button>
                     <Button text="+ Nuevo rol" onAction="#create" styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
             </HBox>
@@ -40,10 +33,11 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaRoles" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaId" text="ID" prefWidth="70"/>
-                        <TableColumn fx:id="columnaNombre" text="NOMBRE DEL ROL" prefWidth="200"/>
-                        <TableColumn fx:id="columnaDescripcion" text="DESCRIPCIÓN" prefWidth="340"/>
-                        <TableColumn fx:id="columnaUsuarios" text="USUARIOS ASOCIADOS" prefWidth="180"/>
+                        <TableColumn fx:id="columnaId"          text="ID"                prefWidth="70"/>
+                        <TableColumn fx:id="columnaNombre"      text="NOMBRE DEL ROL"    prefWidth="200"/>
+                        <TableColumn fx:id="columnaDescripcion" text="DESCRIPCIÓN"       prefWidth="330"/>
+                        <TableColumn fx:id="columnaUsuarios"    text="USUARIOS ASOCIADOS" prefWidth="150"/>
+                        <TableColumn fx:id="columnaAcciones"    text="ACCIONES"          prefWidth="100" sortable="false"/>
                     </columns>
                     <placeholder><Label text="Aún no hay roles para mostrar" styleClass="page-subtitle"/></placeholder>
                 </TableView>

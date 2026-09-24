@@ -12,15 +12,20 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.geometry.Pos;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import models.BitacoraModel;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.BitacoraApiClient;
 
@@ -32,6 +37,7 @@ public class BitacoraController {
     @FXML private TableColumn<BitacoraModel, String> columnaEntidad;
     @FXML private TableColumn<BitacoraModel, String> columnaIdRegistro;
     @FXML private TableColumn<BitacoraModel, String> columnaDetalle;
+    @FXML private TableColumn<BitacoraModel, Void>   columnaAcciones;
 
     @FXML private Label lblTotalEventos;
     @FXML private Label lblEstadoModulo;
@@ -65,6 +71,34 @@ public class BitacoraController {
         ));
         columnaDetalle.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getDetalleCorto()));
 
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnEye = new Button();
+                private final HBox box = new HBox(8, btnEye);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnEye.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnEye.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.BLUE_600, 18));
+                    btnEye.setTooltip(new Tooltip("Ver detalle del evento"));
+                    btnEye.setOnAction(e -> {
+                        BitacoraModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) {
+                            tablaBitacora.getSelectionModel().select(item);
+                            verDetalle();
+                        }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() ? null : box);
+                }
+            });
+        }
+
         tablaBitacora.setItems(eventos);
 
         comboEntidad.getItems().setAll("TODAS", "USUARIO", "ROL", "MIEMBRO", "VIVIENDA", "PROYECTO", "AUTH", "SISTEMA");
@@ -86,7 +120,9 @@ public class BitacoraController {
             loadPage();
         });
 
-        btnVerDetalle.disableProperty().bind(tablaBitacora.getSelectionModel().selectedItemProperty().isNull());
+        if (btnVerDetalle != null) {
+            btnVerDetalle.disableProperty().bind(tablaBitacora.getSelectionModel().selectedItemProperty().isNull());
+        }
 
         tablaBitacora.setRowFactory(tv -> {
             TableRow<BitacoraModel> row = new TableRow<>();

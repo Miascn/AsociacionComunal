@@ -46,8 +46,8 @@
                         <TableColumn fx:id="colLugar" text="LUGAR" prefWidth="170"/>
                         <TableColumn fx:id="colTipo" text="TIPO" prefWidth="120"/>
                         <TableColumn fx:id="colEstado" text="ESTADO" prefWidth="120"/>
-                        <TableColumn fx:id="colQuorum" text="QUÓRUM / ASISTENCIA" prefWidth="150"/>
-                        <TableColumn fx:id="colAcciones" text="ACCIONES" prefWidth="300"/>
+                        <TableColumn fx:id="colQuorum"   text="QUÓRUM / ASISTENCIA" prefWidth="150"/>
+                        <TableColumn fx:id="colAcciones" text="ACCIONES"            prefWidth="160" sortable="false"/>
                     </columns>
                     <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
                     <placeholder><Label text="No se encontraron reuniones registradas." styleClass="text-muted"/></placeholder>

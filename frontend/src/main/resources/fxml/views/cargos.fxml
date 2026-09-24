@@ -2,7 +2,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="controller.CargosController"
@@ -27,18 +26,6 @@
                                    styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
                     </HBox>
                     <ComboBox fx:id="comboEstado" prefWidth="115" promptText="Estado"/>
-                    <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnToggleActivo" text="Activar/Desactivar" onAction="#toggleActivo" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-power"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarCargo" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
                     <Button fx:id="btnNuevoCargo" text="+ Nuevo cargo" onAction="#abrirFormularioCrear"
                             styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
@@ -48,21 +35,20 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaCargos" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaJerarquia" text="JERARQUÍA" prefWidth="110"/>
-                        <TableColumn fx:id="columnaNombre" text="CARGO" prefWidth="180"/>
-                        <TableColumn fx:id="columnaDescripcion" text="RESPONSABILIDADES" prefWidth="300"/>
-                        <TableColumn fx:id="columnaAsignaciones" text="ASIGNACIONES" prefWidth="120"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="110"/>
+                        <TableColumn fx:id="columnaJerarquia"    text="JERARQUÍA"         prefWidth="110"/>
+                        <TableColumn fx:id="columnaNombre"       text="CARGO"             prefWidth="180"/>
+                        <TableColumn fx:id="columnaDescripcion"  text="RESPONSABILIDADES" prefWidth="280"/>
+                        <TableColumn fx:id="columnaAsignaciones" text="ASIGNACIONES"      prefWidth="110"/>
+                        <TableColumn fx:id="columnaEstado"       text="ESTADO"            prefWidth="90"/>
+                        <TableColumn fx:id="columnaAcciones"     text="ACCIONES"          prefWidth="110" sortable="false"/>
                     </columns>
                     <placeholder><Label text="No hay cargos directivos registrados" styleClass="page-subtitle"/></placeholder>
                 </TableView>
                 <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblContadorFiltrados" text="0 cargos listados" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="lblCargosActivos" text="0 activos" styleClass="footer-summary-text"/>
-                    <Label fx:id="lblTotalCargos" text="0 total" styleClass="footer-summary-text"
-                           style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
-                    <Label fx:id="lblTotalAsignaciones" text="" styleClass="footer-summary-text"
+                    <Label fx:id="lblCargosActivos"    text="0 activos" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblTotalAsignaciones" text=""         styleClass="footer-summary-text"
                            style="-fx-font-size: 11px;"/>
                 </HBox>
             </VBox>

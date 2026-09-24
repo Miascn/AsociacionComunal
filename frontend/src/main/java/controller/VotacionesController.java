@@ -20,6 +20,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.VotacionModel;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.VotacionApiClient;
 
@@ -166,53 +167,61 @@ public class VotacionesController {
                     setGraphic(null);
                 } else {
                     VotacionModel m = getTableRow().getItem();
-                    HBox box = new HBox(6);
-                    box.setAlignment(Pos.CENTER_LEFT);
-
-                    // Cada acción se ofrece solo cuando el backend la admite. Antes se
-                    // agrupaban BORRADOR y PROGRAMADA, de modo que "Eliminar" aparecía
-                    // sobre una votación programada y el servidor la rechazaba.
-                    if (canManage()) {
-                        if (m.isAbrible()) {
-                            Button btnAbrir = new Button("Abrir");
-                            btnAbrir.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnAbrir.setOnAction(e -> abrirVotacion(m));
-                            box.getChildren().add(btnAbrir);
-                        }
-                        if (m.isEditable()) {
-                            Button btnEditar = new Button("Editar");
-                            btnEditar.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnEditar.setOnAction(e -> abrirFormularioEditar(m));
-                            box.getChildren().add(btnEditar);
-                        }
-                        if (m.isEliminable()) {
-                            Button btnEliminar = new Button("Eliminar");
-                            btnEliminar.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #b91c1c; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnEliminar.setOnAction(e -> eliminarVotacion(m));
-                            box.getChildren().add(btnEliminar);
-                        }
-                        if (m.isCerrable()) {
-                            Button btnCerrar = new Button("Cerrar");
-                            btnCerrar.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
-                            btnCerrar.setOnAction(e -> cerrarVotacion(m));
-                            box.getChildren().add(btnCerrar);
-                        }
-                    }
+                    HBox box = new HBox(8);
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
 
                     if (m.isAbierta()) {
-                        box.getChildren().add(0, construirBotonVoto(m));
+                        box.getChildren().add(construirBotonVoto(m));
                     }
 
-                    Button btnDetalle = new Button("Ver opciones");
-                    btnDetalle.setStyle("-fx-background-color: #e0e7ff; -fx-text-fill: #4338ca; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
+                    Button btnDetalle = new Button();
+                    btnDetalle.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnDetalle.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.BLUE_600, 18));
+                    btnDetalle.setTooltip(new Tooltip("Ver opciones y resultados"));
                     btnDetalle.setOnAction(e -> mostrarDetalle(m));
                     box.getChildren().add(btnDetalle);
 
                     if (canManage()) {
-                        Button btnOpciones = new Button("Opciones");
-                        btnOpciones.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-padding: 3 8 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
+                        if (m.isAbrible()) {
+                            Button btnAbrir = new Button();
+                            btnAbrir.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                            btnAbrir.setGraphic(HeroIcon.create(HeroIcon.PLAY, HeroIcon.GREEN_600, 18));
+                            btnAbrir.setTooltip(new Tooltip("Abrir votación a la comunidad"));
+                            btnAbrir.setOnAction(e -> abrirVotacion(m));
+                            box.getChildren().add(btnAbrir);
+                        }
+                        if (m.isEditable()) {
+                            Button btnEditar = new Button();
+                            btnEditar.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                            btnEditar.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                            btnEditar.setTooltip(new Tooltip("Editar votación"));
+                            btnEditar.setOnAction(e -> abrirFormularioEditar(m));
+                            box.getChildren().add(btnEditar);
+                        }
+                        Button btnOpciones = new Button();
+                        btnOpciones.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                        btnOpciones.setGraphic(HeroIcon.create(HeroIcon.SLIDERS, HeroIcon.INDIGO_600, 18));
+                        btnOpciones.setTooltip(new Tooltip("Configurar opciones de votación"));
                         btnOpciones.setOnAction(e -> abrirModalOpciones(m));
                         box.getChildren().add(btnOpciones);
+
+                        if (m.isCerrable()) {
+                            Button btnCerrar = new Button();
+                            btnCerrar.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                            btnCerrar.setGraphic(HeroIcon.create(HeroIcon.BAN, HeroIcon.SLATE_700, 18));
+                            btnCerrar.setTooltip(new Tooltip("Cerrar votación"));
+                            btnCerrar.setOnAction(e -> cerrarVotacion(m));
+                            box.getChildren().add(btnCerrar);
+                        }
+                        if (m.isEliminable()) {
+                            Button btnEliminar = new Button();
+                            btnEliminar.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                            btnEliminar.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                            btnEliminar.setTooltip(new Tooltip("Eliminar votación"));
+                            btnEliminar.setOnAction(e -> eliminarVotacion(m));
+                            box.getChildren().add(btnEliminar);
+                        }
                     }
 
                     setGraphic(box);

@@ -12,6 +12,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -24,11 +25,14 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.AuthUser;
 import models.ProyectoModel;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.ProyectoApiClient;
 
@@ -40,6 +44,7 @@ public class ProyectoController {
     @FXML private TableColumn<ProyectoModel, String> columnaFecha;
     @FXML private TableColumn<ProyectoModel, String> columnaCreador;
     @FXML private TableColumn<ProyectoModel, String> columnaEstado;
+    @FXML private TableColumn<ProyectoModel, Void>   columnaAcciones;
 
     @FXML private Label lblEnEjecucion;
     @FXML private Label lblAprobadosPropuestos;
@@ -66,14 +71,25 @@ public class ProyectoController {
             || "PRESIDENTE".equalsIgnoreCase(user.getRole())
             || "TESORERO".equalsIgnoreCase(user.getRole());
 
-        btnNuevoProyecto.setVisible(puedeGestionar);
-        btnNuevoProyecto.setManaged(puedeGestionar);
-        btnCicloVida.setVisible(puedeGestionar);
-        btnCicloVida.setManaged(puedeGestionar);
-        btnEditar.setVisible(puedeGestionar);
-        btnEditar.setManaged(puedeGestionar);
-        btnEliminar.setVisible(puedeGestionar);
-        btnEliminar.setManaged(puedeGestionar);
+        if (btnNuevoProyecto != null) {
+            btnNuevoProyecto.setVisible(puedeGestionar);
+            btnNuevoProyecto.setManaged(puedeGestionar);
+        }
+        if (btnCicloVida != null) {
+            btnCicloVida.setVisible(puedeGestionar);
+            btnCicloVida.setManaged(puedeGestionar);
+            btnCicloVida.disableProperty().bind(tablaProyectos.getSelectionModel().selectedItemProperty().isNull());
+        }
+        if (btnEditar != null) {
+            btnEditar.setVisible(puedeGestionar);
+            btnEditar.setManaged(puedeGestionar);
+            btnEditar.disableProperty().bind(tablaProyectos.getSelectionModel().selectedItemProperty().isNull());
+        }
+        if (btnEliminar != null) {
+            btnEliminar.setVisible(puedeGestionar);
+            btnEliminar.setManaged(puedeGestionar);
+            btnEliminar.disableProperty().bind(tablaProyectos.getSelectionModel().selectedItemProperty().isNull());
+        }
 
         columnaNombre.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombre()));
         columnaDescripcion.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getDescripcion()));
@@ -105,6 +121,66 @@ public class ProyectoController {
             }
         });
 
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnCiclo = new Button();
+                private final Button btnEdit  = new Button();
+                private final Button btnDel   = new Button();
+                private final HBox box = new HBox(8, btnCiclo, btnEdit, btnDel);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnCiclo.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnCiclo.setGraphic(HeroIcon.create(HeroIcon.SLIDERS, HeroIcon.BLUE_600, 18));
+                    btnCiclo.setTooltip(new Tooltip("Ciclo de vida / Estados"));
+                    btnCiclo.setOnAction(e -> {
+                        ProyectoModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaProyectos.getSelectionModel().select(p);
+                            abrirCicloVida();
+                        }
+                    });
+
+                    btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEdit.setTooltip(new Tooltip("Editar proyecto"));
+                    btnEdit.setOnAction(e -> {
+                        ProyectoModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaProyectos.getSelectionModel().select(p);
+                            abrirFormularioEditar();
+                        }
+                    });
+
+                    btnDel.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDel.setTooltip(new Tooltip("Eliminar proyecto"));
+                    btnDel.setOnAction(e -> {
+                        ProyectoModel p = getTableView().getItems().get(getIndex());
+                        if (p != null) {
+                            tablaProyectos.getSelectionModel().select(p);
+                            eliminarProyecto();
+                        }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        if (!puedeGestionar) {
+                            setGraphic(null);
+                        } else {
+                            setGraphic(box);
+                        }
+                    }
+                }
+            });
+        }
+
         proyectosFiltrados = new FilteredList<>(proyectos, p -> true);
         tablaProyectos.setItems(proyectosFiltrados);
 
@@ -113,10 +189,6 @@ public class ProyectoController {
 
         comboEstado.valueProperty().addListener((obs, o, n) -> aplicarFiltro());
         campoBusqueda.textProperty().addListener((obs, o, n) -> aplicarFiltro());
-
-        btnCicloVida.disableProperty().bind(tablaProyectos.getSelectionModel().selectedItemProperty().isNull());
-        btnEditar.disableProperty().bind(tablaProyectos.getSelectionModel().selectedItemProperty().isNull());
-        btnEliminar.disableProperty().bind(tablaProyectos.getSelectionModel().selectedItemProperty().isNull());
 
         tablaProyectos.setRowFactory(tv -> {
             TableRow<ProyectoModel> row = new TableRow<>();

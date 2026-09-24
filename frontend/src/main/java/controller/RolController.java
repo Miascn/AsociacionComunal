@@ -12,6 +12,7 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -19,10 +20,14 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import models.RolModel;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.RolApiClient;
 import service.RolApiClient.RolRequest;
@@ -33,11 +38,12 @@ public class RolController {
     @FXML private TableColumn<RolModel, String> columnaNombre;
     @FXML private TableColumn<RolModel, String> columnaDescripcion;
     @FXML private TableColumn<RolModel, Number> columnaUsuarios;
+    @FXML private TableColumn<RolModel, Void>   columnaAcciones;
     @FXML private TextField campoBusqueda;
     @FXML private Label lblTotalRoles;
     @FXML private Label lblEstadoModulo;
-    @FXML private Button btnEditar;
-    @FXML private Button btnEliminar;
+    @FXML private Button btnEditar;   // opcional
+    @FXML private Button btnEliminar; // opcional
 
     private final ObservableList<RolModel> roles = FXCollections.observableArrayList();
     private FilteredList<RolModel> filtered;
@@ -57,8 +63,47 @@ public class RolController {
         tablaRoles.setItems(filtered);
 
         campoBusqueda.textProperty().addListener((obs, previous, value) -> filter(value));
-        btnEditar.disableProperty().bind(tablaRoles.getSelectionModel().selectedItemProperty().isNull());
-        btnEliminar.disableProperty().bind(tablaRoles.getSelectionModel().selectedItemProperty().isNull());
+        if (btnEditar   != null) btnEditar.disableProperty().bind(tablaRoles.getSelectionModel().selectedItemProperty().isNull());
+        if (btnEliminar != null) btnEliminar.disableProperty().bind(tablaRoles.getSelectionModel().selectedItemProperty().isNull());
+
+        // Columna ACCIONES inline: Edit (amber pencil), Delete (red trash)
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnEdit = new Button();
+                private final Button btnDel  = new Button();
+                private final HBox box = new HBox(8, btnEdit, btnDel);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEdit.setTooltip(new Tooltip("Editar rol"));
+                    btnEdit.setOnAction(e -> {
+                        RolModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) openForm(item);
+                    });
+
+                    btnDel.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDel.setTooltip(new Tooltip("Eliminar rol"));
+                    btnDel.setOnAction(e -> {
+                        RolModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) { tablaRoles.getSelectionModel().select(item); delete(); }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(box);
+                    }
+                }
+            });
+        }
 
         loadData();
     }

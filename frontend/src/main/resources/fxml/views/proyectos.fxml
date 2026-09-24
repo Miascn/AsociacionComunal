@@ -27,18 +27,6 @@
                                    styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
                     </HBox>
                     <ComboBox fx:id="comboEstado" prefWidth="130" promptText="Estado"/>
-                    <Button fx:id="btnCicloVida" text="Ciclo de vida" onAction="#abrirCicloVida" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-sliders"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarProyecto" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
                     <Button fx:id="btnNuevoProyecto" text="+ Nuevo proyecto" onAction="#abrirFormularioCrear"
                             styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
@@ -48,12 +36,13 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaProyectos" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaNombre" text="PROYECTO" prefWidth="190"/>
-                        <TableColumn fx:id="columnaDescripcion" text="DESCRIPCIÓN" prefWidth="260"/>
-                        <TableColumn fx:id="columnaPresupuesto" text="PRESUPUESTO" prefWidth="120"/>
-                        <TableColumn fx:id="columnaFecha" text="CREACIÓN" prefWidth="105"/>
-                        <TableColumn fx:id="columnaCreador" text="CREADO POR" prefWidth="130"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
+                        <TableColumn fx:id="columnaNombre"      text="PROYECTO"     prefWidth="190"/>
+                        <TableColumn fx:id="columnaDescripcion" text="DESCRIPCIÓN"  prefWidth="250"/>
+                        <TableColumn fx:id="columnaPresupuesto" text="PRESUPUESTO"  prefWidth="120"/>
+                        <TableColumn fx:id="columnaFecha"       text="CREACIÓN"     prefWidth="105"/>
+                        <TableColumn fx:id="columnaCreador"     text="CREADO POR"   prefWidth="130"/>
+                        <TableColumn fx:id="columnaEstado"      text="ESTADO"       prefWidth="120"/>
+                        <TableColumn fx:id="columnaAcciones"    text="ACCIONES"     prefWidth="120" sortable="false"/>
                     </columns>
                     <placeholder><Label text="No hay proyectos comunales registrados" styleClass="page-subtitle"/></placeholder>
                 </TableView>

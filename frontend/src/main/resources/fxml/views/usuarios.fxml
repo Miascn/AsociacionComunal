@@ -2,7 +2,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="controller.UsuarioController"
@@ -22,22 +21,10 @@
                 <Region HBox.hgrow="ALWAYS"/>
                 <HBox spacing="10" alignment="CENTER_RIGHT">
                     <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
-                          prefWidth="240" minWidth="180" prefHeight="38" minHeight="38" maxHeight="38">
+                          prefWidth="260" minWidth="180" prefHeight="38" minHeight="38" maxHeight="38">
                         <TextField fx:id="campoBusqueda" promptText="Buscar usuario, rol o miembro..." HBox.hgrow="ALWAYS"
                                    styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
                     </HBox>
-                    <Button fx:id="btnEditar" text="Editar" onAction="#edit" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnCambiarEstado" text="Estado" onAction="#changeState" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
-                    <Button fx:id="btnBloquear" text="Bloquear" onAction="#bloquearUsuario" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-slash"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRestablecerClave" text="Clave" onAction="#restablecerClave" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-key"/></graphic>
-                    </Button>
                     <Button text="+ Nuevo usuario" onAction="#create" styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
             </HBox>
@@ -46,16 +33,17 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaUsuarios" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaUsuario" text="USUARIO" prefWidth="155"/>
-                        <TableColumn fx:id="columnaRol" text="ROL" prefWidth="130"/>
-                        <TableColumn fx:id="columnaMiembro" text="MIEMBRO ASOCIADO" prefWidth="220"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="105"/>
-                        <TableColumn fx:id="columnaUltimoAcceso" text="ÚLTIMO ACCESO" prefWidth="180"/>
+                        <TableColumn fx:id="columnaUsuario"     text="USUARIO"          prefWidth="150"/>
+                        <TableColumn fx:id="columnaRol"         text="ROL"              prefWidth="130"/>
+                        <TableColumn fx:id="columnaMiembro"     text="MIEMBRO ASOCIADO" prefWidth="210"/>
+                        <TableColumn fx:id="columnaEstado"      text="ESTADO"           prefWidth="95"/>
+                        <TableColumn fx:id="columnaUltimoAcceso" text="ÚLTIMO ACCESO"   prefWidth="155"/>
+                        <TableColumn fx:id="columnaAcciones"    text="ACCIONES"         prefWidth="130" sortable="false"/>
                     </columns>
                     <placeholder><Label text="Aún no hay usuarios para mostrar" styleClass="page-subtitle"/></placeholder>
                 </TableView>
                 <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
-                    <Label fx:id="lblTotalUsuarios" text="0 usuarios registrados" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblTotalUsuarios" text="0 usuarios" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblEstadoModulo" text="" styleClass="footer-summary-text"
                            style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>

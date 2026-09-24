@@ -17,11 +17,14 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -29,6 +32,7 @@ import models.AsignacionCargoModel;
 import models.AuthUser;
 import models.PeriodoDirectivaModel;
 import security.SessionManager;
+import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.DirectivaApiClient;
 import service.PeriodoApiClient;
@@ -41,6 +45,7 @@ public class DirectivaController {
     @FXML private TableColumn<AsignacionCargoModel, String> columnaContacto;
     @FXML private TableColumn<AsignacionCargoModel, String> columnaVigencia;
     @FXML private TableColumn<AsignacionCargoModel, String> columnaEstado;
+    @FXML private TableColumn<AsignacionCargoModel, Void>   columnaAcciones;
 
     @FXML private Label lblNombrePeriodo;
     @FXML private Label lblEstadoPeriodo;
@@ -74,14 +79,22 @@ public class DirectivaController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         puedeGestionar = isAdministrator(user.getRole()) || "PRESIDENTE".equalsIgnoreCase(user.getRole());
 
-        btnAsignarCargo.setVisible(puedeGestionar);
-        btnAsignarCargo.setManaged(puedeGestionar);
-        btnRevocar.setVisible(puedeGestionar);
-        btnRevocar.setManaged(puedeGestionar);
-        btnFinalizar.setVisible(puedeGestionar);
-        btnFinalizar.setManaged(puedeGestionar);
-        btnEliminar.setVisible(puedeGestionar);
-        btnEliminar.setManaged(puedeGestionar);
+        if (btnAsignarCargo != null) {
+            btnAsignarCargo.setVisible(puedeGestionar);
+            btnAsignarCargo.setManaged(puedeGestionar);
+        }
+        if (btnRevocar != null) {
+            btnRevocar.setVisible(puedeGestionar);
+            btnRevocar.setManaged(puedeGestionar);
+        }
+        if (btnFinalizar != null) {
+            btnFinalizar.setVisible(puedeGestionar);
+            btnFinalizar.setManaged(puedeGestionar);
+        }
+        if (btnEliminar != null) {
+            btnEliminar.setVisible(puedeGestionar);
+            btnEliminar.setManaged(puedeGestionar);
+        }
 
         columnaJerarquia.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getJerarquiaDisplay()));
         columnaCargo.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombreCargo()));
@@ -114,6 +127,71 @@ public class DirectivaController {
             }
         });
 
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnRev = new Button();
+                private final Button btnFin = new Button();
+                private final Button btnDel = new Button();
+                private final HBox box = new HBox(8);
+                {
+                    box.getStyleClass().add("row-actions-box");
+                    box.setAlignment(Pos.CENTER);
+
+                    btnRev.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnRev.setGraphic(HeroIcon.create(HeroIcon.USER_MINUS, HeroIcon.AMBER_600, 18));
+                    btnRev.setTooltip(new Tooltip("Revocar cargo"));
+                    btnRev.setOnAction(e -> {
+                        AsignacionCargoModel a = getTableView().getItems().get(getIndex());
+                        if (a != null) {
+                            tablaDirectiva.getSelectionModel().select(a);
+                            abrirModalRevocar();
+                        }
+                    });
+
+                    btnFin.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnFin.setGraphic(HeroIcon.create(HeroIcon.CHECK_CIRCLE, HeroIcon.BLUE_600, 18));
+                    btnFin.setTooltip(new Tooltip("Finalizar asignación"));
+                    btnFin.setOnAction(e -> {
+                        AsignacionCargoModel a = getTableView().getItems().get(getIndex());
+                        if (a != null) {
+                            tablaDirectiva.getSelectionModel().select(a);
+                            finalizarAsignacion();
+                        }
+                    });
+
+                    btnDel.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDel.setTooltip(new Tooltip("Eliminar asignación"));
+                    btnDel.setOnAction(e -> {
+                        AsignacionCargoModel a = getTableView().getItems().get(getIndex());
+                        if (a != null) {
+                            tablaDirectiva.getSelectionModel().select(a);
+                            eliminarAsignacion();
+                        }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() || !puedeGestionar) {
+                        setGraphic(null);
+                    } else {
+                        AsignacionCargoModel a = getTableView().getItems().get(getIndex());
+                        boolean isActivo = "ACTIVO".equalsIgnoreCase(a.getEstado());
+                        box.getChildren().clear();
+
+                        if (isActivo) {
+                            box.getChildren().addAll(btnRev, btnFin);
+                        }
+                        box.getChildren().add(btnDel);
+
+                        setGraphic(box);
+                    }
+                }
+            });
+        }
+
         asignacionesFiltradas = new FilteredList<>(asignaciones, a -> true);
         tablaDirectiva.setItems(asignacionesFiltradas);
 
@@ -125,14 +203,14 @@ public class DirectivaController {
 
         tablaDirectiva.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
             if (selected == null) {
-                btnRevocar.setDisable(true);
-                btnFinalizar.setDisable(true);
-                btnEliminar.setDisable(true);
+                if (btnRevocar != null) btnRevocar.setDisable(true);
+                if (btnFinalizar != null) btnFinalizar.setDisable(true);
+                if (btnEliminar != null) btnEliminar.setDisable(true);
             } else {
                 boolean isActivo = "ACTIVO".equalsIgnoreCase(selected.getEstado());
-                btnRevocar.setDisable(!isActivo);
-                btnFinalizar.setDisable(!isActivo);
-                btnEliminar.setDisable(false);
+                if (btnRevocar != null) btnRevocar.setDisable(!isActivo);
+                if (btnFinalizar != null) btnFinalizar.setDisable(!isActivo);
+                if (btnEliminar != null) btnEliminar.setDisable(false);
             }
         });
 

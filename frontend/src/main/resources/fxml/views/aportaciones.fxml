@@ -30,15 +30,6 @@
                                prefHeight="38" minHeight="38" maxHeight="38"/>
                     <ComboBox fx:id="comboMetodo" prefWidth="115" promptText="Método"/>
                     <ComboBox fx:id="comboEstado" prefWidth="110" promptText="Estado"/>
-                    <Button fx:id="btnVerRecibo" text="Recibo" onAction="#verRecibo" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
-                    </Button>
-                    <Button fx:id="btnAnular" text="Anular" onAction="#anularAportacion" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-slash"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
                 </HBox>
             </HBox>
 
@@ -46,15 +37,16 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaAportaciones" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaFecha" text="FECHA PAGO" prefWidth="110"/>
-                        <TableColumn fx:id="columnaMiembro" text="MIEMBRO" prefWidth="180"/>
-                        <TableColumn fx:id="columnaDui" text="DUI" prefWidth="110"/>
-                        <TableColumn fx:id="columnaPeriodo" text="PERÍODO" prefWidth="90"/>
-                        <TableColumn fx:id="columnaMonto" text="MONTO" prefWidth="95"/>
-                        <TableColumn fx:id="columnaMetodo" text="MÉTODO" prefWidth="110"/>
-                        <TableColumn fx:id="columnaProyecto" text="PROYECTO" prefWidth="160"/>
-                        <TableColumn fx:id="columnaReferencia" text="COMPROBANTE" prefWidth="130"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="110"/>
+                        <TableColumn fx:id="columnaFecha"      text="FECHA PAGO"    prefWidth="110"/>
+                        <TableColumn fx:id="columnaMiembro"    text="MIEMBRO"       prefWidth="180"/>
+                        <TableColumn fx:id="columnaDui"        text="DUI"           prefWidth="105"/>
+                        <TableColumn fx:id="columnaPeriodo"    text="PERÍODO"       prefWidth="85"/>
+                        <TableColumn fx:id="columnaMonto"      text="MONTO"         prefWidth="90"/>
+                        <TableColumn fx:id="columnaMetodo"     text="MÉTODO"        prefWidth="100"/>
+                        <TableColumn fx:id="columnaProyecto"   text="PROYECTO"      prefWidth="150"/>
+                        <TableColumn fx:id="columnaReferencia" text="COMPROBANTE"   prefWidth="120"/>
+                        <TableColumn fx:id="columnaEstado"     text="ESTADO"        prefWidth="100"/>
+                        <TableColumn fx:id="columnaAcciones"   text="ACCIONES"      prefWidth="100" sortable="false"/>
                     </columns>
                     <placeholder><Label text="No se encontraron aportaciones registradas" styleClass="page-subtitle"/></placeholder>
                 </TableView>

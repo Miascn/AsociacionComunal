@@ -28,18 +28,6 @@
                     </HBox>
                     <ComboBox fx:id="comboPeriodo" prefWidth="175" promptText="Seleccionar período"/>
                     <ComboBox fx:id="comboEstado" prefWidth="110" promptText="Estado"/>
-                    <Button fx:id="btnRevocar" text="Revocar" onAction="#abrirModalRevocar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-user-x"/></graphic>
-                    </Button>
-                    <Button fx:id="btnFinalizar" text="Finalizar" onAction="#finalizarAsignacion" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-check-circle"/></graphic>
-                    </Button>
-                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarAsignacion" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-                    </Button>
-                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
-                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-                    </Button>
                     <Button fx:id="btnAsignarCargo" text="+ Asignar cargo" onAction="#abrirModalAsignacion"
                             styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
@@ -49,12 +37,13 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaDirectiva" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaJerarquia" text="JERARQUÍA" prefWidth="100"/>
-                        <TableColumn fx:id="columnaCargo" text="CARGO DIRECTIVO" prefWidth="190"/>
-                        <TableColumn fx:id="columnaMiembro" text="MIEMBRO ASIGNADO" prefWidth="240"/>
-                        <TableColumn fx:id="columnaContacto" text="CONTACTO (TEL / DUI)" prefWidth="180"/>
-                        <TableColumn fx:id="columnaVigencia" text="VIGENCIA EN EL CARGO" prefWidth="220"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
+                        <TableColumn fx:id="columnaJerarquia" text="JERARQUÍA"             prefWidth="100"/>
+                        <TableColumn fx:id="columnaCargo"     text="CARGO DIRECTIVO"        prefWidth="180"/>
+                        <TableColumn fx:id="columnaMiembro"   text="MIEMBRO ASIGNADO"       prefWidth="230"/>
+                        <TableColumn fx:id="columnaContacto"  text="CONTACTO (TEL / DUI)"   prefWidth="170"/>
+                        <TableColumn fx:id="columnaVigencia"  text="VIGENCIA EN EL CARGO"   prefWidth="200"/>
+                        <TableColumn fx:id="columnaEstado"    text="ESTADO"                 prefWidth="100"/>
+                        <TableColumn fx:id="columnaAcciones"  text="ACCIONES"               prefWidth="120" sortable="false"/>
                     </columns>
                     <placeholder><Label text="No hay cargos directivos asignados en este período" styleClass="page-subtitle"/></placeholder>
                 </TableView>
