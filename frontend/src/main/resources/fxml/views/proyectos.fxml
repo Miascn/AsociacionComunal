@@ -50,7 +50,7 @@
                     <Label fx:id="lblTotalProyectos" text="0 proyectos registrados" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblEnEjecucion" text="0 en ejecución" styleClass="footer-summary-text"/>
-                    <Label fx:id="lblPresupuestoTotal" text="$0.00" styleClass="footer-summary-text"
+                    <Label fx:id="lblPresupuestoTotal" text="USD 0.00" styleClass="footer-summary-text"
                            style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
                     <Label fx:id="lblAprobadosPropuestos" text="" styleClass="footer-summary-text"
                            style="-fx-font-size: 11px;"/>

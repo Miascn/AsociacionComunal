@@ -53,7 +53,7 @@
                 <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblTotalRegistros" text="0 aportaciones" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="lblTotalRecaudado" text="$0.00 recaudado" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblTotalRecaudado" text="USD 0.00 recaudado" styleClass="footer-summary-text"/>
                     <Label fx:id="lblPaginacion" text="Página 1 de 1" styleClass="footer-summary-text"/>
                     <Button fx:id="btnAnterior" text="←" onAction="#paginaAnterior" styleClass="btn-toggle-inactivos"/>
                     <Button fx:id="btnSiguiente" text="→" onAction="#paginaSiguiente" styleClass="btn-toggle-inactivos"/>

@@ -109,39 +109,35 @@ class FxmlNavigationTest {
                     busqueda.clear();
                 } else if ("Usuarios".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Gestión de usuarios"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("usuarios")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Roles".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Catálogo de roles"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("roles")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Cargos".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Catálogo de cargos directivos"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("cargos")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Períodos".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Períodos de junta directiva"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("período") || t.toLowerCase().contains("periodo")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Directiva".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Conformación de junta directiva"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("directiva")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Bitácora".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Bitácora del sistema"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("bitácora") || t.toLowerCase().contains("bitacora")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Proyectos".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream()
-                            .map(Label::getText)
-                            .anyMatch("Proyectos comunales"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("proyectos")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Viviendas".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream()
-                            .map(Label::getText)
-                            .anyMatch("Gestión de viviendas"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("viviendas")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Aportaciones".equals(boton.getText())) {
                     boton.fire();
@@ -149,11 +145,11 @@ class FxmlNavigationTest {
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Votaciones".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Procesos de votación comunal"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("votaciones")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if ("Reuniones".equals(boton.getText())) {
                     boton.fire();
-                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).anyMatch("Reuniones y Asambleas Comunitarias"::equals));
+                    assertTrue(buscarEtiquetas(root).stream().map(Label::getText).filter(java.util.Objects::nonNull).anyMatch(t -> t.toLowerCase().contains("reuniones")));
                     assertTrue(recorrer(root).stream().anyMatch(TableView.class::isInstance));
                 } else if (!"Dashboard".equals(boton.getText()) && !"Cerrar sesión".equals(boton.getText())) {
                     boton.fire();

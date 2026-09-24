@@ -68,14 +68,22 @@ public class CargosController {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         puedeGestionar = isAdministrator(user.getRole()) || "PRESIDENTE".equalsIgnoreCase(user.getRole());
 
-        btnNuevoCargo.setVisible(puedeGestionar);
-        btnNuevoCargo.setManaged(puedeGestionar);
-        btnEditar.setVisible(puedeGestionar);
-        btnEditar.setManaged(puedeGestionar);
-        btnToggleActivo.setVisible(puedeGestionar);
-        btnToggleActivo.setManaged(puedeGestionar);
-        btnEliminar.setVisible(puedeGestionar);
-        btnEliminar.setManaged(puedeGestionar);
+        if (btnNuevoCargo != null) {
+            btnNuevoCargo.setVisible(puedeGestionar);
+            btnNuevoCargo.setManaged(puedeGestionar);
+        }
+        if (btnEditar != null) {
+            btnEditar.setVisible(puedeGestionar);
+            btnEditar.setManaged(puedeGestionar);
+        }
+        if (btnToggleActivo != null) {
+            btnToggleActivo.setVisible(puedeGestionar);
+            btnToggleActivo.setManaged(puedeGestionar);
+        }
+        if (btnEliminar != null) {
+            btnEliminar.setVisible(puedeGestionar);
+            btnEliminar.setManaged(puedeGestionar);
+        }
 
         columnaJerarquia.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNivelDisplay()));
         columnaNombre.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombre()));
