@@ -1872,16 +1872,10 @@ public class CommunityMapPane extends HBox {
             lotNode.setOnMouseEntered(e -> {
                 if (modoColocacion) return;
                 animarHover(true);
-                if (isEditable()) {
-                    return; // En modo edición no mostrar callout ni información de la casa
-                }
             });
 
             lotNode.setOnMouseExited(e -> {
                 animarHover(false);
-                if (!isEditable() && loteSeleccionado != this) {
-                    ocultarCallout();
-                }
             });
 
             lotNode.setOnMousePressed(e -> {
