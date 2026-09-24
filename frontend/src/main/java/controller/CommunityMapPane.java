@@ -1793,7 +1793,7 @@ public class CommunityMapPane extends HBox {
     private class LotSlot {
         final int numero;
         final int index;
-        final String codigo;
+        String codigo;
         final String sector;
         final String direccion;
         double posX;
@@ -1805,15 +1805,15 @@ public class CommunityMapPane extends HBox {
         private final StackPane cuerpoCasa = new StackPane();
         private final Rectangle parcela = new Rectangle(44, 34);
         private final Rectangle techoCasa = new Rectangle(30, 20);
-        private final VBox pinContainer = new VBox(-3);
-        private final Circle pinCircle = new Circle(10.5);
-        private final Label lblNumero = new Label();
+        private final VBox pinContainer = new VBox(-2);
+        private final StackPane pinHead = new StackPane();
+        private final Label lblCodigo = new Label();
         private final Polygon pinPointer = new Polygon(0.0, 0.0, 6.0, 0.0, 3.0, 4.0);
 
         LotSlot(int numero, int index, String codigo, String sector, String direccion, double x, double y, double rotacion) {
             this.numero = numero;
             this.index = index;
-            this.codigo = codigo;
+            this.codigo = (codigo != null && !codigo.isBlank()) ? codigo.trim().toUpperCase(Locale.ROOT) : "";
             this.sector = sector;
             this.direccion = direccion;
             this.posX = x;
@@ -1852,14 +1852,19 @@ public class CommunityMapPane extends HBox {
             pinContainer.setAlignment(Pos.CENTER);
             pinContainer.setPickOnBounds(false);
 
-            // Numeración limpia: si el número extraído es corto (<= 99), se muestra; si no, el índice secuencial
-            int pinDisplayNum = (numero >= 1 && numero <= 99) ? numero : index;
-            lblNumero.setText(String.valueOf(pinDisplayNum));
-            lblNumero.setFont(Font.font("Segoe UI", FontWeight.BOLD, pinDisplayNum > 9 ? 8.5 : 9.5));
-            lblNumero.setTextFill(Color.WHITE);
+            // Mostrar el código de la vivienda (ej. "A-1", "B-2", "VIV-01") en lugar de solo número
+            lblCodigo.setTextFill(Color.WHITE);
+            lblCodigo.setAlignment(Pos.CENTER);
+            lblCodigo.setTextAlignment(TextAlignment.CENTER);
 
-            StackPane pinHead = new StackPane(pinCircle, lblNumero);
-            pinHead.setPrefSize(21, 21);
+            pinHead.getChildren().add(lblCodigo);
+            pinHead.setAlignment(Pos.CENTER);
+            pinHead.setMinHeight(16);
+            pinHead.setPrefHeight(17);
+            pinHead.setMaxHeight(18);
+            pinHead.setMinWidth(19);
+
+            actualizarTextoCodigo();
 
             pinContainer.getChildren().addAll(pinHead, pinPointer);
 
@@ -1981,7 +1986,30 @@ public class CommunityMapPane extends HBox {
 
         void asignarVivienda(ViviendaModel vivienda) {
             this.vivienda = vivienda;
+            if (vivienda != null && vivienda.getCodigo() != null && !vivienda.getCodigo().isBlank()) {
+                this.codigo = vivienda.getCodigo().trim().toUpperCase(Locale.ROOT);
+            }
+            actualizarTextoCodigo();
             actualizarEstadoVisual();
+        }
+
+        private void actualizarTextoCodigo() {
+            String cod = (this.codigo != null && !this.codigo.isBlank())
+                    ? this.codigo.trim()
+                    : (vivienda != null && vivienda.getCodigo() != null && !vivienda.getCodigo().isBlank()
+                            ? vivienda.getCodigo().trim()
+                            : String.valueOf(numero > 0 ? numero : index));
+            lblCodigo.setText(cod);
+            if (cod.length() > 5) {
+                lblCodigo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 7.0));
+                pinHead.setPadding(new Insets(1, 3, 1, 3));
+            } else if (cod.length() > 3) {
+                lblCodigo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 7.5));
+                pinHead.setPadding(new Insets(1, 4, 1, 4));
+            } else {
+                lblCodigo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 8.5));
+                pinHead.setPadding(new Insets(1, 5, 1, 5));
+            }
         }
 
         void setResaltado(boolean resaltado) {
@@ -2009,27 +2037,29 @@ public class CommunityMapPane extends HBox {
             if (isEditable()) return;
 
             parcela.setStrokeWidth(1.2);
+            Color pinColor;
             if (vivienda != null) {
                 if (vivienda.getTotalResidentes() > 0) {
-                    pinCircle.setFill(Color.web("#10b981"));
-                    pinPointer.setFill(Color.web("#10b981"));
+                    pinColor = Color.web("#10b981");
                     parcela.setStroke(Color.web("#059669"));
                     parcela.setFill(Color.rgb(240, 253, 244, 0.92));
                     techoCasa.setFill(Color.web("#d1fae5"));
                 } else {
-                    pinCircle.setFill(Color.web("#2563eb"));
-                    pinPointer.setFill(Color.web("#2563eb"));
+                    pinColor = Color.web("#2563eb");
                     parcela.setStroke(Color.web("#1d4ed8"));
                     parcela.setFill(Color.rgb(239, 246, 255, 0.92));
                     techoCasa.setFill(Color.web("#dbeafe"));
                 }
             } else {
-                pinCircle.setFill(Color.web("#64748b"));
-                pinPointer.setFill(Color.web("#64748b"));
+                pinColor = Color.web("#64748b");
                 parcela.setStroke(Color.web("#94a3b8"));
                 parcela.setFill(Color.rgb(255, 255, 255, 0.88));
                 techoCasa.setFill(Color.web("#f1f5f9"));
             }
+
+            pinHead.setBackground(new Background(new BackgroundFill(pinColor, new CornerRadii(999), Insets.EMPTY)));
+            pinHead.setBorder(new Border(new BorderStroke(Color.rgb(255, 255, 255, 0.65), BorderStrokeStyle.SOLID, new CornerRadii(999), new BorderWidths(0.8))));
+            pinPointer.setFill(pinColor);
         }
 
         Node getNode() {
