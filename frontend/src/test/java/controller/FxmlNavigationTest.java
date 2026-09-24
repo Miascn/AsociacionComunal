@@ -30,14 +30,17 @@ class FxmlNavigationTest {
     @BeforeAll
     static void iniciarJavaFx() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        Platform.startup(latch::countDown);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        try {
+            Platform.startup(latch::countDown);
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        } catch (IllegalStateException e) {
+            // Ya iniciado
+        }
     }
 
     @AfterAll
     static void finalizarJavaFx() {
         SessionManager.getInstance().clear();
-        Platform.exit();
     }
 
     @Test
@@ -174,6 +177,32 @@ class FxmlNavigationTest {
                     .fire();
             assertTrue(logoutInvocado[0]);
             assertFalse(session.isAuthenticated());
+            return null;
+        });
+    }
+
+    @Test
+    void barraSuperiorYSidebarColapsable() throws Exception {
+        ejecutarEnJavaFx(() -> {
+            SessionManager session = SessionManager.getInstance();
+            session.start(new AuthUser("admin", "Josué Romero", "Administrador"), "test-token");
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+            Parent root = loader.load();
+            MainController controller = loader.getController();
+
+            assertNotNull(root);
+            assertNotNull(controller);
+
+            // Verificar existencia de la barra superior y elementos
+            assertNotNull(root.lookup(".top-bar"));
+            assertNotNull(root.lookup("#btnToggleSidebar"));
+            assertNotNull(root.lookup("#btnUsuarioBadge"));
+
+            // Probar alternado de sidebar y tema
+            controller.onToggleSidebar();
+            controller.onAlternarTema();
+
             return null;
         });
     }

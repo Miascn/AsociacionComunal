@@ -10,39 +10,31 @@ class VotingRepository {
 
   /// Obtiene los procesos de votación disponibles.
   Future<List<VotingModel>> getPolls({String? estado}) async {
-    try {
-      final queryParams = <String, String>{};
-      if (estado != null && estado.isNotEmpty) {
-        queryParams['estado'] = estado;
-      }
-
-      final response = await _api.get(
-        ApiConstants.votacionesEndpoint,
-        queryParams: queryParams.isNotEmpty ? queryParams : null,
-      );
-
-      if (response is List) {
-        return response
-            .map((item) => VotingModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
+    final queryParams = <String, String>{};
+    if (estado != null && estado.isNotEmpty) {
+      queryParams['estado'] = estado;
     }
+
+    final response = await _api.get(
+      ApiConstants.votacionesEndpoint,
+      queryParams: queryParams.isNotEmpty ? queryParams : null,
+    );
+
+    if (response is List) {
+      return response
+          .map((item) => VotingModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
   }
 
   /// Consulta el detalle de una votación con sus opciones.
   Future<VotingModel?> getPollById(int id) async {
-    try {
-      final response = await _api.get('${ApiConstants.votacionesEndpoint}/$id');
-      if (response is Map<String, dynamic>) {
-        return VotingModel.fromJson(response);
-      }
-      return null;
-    } catch (_) {
-      return null;
+    final response = await _api.get('${ApiConstants.votacionesEndpoint}/$id');
+    if (response is Map<String, dynamic>) {
+      return VotingModel.fromJson(response);
     }
+    return null;
   }
 
   /// Verifica si el miembro ya emitió su voto en una votación específica.

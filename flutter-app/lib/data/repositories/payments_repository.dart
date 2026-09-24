@@ -10,35 +10,30 @@ class PaymentsRepository {
 
   /// Obtiene el listado de aportaciones del miembro conectado.
   Future<List<PaymentModel>> getMyPayments({int? idMiembro}) async {
-    try {
-      final queryParams = <String, String>{
-        'page': '1',
-        'size': '50',
-      };
-      if (idMiembro != null) {
-        queryParams['idMiembro'] = idMiembro.toString();
-      }
-
-      final response = await _api.get(
-        ApiConstants.aportacionesEndpoint,
-        queryParams: queryParams,
-      );
-
-      if (response is Map<String, dynamic> && response['items'] is List) {
-        final items = response['items'] as List;
-        return items
-            .map((item) => PaymentModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-      } else if (response is List) {
-        return response
-            .map((item) => PaymentModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (_) {
-      // Retorna lista vacía si la base aún no tiene registros o no hay conexión directa
-      return [];
+    final queryParams = <String, String>{
+      'page': '1',
+      'size': '50',
+    };
+    if (idMiembro != null) {
+      queryParams['idMiembro'] = idMiembro.toString();
     }
+
+    final response = await _api.get(
+      ApiConstants.aportacionesEndpoint,
+      queryParams: queryParams,
+    );
+
+    if (response is Map<String, dynamic> && response['items'] is List) {
+      final items = response['items'] as List;
+      return items
+          .map((item) => PaymentModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } else if (response is List) {
+      return response
+          .map((item) => PaymentModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
   }
 
   /// Calcula el total aportado por el residente.

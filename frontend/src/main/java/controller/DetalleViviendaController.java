@@ -9,14 +9,13 @@ import service.ViviendaApiClient.Resident;
 
 public final class DetalleViviendaController {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    @FXML private Label lblCodigo,lblEstado,lblSector,lblDireccion,lblReferencia,lblRepresentante,lblFecha,lblResumen;
+    @FXML private Label lblCodigo,lblEstado,lblSector,lblDireccion,lblReferencia,lblFecha,lblResumen;
     @FXML private ListView<String> listaAdultos,listaMenores;
 
     public void setDetail(HouseDetail detail) {
         var house=detail.vivienda();
         lblCodigo.setText(house.getCodigo());lblEstado.setText(house.getEstado());lblSector.setText(house.getSector());
         lblDireccion.setText(house.getDireccion());lblReferencia.setText(value(house.getReferencia(),"Sin referencia"));
-        lblRepresentante.setText(value(house.getRepresentante(),"Sin representante"));
         lblFecha.setText(house.getFechaRegistro()==null?"No registrada":house.getFechaRegistro().format(DATE));
         for(Resident resident:detail.residentes()){
             String name=resident.name()+(resident.representative()?" (Representante)":"");

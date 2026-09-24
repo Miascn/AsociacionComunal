@@ -4,95 +4,71 @@
 <?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.PeriodosController" spacing="20" styleClass="module-page, members-page">
-    <padding><Insets top="28" right="34" bottom="28" left="34"/></padding>
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.PeriodosController"
+            fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+            styleClass="members-scroll-pane">
+    <content>
+        <VBox spacing="18" styleClass="module-page, members-page">
+            <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
-    <!-- Encabezado de la página -->
-    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
-        <VBox spacing="6">
-            <Label text="GOBIERNO / JUNTA DIRECTIVA" styleClass="page-eyebrow"/>
-            <Label text="Períodos de junta directiva" styleClass="page-title, members-title"/>
-            <Label text="Ciclos de gobernanza comunal, vigencia temporal y control de directivas." styleClass="page-subtitle"/>
-        </VBox>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnNuevoPeriodo" text="Nuevo período" onAction="#abrirFormularioCrear" styleClass="primary-action">
-            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
-        </Button>
-    </HBox>
-
-    <!-- Tarjetas de resumen del tablero -->
-    <HBox spacing="14">
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-check-circle"/></HBox>
-            <VBox spacing="3">
-                <Label text="PERÍODO ACTIVO VIGENTE" styleClass="summary-label"/>
-                <Label fx:id="lblPeriodoActivo" text="Sin período activo" styleClass="summary-value-success"/>
-                <Label fx:id="lblVigenciaActiva" text="No hay directiva en funciones" styleClass="summary-label"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-calendar"/></HBox>
-            <VBox spacing="3">
-                <Label text="PLANIFICADOS" styleClass="summary-label"/>
-                <Label fx:id="lblTotalPlanificados" text="0 períodos" styleClass="summary-value"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-archive"/></HBox>
-            <VBox spacing="3">
-                <Label text="FINALIZADOS (HISTÓRICOS)" styleClass="summary-label"/>
-                <Label fx:id="lblTotalFinalizados" text="0 períodos" styleClass="summary-value"/>
-            </VBox>
-        </HBox>
-    </HBox>
-
-    <!-- Contenedor principal de la tabla -->
-    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
-        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="members-toolbar">
-            <VBox spacing="2">
-                <Label text="Cronología de períodos directivos" styleClass="section-title"/>
-                <Label fx:id="lblContadorFiltrados" text="0 períodos registrados" styleClass="toolbar-caption"/>
-            </VBox>
-            <Region HBox.hgrow="ALWAYS"/>
-
-            <!-- Filtro de estado -->
-            <ComboBox fx:id="comboEstado" prefWidth="140" promptText="Estado"/>
-
-            <!-- Búsqueda rápida -->
-            <HBox alignment="CENTER_LEFT" spacing="6" styleClass="search-box">
-                <FontIcon iconLiteral="fth-search"/>
-                <TextField fx:id="campoBusqueda" promptText="Buscar período..." prefWidth="180" styleClass="search-field"/>
+            <!-- Hero -->
+            <HBox alignment="CENTER_LEFT" spacing="16" styleClass="members-hero">
+                <VBox spacing="4">
+                    <Label text="GOBIERNO / JUNTA DIRECTIVA" styleClass="page-eyebrow"/>
+                    <Label text="Períodos directivos" styleClass="page-title, members-title"/>
+                    <Label fx:id="lblPeriodoActivo" text="Sin período activo." styleClass="page-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
+                          prefWidth="200" minWidth="150" prefHeight="38" minHeight="38" maxHeight="38">
+                        <TextField fx:id="campoBusqueda" promptText="Buscar período..." HBox.hgrow="ALWAYS"
+                                   styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
+                    </HBox>
+                    <ComboBox fx:id="comboEstado" prefWidth="120" promptText="Estado"/>
+                    <Button fx:id="btnActivar" text="Activar" onAction="#activarPeriodo" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-play"/></graphic>
+                    </Button>
+                    <Button fx:id="btnFinalizar" text="Finalizar" onAction="#finalizarPeriodo" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
+                    </Button>
+                    <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
+                    </Button>
+                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarPeriodo" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
+                    </Button>
+                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
+                    </Button>
+                    <Button fx:id="btnNuevoPeriodo" text="+ Nuevo período" onAction="#abrirFormularioCrear"
+                            styleClass="btn-primary-blue, members-primary-action"/>
+                </HBox>
             </HBox>
 
-            <!-- Acciones -->
-            <Button fx:id="btnActivar" text="Activar" onAction="#activarPeriodo" styleClass="primary-action">
-                <graphic><FontIcon iconLiteral="fth-play"/></graphic>
-            </Button>
-            <Button fx:id="btnFinalizar" text="Finalizar" onAction="#finalizarPeriodo" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
-            </Button>
-            <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-            </Button>
-            <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarPeriodo" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-            </Button>
-            <Button fx:id="btnRefrescar" text="Actualizar" onAction="#recargar" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-            </Button>
-        </HBox>
-
-        <!-- Tabla de períodos -->
-        <TableView fx:id="tablaPeriodos" VBox.vgrow="ALWAYS" styleClass="members-table">
-            <columns>
-                <TableColumn fx:id="columnaNombre" text="PERÍODO DIRECTIVO" prefWidth="220"/>
-                <TableColumn fx:id="columnaInicio" text="FECHA INICIO" prefWidth="120"/>
-                <TableColumn fx:id="columnaFin" text="FECHA FIN" prefWidth="120"/>
-                <TableColumn fx:id="columnaRango" text="VIGENCIA TEMPORAL" prefWidth="240"/>
-                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
-            </columns>
-            <placeholder><Label text="No hay períodos directivos registrados" styleClass="page-subtitle"/></placeholder>
-        </TableView>
-    </VBox>
-</VBox>
+            <!-- Tabla limpia -->
+            <VBox spacing="0" styleClass="clean-table-card">
+                <TableView fx:id="tablaPeriodos" styleClass="members-table">
+                    <columns>
+                        <TableColumn fx:id="columnaNombre" text="PERÍODO DIRECTIVO" prefWidth="220"/>
+                        <TableColumn fx:id="columnaInicio" text="FECHA INICIO" prefWidth="120"/>
+                        <TableColumn fx:id="columnaFin" text="FECHA FIN" prefWidth="120"/>
+                        <TableColumn fx:id="columnaRango" text="VIGENCIA TEMPORAL" prefWidth="240"/>
+                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
+                    </columns>
+                    <placeholder><Label text="No hay períodos directivos registrados" styleClass="page-subtitle"/></placeholder>
+                </TableView>
+                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                    <Label fx:id="lblContadorFiltrados" text="0 períodos registrados" styleClass="footer-summary-text"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblVigenciaActiva" text="" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblTotalPlanificados" text="0 planificados" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px;"/>
+                    <Label fx:id="lblTotalFinalizados" text="0 finalizados" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </content>
+</ScrollPane>

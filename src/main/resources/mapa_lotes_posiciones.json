@@ -1,0 +1,184 @@
+{
+  "A-1" : {
+    "numero" : 1,
+    "sector" : "A",
+    "x" : 407,
+    "y" : 486,
+    "rotacion" : 0
+  },
+  "A-2" : {
+    "numero" : 2,
+    "sector" : "A",
+    "x" : 419,
+    "y" : 442,
+    "rotacion" : 4
+  },
+  "A-3" : {
+    "numero" : 3,
+    "sector" : "A",
+    "x" : 429,
+    "y" : 405,
+    "rotacion" : 0
+  },
+  "A-5" : {
+    "numero" : 5,
+    "sector" : "A",
+    "x" : 430,
+    "y" : 360,
+    "rotacion" : 0
+  },
+  "A-6" : {
+    "numero" : 6,
+    "sector" : "A",
+    "x" : 438,
+    "y" : 330,
+    "rotacion" : 0
+  },
+  "A-7" : {
+    "numero" : 7,
+    "sector" : "A",
+    "x" : 448,
+    "y" : 297,
+    "rotacion" : 0
+  },
+  "A-8" : {
+    "numero" : 8,
+    "sector" : "A",
+    "x" : 449,
+    "y" : 260,
+    "rotacion" : 0
+  },
+  "B-1" : {
+    "numero" : 1,
+    "sector" : "B",
+    "x" : 466,
+    "y" : 501,
+    "rotacion" : 0
+  },
+  "B-2" : {
+    "numero" : 2,
+    "sector" : "B",
+    "x" : 470,
+    "y" : 470,
+    "rotacion" : 0
+  },
+  "B-3" : {
+    "numero" : 3,
+    "sector" : "B",
+    "x" : 482,
+    "y" : 437,
+    "rotacion" : 0
+  },
+  "B-5" : {
+    "numero" : 5,
+    "sector" : "B",
+    "x" : 487,
+    "y" : 404,
+    "rotacion" : 0
+  },
+  "B-6" : {
+    "numero" : 6,
+    "sector" : "B",
+    "x" : 489,
+    "y" : 370,
+    "rotacion" : 0
+  },
+  "B-7" : {
+    "numero" : 7,
+    "sector" : "B",
+    "x" : 497,
+    "y" : 339,
+    "rotacion" : 0
+  },
+  "B-8" : {
+    "numero" : 8,
+    "sector" : "B",
+    "x" : 503,
+    "y" : 309,
+    "rotacion" : 0
+  },
+  "C-1" : {
+    "numero" : 1,
+    "sector" : "C",
+    "x" : 597,
+    "y" : 522,
+    "rotacion" : 0
+  },
+  "C-2" : {
+    "numero" : 2,
+    "sector" : "C",
+    "x" : 611,
+    "y" : 472,
+    "rotacion" : 0
+  },
+  "C-4" : {
+    "numero" : 4,
+    "sector" : "C",
+    "x" : 623,
+    "y" : 413,
+    "rotacion" : 0
+  },
+  "C-5" : {
+    "numero" : 5,
+    "sector" : "C",
+    "x" : 628,
+    "y" : 369,
+    "rotacion" : 0
+  },
+  "C-6" : {
+    "numero" : 6,
+    "sector" : "C",
+    "x" : 636,
+    "y" : 324,
+    "rotacion" : 0
+  },
+  "C-7" : {
+    "numero" : 7,
+    "sector" : "C",
+    "x" : 648,
+    "y" : 281,
+    "rotacion" : 0
+  },
+  "C-8" : {
+    "numero" : 8,
+    "sector" : "C",
+    "x" : 424,
+    "y" : 338,
+    "rotacion" : 0
+  },
+  "D-1" : {
+    "numero" : 1,
+    "sector" : "D",
+    "x" : 666,
+    "y" : 538,
+    "rotacion" : 0
+  },
+  "D-2" : {
+    "numero" : 2,
+    "sector" : "D",
+    "x" : 667,
+    "y" : 504,
+    "rotacion" : 0
+  },
+  "D-4" : {
+    "numero" : 4,
+    "sector" : "D",
+    "x" : 681,
+    "y" : 467,
+    "rotacion" : 0
+  },
+  "D-5" : {
+    "numero" : 5,
+    "sector" : "D",
+    "x" : 693,
+    "y" : 429,
+    "rotacion" : 0
+  },
+  "D-6" : {
+    "numero" : 6,
+    "sector" : "D",
+    "x" : 692,
+    "y" : 384,
+    "rotacion" : 0
+  }
+}

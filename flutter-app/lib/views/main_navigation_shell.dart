@@ -51,18 +51,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     setState(() => _currentIndex = index);
   }
 
-  void _openVotingScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => VotingView(
-          viewModel: widget.votingViewModel,
-          idMiembro: widget.profile.member?.id,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final screens = [
@@ -71,7 +59,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         profile: widget.profile,
         onNavigateToPayments: () => _navigateToTab(1),
         onNavigateToCommunity: () => _navigateToTab(2),
-        onNavigateToVoting: _openVotingScreen,
+        onNavigateToVoting: () => _navigateToTab(3),
       ),
       PaymentsView(
         viewModel: widget.paymentsViewModel,
@@ -80,6 +68,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       CommunityView(
         viewModel: widget.communityViewModel,
         votingViewModel: widget.votingViewModel,
+        idMiembro: widget.profile.member?.id,
+      ),
+      VotingView(
+        viewModel: widget.votingViewModel,
         idMiembro: widget.profile.member?.id,
       ),
       ProfileView(
@@ -125,7 +117,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           GlassNavItem(
             icon: FluentIcons.wallet_24_regular,
             activeIcon: FluentIcons.wallet_24_filled,
-            label: 'Pagos',
+            label: 'Aportaciones',
           ),
           GlassNavItem(
             icon: FluentIcons.people_community_24_regular,
@@ -133,9 +125,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             label: 'Comunidad',
           ),
           GlassNavItem(
+            icon: FluentIcons.vote_24_regular,
+            activeIcon: FluentIcons.vote_24_filled,
+            label: 'Votaciones',
+          ),
+          GlassNavItem(
             icon: FluentIcons.person_circle_24_regular,
             activeIcon: FluentIcons.person_circle_24_filled,
-            label: 'Mi Cuenta',
+            label: 'Perfil',
           ),
         ],
       ),

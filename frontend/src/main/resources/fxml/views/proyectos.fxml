@@ -4,92 +4,69 @@
 <?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.ProyectoController" spacing="20" styleClass="module-page, members-page">
-    <padding><Insets top="28" right="34" bottom="28" left="34"/></padding>
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.ProyectoController"
+            fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+            styleClass="members-scroll-pane">
+    <content>
+        <VBox spacing="18" styleClass="module-page, members-page">
+            <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
-    <!-- Encabezado de la página -->
-    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
-        <VBox spacing="6">
-            <Label text="PROYECTOS / GESTIÓN COMUNAL" styleClass="page-eyebrow"/>
-            <Label text="Proyectos comunales" styleClass="page-title, members-title"/>
-            <Label text="Planificación, aprobación y seguimiento del ciclo de vida de iniciativas comunitarias." styleClass="page-subtitle"/>
-        </VBox>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnNuevoProyecto" text="Nuevo proyecto" onAction="#abrirFormularioCrear" styleClass="primary-action">
-            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
-        </Button>
-    </HBox>
-
-    <!-- Tarjetas de resumen del tablero -->
-    <HBox spacing="14">
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-play-circle"/></HBox>
-            <VBox spacing="3">
-                <Label text="EN EJECUCIÓN" styleClass="summary-label"/>
-                <Label fx:id="lblEnEjecucion" text="0 proyectos" styleClass="summary-value-success"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-check-circle"/></HBox>
-            <VBox spacing="3">
-                <Label text="APROBADOS / PROPUESTOS" styleClass="summary-label"/>
-                <Label fx:id="lblAprobadosPropuestos" text="0 iniciativas" styleClass="summary-value"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-dollar-sign"/></HBox>
-            <VBox spacing="3">
-                <Label text="PRESUPUESTO TOTAL PLANIFICADO" styleClass="summary-label"/>
-                <Label fx:id="lblPresupuestoTotal" text="\$0.00" styleClass="summary-value"/>
-            </VBox>
-        </HBox>
-    </HBox>
-
-    <!-- Contenedor principal de la tabla con barra de filtros y acciones -->
-    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
-        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="members-toolbar">
-            <VBox spacing="2">
-                <Label text="Catálogo de iniciativas" styleClass="section-title"/>
-                <Label fx:id="lblTotalProyectos" text="0 proyectos registrados" styleClass="toolbar-caption"/>
-            </VBox>
-            <Region HBox.hgrow="ALWAYS"/>
-
-            <!-- Filtro de estado -->
-            <ComboBox fx:id="comboEstado" prefWidth="140" promptText="Estado"/>
-
-            <!-- Búsqueda rápida -->
-            <HBox alignment="CENTER_LEFT" spacing="6" styleClass="search-box">
-                <FontIcon iconLiteral="fth-search"/>
-                <TextField fx:id="campoBusqueda" promptText="Buscar por nombre o descripción" prefWidth="210" styleClass="search-field"/>
+            <!-- Hero -->
+            <HBox alignment="CENTER_LEFT" spacing="16" styleClass="members-hero">
+                <VBox spacing="4">
+                    <Label text="PROYECTOS / GESTIÓN COMUNAL" styleClass="page-eyebrow"/>
+                    <Label text="Proyectos" styleClass="page-title, members-title"/>
+                    <Label text="Planificación, aprobación y seguimiento de iniciativas comunitarias." styleClass="page-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
+                          prefWidth="220" minWidth="160" prefHeight="38" minHeight="38" maxHeight="38">
+                        <TextField fx:id="campoBusqueda" promptText="Buscar proyecto..." HBox.hgrow="ALWAYS"
+                                   styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
+                    </HBox>
+                    <ComboBox fx:id="comboEstado" prefWidth="130" promptText="Estado"/>
+                    <Button fx:id="btnCicloVida" text="Ciclo de vida" onAction="#abrirCicloVida" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-sliders"/></graphic>
+                    </Button>
+                    <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
+                    </Button>
+                    <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarProyecto" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
+                    </Button>
+                    <Button fx:id="btnRefrescar" onAction="#recargar" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
+                    </Button>
+                    <Button fx:id="btnNuevoProyecto" text="+ Nuevo proyecto" onAction="#abrirFormularioCrear"
+                            styleClass="btn-primary-blue, members-primary-action"/>
+                </HBox>
             </HBox>
 
-            <!-- Acciones -->
-            <Button fx:id="btnCicloVida" text="Ciclo de vida" onAction="#abrirCicloVida" styleClass="primary-action">
-                <graphic><FontIcon iconLiteral="fth-sliders"/></graphic>
-            </Button>
-            <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormularioEditar" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-            </Button>
-            <Button fx:id="btnEliminar" text="Eliminar" onAction="#eliminarProyecto" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-trash-2"/></graphic>
-            </Button>
-            <Button fx:id="btnRefrescar" text="Actualizar" onAction="#recargar" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-            </Button>
-        </HBox>
-
-        <!-- Tabla de proyectos -->
-        <TableView fx:id="tablaProyectos" VBox.vgrow="ALWAYS" styleClass="members-table">
-            <columns>
-                <TableColumn fx:id="columnaNombre" text="PROYECTO" prefWidth="190"/>
-                <TableColumn fx:id="columnaDescripcion" text="DESCRIPCIÓN" prefWidth="260"/>
-                <TableColumn fx:id="columnaPresupuesto" text="PRESUPUESTO" prefWidth="120"/>
-                <TableColumn fx:id="columnaFecha" text="CREACIÓN" prefWidth="105"/>
-                <TableColumn fx:id="columnaCreador" text="CREADO POR" prefWidth="130"/>
-                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
-            </columns>
-            <placeholder><Label text="No hay proyectos comunales registrados" styleClass="page-subtitle"/></placeholder>
-        </TableView>
-    </VBox>
-</VBox>
+            <!-- Tabla limpia -->
+            <VBox spacing="0" styleClass="clean-table-card">
+                <TableView fx:id="tablaProyectos" styleClass="members-table">
+                    <columns>
+                        <TableColumn fx:id="columnaNombre" text="PROYECTO" prefWidth="190"/>
+                        <TableColumn fx:id="columnaDescripcion" text="DESCRIPCIÓN" prefWidth="260"/>
+                        <TableColumn fx:id="columnaPresupuesto" text="PRESUPUESTO" prefWidth="120"/>
+                        <TableColumn fx:id="columnaFecha" text="CREACIÓN" prefWidth="105"/>
+                        <TableColumn fx:id="columnaCreador" text="CREADO POR" prefWidth="130"/>
+                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="130"/>
+                    </columns>
+                    <placeholder><Label text="No hay proyectos comunales registrados" styleClass="page-subtitle"/></placeholder>
+                </TableView>
+                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                    <Label fx:id="lblTotalProyectos" text="0 proyectos registrados" styleClass="footer-summary-text"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblEnEjecucion" text="0 en ejecución" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblPresupuestoTotal" text="$0.00" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
+                    <Label fx:id="lblAprobadosPropuestos" text="" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </content>
+</ScrollPane>

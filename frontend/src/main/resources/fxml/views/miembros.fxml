@@ -1,88 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.MiembroController" spacing="22" styleClass="module-page, members-page">
-    <padding><Insets top="30" right="34" bottom="30" left="34"/></padding>
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.MiembroController"
+            fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+            styleClass="members-scroll-pane">
+    <content>
+        <VBox fx:id="contenedorPrincipal" spacing="18" styleClass="module-page, members-page">
+            <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
-    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
-        <VBox spacing="7">
-            <Label text="COMUNIDAD / DIRECTORIO" styleClass="page-eyebrow"/>
-            <Label text="Gestión de miembros" styleClass="page-title, members-title"/>
-            <Label text="Gestiona el censo, los datos de contacto y el estado de cada integrante."
-                   styleClass="page-subtitle"/>
-        </VBox>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnNuevoMiembro" text="NUEVO MIEMBRO" styleClass="primary-action, members-primary-action" onAction="#abrirRegistro">
-            <graphic><FontIcon iconLiteral="fth-plus"/></graphic>
-        </Button>
-    </HBox>
-
-    <HBox spacing="14">
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-users"/></HBox>
-            <VBox spacing="3">
-                <Label text="MIEMBROS REGISTRADOS" styleClass="summary-label"/>
-                <Label fx:id="lblTotalMiembros" text="0 miembros registrados" styleClass="summary-value"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-activity"/></HBox>
-            <VBox spacing="3">
-                <Label text="ESTADO DEL SISTEMA" styleClass="summary-label"/>
-                <Label fx:id="lblEstadoModulo" text="Conectando al servidor..." styleClass="summary-value-success"/>
-            </VBox>
-        </HBox>
-    </HBox>
-
-    <VBox spacing="0" styleClass="table-card, members-table-card" VBox.vgrow="ALWAYS">
-        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="members-toolbar">
-            <VBox spacing="2">
-                <Label text="Directorio de miembros" styleClass="section-title"/>
-                <Label text="Consulta y administra los registros de la comunidad" styleClass="toolbar-caption"/>
-            </VBox>
-            <Region HBox.hgrow="ALWAYS"/>
-            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="search-box">
-                <FontIcon iconLiteral="fth-search"/>
-                <TextField fx:id="campoBusqueda" promptText="Buscar por documento, nombre o correo"
-                           prefWidth="250" styleClass="search-field"/>
+            <!-- Hero: título + búsqueda + botones en la misma fila -->
+            <HBox alignment="CENTER_LEFT" spacing="16" styleClass="members-hero">
+                <VBox spacing="4">
+                    <Label text="Gestión de miembros" styleClass="page-eyebrow"/>
+                    <Label text="Miembros" styleClass="page-title, members-title"/>
+                    <Label fx:id="lblSubtitulo" text="Listado de miembros activos." styleClass="page-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
+                          prefWidth="260" minWidth="200" maxWidth="320"
+                          prefHeight="38" minHeight="38" maxHeight="38">
+                        <StackPane fx:id="iconoBusquedaContainer" alignment="CENTER"/>
+                        <TextField fx:id="campoBusqueda" promptText="Buscar miembros..." HBox.hgrow="ALWAYS"
+                                   styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
+                    </HBox>
+                    <Button fx:id="btnToggleInactivos" text="Ver inactivos"
+                            styleClass="btn-toggle-inactivos" onAction="#toggleFiltroInactivos"/>
+                    <Button fx:id="btnNuevoMiembro" text="+ Registrar miembro"
+                            styleClass="btn-primary-blue, members-primary-action" onAction="#abrirRegistro"/>
+                </HBox>
             </HBox>
-            <Button fx:id="btnVerDetalle" text="Ver detalle" styleClass="secondary-action" onAction="#verDetalle">
-                <graphic><FontIcon iconLiteral="fth-eye"/></graphic>
-            </Button>
-            <Button fx:id="btnEditar" text="Editar" styleClass="secondary-action" onAction="#editar">
-                <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
-            </Button>
-            <Button fx:id="btnCambiarEstado" text="Desactivar" styleClass="secondary-action" onAction="#cambiarEstado">
-                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-            </Button>
-            <Button fx:id="btnVerAsistencia" text="Asistencia" styleClass="secondary-action" onAction="#verAsistencia">
-                <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
-            </Button>
-            <Button text="Exportar" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-download"/></graphic>
-            </Button>
-        </HBox>
-        <TableView fx:id="tablaMiembros" VBox.vgrow="ALWAYS" styleClass="members-table">
-            <columns>
-                <TableColumn fx:id="columnaDui" text="DOCUMENTO" prefWidth="135"/>
-                <TableColumn fx:id="columnaNombres" text="NOMBRES" prefWidth="145"/>
-                <TableColumn fx:id="columnaApellidos" text="APELLIDOS" prefWidth="145"/>
-                <TableColumn fx:id="columnaTelefono" text="TELÉFONO" prefWidth="105"/>
-                <TableColumn fx:id="columnaCorreo" text="CORREO ELECTRÓNICO" prefWidth="210"/>
-                <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="90"/>
-            </columns>
-            <placeholder><Label text="Aún no hay miembros para mostrar" styleClass="page-subtitle"/></placeholder>
-        </TableView>
-    </VBox>
-</VBox>
+
+            <!-- Tarjeta de tabla limpia -->
+            <VBox fx:id="tarjetaTabla" spacing="0" styleClass="clean-table-card">
+                <TableView fx:id="tablaMiembros" styleClass="members-table">
+                    <columns>
+                        <TableColumn fx:id="columnaDui" text="ID" prefWidth="75"/>
+                        <TableColumn fx:id="columnaNombres" text="NOMBRE" prefWidth="270"/>
+                        <TableColumn fx:id="columnaTelefono" text="TELÉFONO" prefWidth="150"/>
+                        <TableColumn fx:id="columnaCorreo" text="EMAIL" prefWidth="240"/>
+                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="120"/>
+                        <TableColumn fx:id="columnaAcciones" text="ACCIONES" prefWidth="130" sortable="false"/>
+                    </columns>
+                    <placeholder><Label text="No hay miembros para mostrar en este filtro." styleClass="page-subtitle"/></placeholder>
+                </TableView>
+
+                <!-- Pie de tabla -->
+                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                    <Label fx:id="lblResumenPie" text="0 miembros · Mostrando activos" styleClass="footer-summary-text"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblTotalMiembros" text="0 registrados" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblEstadoModulo" text="" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </content>
+</ScrollPane>

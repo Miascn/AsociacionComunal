@@ -1,34 +1,23 @@
-import 'package:flutter/foundation.dart';
-
 /// Constantes y configuración de red para la API de Asociación Comunal.
 class ApiConstants {
   ApiConstants._();
 
-  /// URL base por defecto según la plataforma en tiempo de ejecución.
-  static String get defaultBaseUrl {
-    if (kIsWeb) return 'http://localhost:8080';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        // 10.0.2.2 es el alias del host en el emulador estándar de Android
-        return 'http://10.0.2.2:8080';
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-      default:
-        return 'http://localhost:8080';
-    }
-  }
+  /// URL base oficial de producción para la Asociación Comunal.
+  static const String defaultBaseUrl = 'https://asociacion-comunal.miascn.org';
 
-  /// URL activa (permite ser reconfigurada en tiempo de ejecución por túnel ngrok/cloudflare).
+  /// URL activa de la API.
   static String baseUrl = defaultBaseUrl;
 
-  // Cabeceras personalizadas
+  /// Cabeceras estándar para todas las peticiones HTTPS.
   static const Map<String, String> standardHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'User-Agent': 'AsociacionComunalApp/1.0 (Android/Flutter)',
     'ngrok-skip-browser-warning': 'asociacion-flutter',
   };
+
+  // Rutas de Verificación
+  static const String healthEndpoint = '/health';
 
   // Rutas de Autenticación
   static const String loginEndpoint = '/api/auth/login';
@@ -42,6 +31,9 @@ class ApiConstants {
   static const String proyectosEndpoint = '/api/proyectos';
   static const String reunionesEndpoint = '/api/reuniones';
   static const String votacionesEndpoint = '/api/votaciones';
+  static const String votosEndpoint = '/api/votos';
+  static const String directivaActualEndpoint = '/api/directiva/actual';
+  static const String viviendasEndpoint = '/api/viviendas';
 
   // Actualizaciones
   static const String updateManifestEndpoint = '/api/mobile/updates/android/manifest';

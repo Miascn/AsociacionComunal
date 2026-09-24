@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/api_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
@@ -41,182 +40,6 @@ class _LoginViewState extends State<LoginView> {
         _passwordController.text,
       );
     }
-  }
-
-  void _showApiConfigDialog() {
-    final currentUrl = widget.storage.customBaseUrl ?? ApiConstants.baseUrl;
-    final controller = TextEditingController(text: currentUrl);
-
-    bool isTesting = false;
-    Map<String, dynamic>? testResult;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.settings_ethernet, size: 22, color: AppColors.brandBlue),
-              SizedBox(width: 8),
-              Text('Servidor API', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Elige un preajuste o escribe la dirección de tu backend:',
-                  style: TextStyle(fontSize: 12.5),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.usb, size: 16),
-                      label: const Text('USB / ADB', style: TextStyle(fontSize: 11.5)),
-                      onPressed: () {
-                        setDialogState(() {
-                          controller.text = 'http://localhost:8080';
-                          testResult = null;
-                        });
-                      },
-                    ),
-                    ActionChip(
-                      avatar: const Icon(Icons.wifi, size: 16),
-                      label: const Text('Wi-Fi (192.168.0.2)', style: TextStyle(fontSize: 11.5)),
-                      onPressed: () {
-                        setDialogState(() {
-                          controller.text = 'http://192.168.0.2:8080';
-                          testResult = null;
-                        });
-                      },
-                    ),
-                    ActionChip(
-                      avatar: const Icon(Icons.phone_android, size: 16),
-                      label: const Text('Emulador', style: TextStyle(fontSize: 11.5)),
-                      onPressed: () {
-                        setDialogState(() {
-                          controller.text = 'http://10.0.2.2:8080';
-                          testResult = null;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: controller,
-                  style: const TextStyle(fontSize: 13.5),
-                  decoration: InputDecoration(
-                    hintText: 'http://192.168.0.2:8080',
-                    labelText: 'URL Base',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                  onChanged: (_) {
-                    if (testResult != null) {
-                      setDialogState(() => testResult = null);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: isTesting
-                        ? null
-                        : () async {
-                            setDialogState(() {
-                              isTesting = true;
-                              testResult = null;
-                            });
-                            final res = await widget.viewModel.checkConnection(controller.text.trim());
-                            setDialogState(() {
-                              isTesting = false;
-                              testResult = res;
-                            });
-                          },
-                    icon: isTesting
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.network_check, size: 18),
-                    label: Text(isTesting ? 'Comprobando...' : 'Probar Conexión'),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                if (testResult != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: (testResult!['ok'] == true)
-                          ? Colors.green.withValues(alpha: 0.12)
-                          : Colors.red.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: (testResult!['ok'] == true)
-                            ? Colors.green.withValues(alpha: 0.4)
-                            : Colors.red.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          (testResult!['ok'] == true) ? Icons.check_circle : Icons.error_outline,
-                          size: 18,
-                          color: (testResult!['ok'] == true) ? Colors.green : Colors.red,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            testResult!['message']?.toString() ?? '',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: (testResult!['ok'] == true) ? Colors.green.shade800 : Colors.red.shade800,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                widget.storage.setCustomBaseUrl(null);
-                Navigator.pop(ctx);
-                setState(() {});
-              },
-              child: const Text('Restablecer'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final text = controller.text.trim();
-                widget.storage.setCustomBaseUrl(text.isEmpty ? null : text);
-                Navigator.pop(ctx);
-                setState(() {});
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -395,14 +218,25 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Botón para configurar endpoint API (ideal para pruebas y desarrollo)
-                  TextButton.icon(
-                    onPressed: _showApiConfigDialog,
-                    icon: const Icon(Icons.settings_ethernet, size: 16),
-                    label: Text(
-                      'Servidor: ${widget.storage.customBaseUrl ?? ApiConstants.baseUrl}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                  // Indicador de conexión oficial segura
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.verified_user_outlined,
+                        size: 15,
+                        color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Conexión segura SSL • Portal Oficial',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

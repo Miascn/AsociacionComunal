@@ -249,11 +249,19 @@ class _PaymentsViewState extends State<PaymentsView> {
 
                   // Referencia / Comprobante
                   Text(
-                    'Comprobante o referencia (opcional)',
+                    'Referencia o comprobante bancario (opcional)',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Ingresa el número o código de tu comprobante. (La carga de archivos físicos estará disponible en una próxima versión).',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -778,6 +786,15 @@ class _PaymentsViewState extends State<PaymentsView> {
 
                     final list = widget.viewModel.filteredPayments;
                     if (list.isEmpty) {
+                      if (widget.viewModel.errorMessage != null) {
+                        return EmptyStateWidget(
+                          icon: FluentIcons.warning_24_regular,
+                          title: 'No se pudieron cargar las aportaciones',
+                          message: widget.viewModel.errorMessage!,
+                          actionLabel: 'Reintentar',
+                          onAction: () => widget.viewModel.loadPayments(idMiembro: widget.idMiembro),
+                        );
+                      }
                       return EmptyStateWidget(
                         icon: FluentIcons.receipt_24_regular,
                         title: 'No hay aportaciones registradas',

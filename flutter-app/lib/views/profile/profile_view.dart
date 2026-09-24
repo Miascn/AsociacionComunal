@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import '../../core/constants/api_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/bouncy_tap.dart';
@@ -12,6 +11,7 @@ import '../../data/services/session_storage_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/housing_viewmodel.dart';
 import 'housing_detail_view.dart';
+import '../auth/change_password_view.dart';
 
 /// Pantalla de Perfil y Configuración del Residente.
 class ProfileView extends StatelessWidget {
@@ -196,17 +196,20 @@ class ProfileView extends StatelessWidget {
                         ),
                         Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12),
                         _buildOptionTile(
-                          icon: FluentIcons.server_24_regular,
-                          title: 'Servidor API',
-                          subtitle: storage.customBaseUrl ?? ApiConstants.baseUrl,
+                          icon: FluentIcons.key_reset_24_regular,
+                          title: 'Cambiar Contraseña',
+                          subtitle: 'Actualizar clave de acceso a la cuenta',
                           trailing: Icon(
-                            FluentIcons.edit_24_regular,
-                            size: 18,
+                            FluentIcons.chevron_right_16_regular,
+                            size: 16,
                             color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
                           ),
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Configuración de servidor activa.')),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChangePasswordView(viewModel: authViewModel),
+                              ),
                             );
                           },
                           isDark: isDark,

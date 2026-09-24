@@ -18,19 +18,58 @@ CREATE TABLE rol (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- TABLA: vivienda
+-- Catalogo habitacional de la comunidad
+-- =====================================================
+CREATE TABLE vivienda (
+    id_vivienda INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(20) NOT NULL UNIQUE,
+    sector VARCHAR(80) NOT NULL,
+    direccion VARCHAR(250) NOT NULL,
+    referencia VARCHAR(250) NULL,
+    fecha_registro DATE NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'ACTIVA',
+    CONSTRAINT chk_vivienda_estado CHECK (estado IN ('ACTIVA', 'DESHABITADA', 'INACTIVA'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- TABLA: miembro
 -- Persona perteneciente a la asociacion
 -- =====================================================
 CREATE TABLE miembro (
-    id_miembro INT AUTO_INCREMENT PRIMARY KEY,
-    dui VARCHAR(10) NOT NULL UNIQUE,
+    id_miembro INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    dui VARCHAR(30) NOT NULL UNIQUE,
+    tipo_documento VARCHAR(24) NOT NULL DEFAULT 'DUI',
+    pais_origen VARCHAR(80) NULL,
+    id_vivienda INT NULL,
     nombres VARCHAR(80) NOT NULL,
     apellidos VARCHAR(80) NOT NULL,
     telefono VARCHAR(20),
     correo VARCHAR(120),
     direccion VARCHAR(250),
     fecha_ingreso DATE NOT NULL,
-    estado ENUM('ACTIVO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO'
+    estado ENUM('ACTIVO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO',
+    creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_miembro_vivienda FOREIGN KEY (id_vivienda) REFERENCES vivienda(id_vivienda),
+    CONSTRAINT chk_miembro_tipo_documento CHECK (tipo_documento IN ('DUI', 'PASAPORTE', 'CARNET_RESIDENTE'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLA: residente_vivienda
+-- Censo de habitantes por vivienda
+-- =====================================================
+CREATE TABLE residente_vivienda (
+    id_residente INT AUTO_INCREMENT PRIMARY KEY,
+    id_vivienda INT NOT NULL,
+    id_miembro INT UNSIGNED NULL,
+    nombre_completo VARCHAR(180) NOT NULL,
+    tipo_persona VARCHAR(10) NOT NULL,
+    es_representante BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT fk_residente_vivienda FOREIGN KEY (id_vivienda) REFERENCES vivienda(id_vivienda),
+    CONSTRAINT fk_residente_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro),
+    CONSTRAINT chk_residente_tipo CHECK (tipo_persona IN ('ADULTO', 'MENOR')),
+    UNIQUE (id_vivienda, id_miembro)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

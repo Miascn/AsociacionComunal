@@ -8,6 +8,7 @@
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -18,35 +19,25 @@
             fx:controller="controller.MainController"
             styleClass="app-root">
     <left>
-        <VBox fx:id="sidebar" prefWidth="240" styleClass="sidebar" BorderPane.alignment="CENTER">
-            <VBox spacing="4" styleClass="sidebar-header">
-                <padding>
-                    <Insets top="24" right="20" bottom="16" left="20"/>
-                </padding>
-                <ImageView fitWidth="72" fitHeight="72" preserveRatio="true" smooth="true"
-                           accessibleText="Logo de Asociación Comunal" styleClass="sidebar-logo">
-                    <image>
-                        <Image url="@../images/logo-asociacion-comunal.png"/>
-                    </image>
-                </ImageView>
-                <Label text="Asociación Comunal" styleClass="sidebar-title"/>
-                <Label text="Sistema de Administración" styleClass="sidebar-caption"/>
-                <Label fx:id="lblNombreUsuario" styleClass="sidebar-username" wrapText="true"/>
-                <Label fx:id="lblRolUsuario" styleClass="sidebar-role"/>
-            </VBox>
-
-            <Separator/>
+        <VBox fx:id="sidebar" prefWidth="68" minWidth="68" maxWidth="68" styleClass="sidebar, sidebar-collapsed" BorderPane.alignment="CENTER">
+            <HBox fx:id="sidebarHeader" alignment="CENTER" prefHeight="58" minHeight="58" maxHeight="58" styleClass="sidebar-header">
+                <StackPane styleClass="sidebar-logo-container">
+                    <ImageView fx:id="imgSidebarLogo" fitWidth="30" fitHeight="30" preserveRatio="true" smooth="true"
+                               accessibleText="Logo de Asociación Comunal" styleClass="sidebar-logo">
+                        <image>
+                            <Image url="@../images/logo-asociacion-comunal.png"/>
+                        </image>
+                    </ImageView>
+                </StackPane>
+            </HBox>
 
             <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="nav-scroll" VBox.vgrow="ALWAYS">
                 <content>
                     <VBox spacing="4" styleClass="nav-list">
-                        <padding>
-                            <Insets top="12" right="12" bottom="12" left="12"/>
-                        </padding>
-                        <Button text="Dashboard" onAction="#mostrarDashboard" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavDashboard" text="Dashboard" onAction="#mostrarDashboard" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-home"/></graphic>
                         </Button>
-                        <Button text="Miembros" onAction="#mostrarMiembros" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavMiembros" text="Miembros" onAction="#mostrarMiembros" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-users"/></graphic>
                         </Button>
                         <Button fx:id="btnUsuarios" text="Usuarios" onAction="#mostrarUsuarios" maxWidth="Infinity" styleClass="nav-button">
@@ -55,34 +46,34 @@
                         <Button fx:id="btnRoles" text="Roles" onAction="#mostrarRoles" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-key"/></graphic>
                         </Button>
-                        <Button text="Cargos" onAction="#mostrarCargos" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavCargos" text="Cargos" onAction="#mostrarCargos" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-award"/></graphic>
                         </Button>
-                        <Button text="Períodos" onAction="#mostrarPeriodos" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavPeriodos" text="Períodos" onAction="#mostrarPeriodos" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
                         </Button>
-                        <Button text="Directiva" onAction="#mostrarDirectiva" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavDirectiva" text="Directiva" onAction="#mostrarDirectiva" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-users"/></graphic>
                         </Button>
                         <Button fx:id="btnBitacora" text="Bitácora" onAction="#mostrarBitacora" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-file-text"/></graphic>
                         </Button>
-                        <Button text="Viviendas" onAction="#mostrarViviendas" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavViviendas" text="Viviendas" onAction="#mostrarViviendas" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-map-pin"/></graphic>
                         </Button>
-                        <Button text="Aportaciones" onAction="#mostrarAportaciones" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavAportaciones" text="Aportaciones" onAction="#mostrarAportaciones" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-dollar-sign"/></graphic>
                         </Button>
-                        <Button text="Proyectos" onAction="#mostrarProyectos" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavProyectos" text="Proyectos" onAction="#mostrarProyectos" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-briefcase"/></graphic>
                         </Button>
-                        <Button text="Reuniones" onAction="#mostrarReuniones" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavReuniones" text="Reuniones" onAction="#mostrarReuniones" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
                         </Button>
-                        <Button text="Votaciones" onAction="#mostrarVotaciones" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavVotaciones" text="Votaciones" onAction="#mostrarVotaciones" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-check-square"/></graphic>
                         </Button>
-                        <Button text="Reportes" onAction="#mostrarReportes" maxWidth="Infinity" styleClass="nav-button">
+                        <Button fx:id="btnNavReportes" text="Reportes" onAction="#mostrarReportes" maxWidth="Infinity" styleClass="nav-button">
                             <graphic><FontIcon iconLiteral="fth-bar-chart-2"/></graphic>
                         </Button>
                     </VBox>
@@ -90,7 +81,7 @@
             </ScrollPane>
 
             <Region minHeight="8"/>
-            <Separator/>
+            <Separator styleClass="sidebar-separator"/>
 
             <Label fx:id="lblVersion" text="Versión DEV" styleClass="sidebar-version">
                 <VBox.margin><Insets top="8" right="14" bottom="0" left="14"/></VBox.margin>
@@ -98,7 +89,7 @@
 
             <Button fx:id="btnTema" text="Modo oscuro" onAction="#onAlternarTema"
                     styleClass="theme-sidebar-button" maxWidth="Infinity">
-                <graphic><FontIcon iconLiteral="fth-moon"/></graphic>
+                <graphic><FontIcon fx:id="iconTemaSidebar" iconLiteral="fth-moon"/></graphic>
                 <VBox.margin><Insets top="8" right="12" bottom="0" left="12"/></VBox.margin>
             </Button>
 
@@ -113,6 +104,43 @@
     </left>
 
     <center>
-        <StackPane fx:id="contentArea" styleClass="content-area"/>
+        <BorderPane styleClass="main-content-pane">
+            <top>
+                <HBox fx:id="topBar" styleClass="top-bar" spacing="12" alignment="CENTER_LEFT">
+                    <Button fx:id="btnToggleSidebar" onAction="#onToggleSidebar" styleClass="topbar-icon-button" accessibleText="Alternar menú">
+                        <graphic><FontIcon iconLiteral="fth-menu"/></graphic>
+                    </Button>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button fx:id="btnTemaTop" onAction="#onAlternarTema" styleClass="topbar-icon-button" accessibleText="Cambiar tema">
+                        <graphic><FontIcon fx:id="iconTemaTop" iconLiteral="fth-moon"/></graphic>
+                    </Button>
+
+                    <Button fx:id="btnNotificaciones" onAction="#onMostrarNotificaciones" styleClass="topbar-icon-button" accessibleText="Notificaciones">
+                        <graphic><FontIcon iconLiteral="fth-bell"/></graphic>
+                    </Button>
+
+                    <Button fx:id="btnUsuarioBadge" onAction="#onMostrarMenuUsuario" styleClass="user-badge-button">
+                        <graphic>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <StackPane styleClass="user-avatar-circle">
+                                    <Label fx:id="lblTopAvatarInicial" text="A" styleClass="user-avatar-text"/>
+                                </StackPane>
+                                <VBox spacing="1" alignment="CENTER_LEFT">
+                                    <Label fx:id="lblTopNombreUsuario" text="Administrador" styleClass="user-badge-name"/>
+                                    <Label fx:id="lblTopEmailUsuario" text="admin@sistema.local" styleClass="user-badge-email"/>
+                                </VBox>
+                                <FontIcon iconLiteral="fth-chevron-down" iconSize="12" style="-fx-icon-color: #64748b;"/>
+                            </HBox>
+                        </graphic>
+                    </Button>
+                </HBox>
+            </top>
+
+            <center>
+                <StackPane fx:id="contentArea" styleClass="content-area"/>
+            </center>
+        </BorderPane>
     </center>
 </BorderPane>

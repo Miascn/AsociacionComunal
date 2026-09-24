@@ -4,88 +4,64 @@
 <?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.ReunionesController" spacing="20" styleClass="module-page, members-page">
-    <padding><Insets top="28" right="34" bottom="28" left="34"/></padding>
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.ReunionesController"
+            fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+            styleClass="members-scroll-pane">
+    <content>
+        <VBox spacing="18" styleClass="module-page, members-page">
+            <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
-    <!-- Encabezado de la página -->
-    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="members-hero">
-        <VBox spacing="6">
-            <Label text="GOBERNANZA COMUNAL / CONVOCATORIAS" styleClass="page-eyebrow"/>
-            <Label text="Reuniones y Asambleas Comunitarias" styleClass="page-title, members-title"/>
-            <Label text="Programación de sesiones ordinarias y extraordinarias, quórum y control de asistencia." styleClass="page-subtitle"/>
+            <!-- Hero -->
+            <HBox alignment="CENTER_LEFT" spacing="16" styleClass="members-hero">
+                <VBox spacing="4">
+                    <Label text="GOBERNANZA COMUNAL / CONVOCATORIAS" styleClass="page-eyebrow"/>
+                    <Label text="Reuniones y asambleas" styleClass="page-title, members-title"/>
+                    <Label text="Programación de sesiones, quórum y control de asistencia." styleClass="page-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
+                          prefWidth="220" minWidth="160" prefHeight="38" minHeight="38" maxHeight="38">
+                        <TextField fx:id="txtBuscar" promptText="Buscar por título o lugar..." HBox.hgrow="ALWAYS"
+                                   styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
+                    </HBox>
+                    <ComboBox fx:id="cbFiltroTipo" promptText="Tipo" prefWidth="130"/>
+                    <ComboBox fx:id="cbFiltroEstado" promptText="Estado" prefWidth="120"/>
+                    <ComboBox fx:id="cbFiltroTemporal" promptText="Período" prefWidth="120"/>
+                    <Button text="Limpiar" onAction="#limpiarFiltros" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
+                    </Button>
+                    <Button fx:id="btnNuevaReunion" text="+ Nueva reunión" onAction="#abrirFormularioCrear"
+                            styleClass="btn-primary-blue, members-primary-action"/>
+                </HBox>
+            </HBox>
+
+            <!-- Tabla limpia -->
+            <VBox spacing="0" styleClass="clean-table-card">
+                <TableView fx:id="tablaReuniones" styleClass="members-table">
+                    <columns>
+                        <TableColumn fx:id="colTitulo" text="TÍTULO DE LA REUNIÓN" prefWidth="250"/>
+                        <TableColumn fx:id="colFecha" text="FECHA Y HORA" prefWidth="160"/>
+                        <TableColumn fx:id="colLugar" text="LUGAR" prefWidth="170"/>
+                        <TableColumn fx:id="colTipo" text="TIPO" prefWidth="120"/>
+                        <TableColumn fx:id="colEstado" text="ESTADO" prefWidth="120"/>
+                        <TableColumn fx:id="colQuorum" text="QUÓRUM / ASISTENCIA" prefWidth="150"/>
+                        <TableColumn fx:id="colAcciones" text="ACCIONES" prefWidth="300"/>
+                    </columns>
+                    <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+                    <placeholder><Label text="No se encontraron reuniones registradas." styleClass="text-muted"/></placeholder>
+                </TableView>
+                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                    <Label fx:id="lblTotalReuniones" text="0 reuniones registradas" styleClass="footer-summary-text"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblTotalProgramadas" text="0 programadas" styleClass="footer-summary-text"/>
+                    <Label fx:id="lblTotalRealizadas" text="0 realizadas" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px;"/>
+                    <Label fx:id="lblTotalCanceladas" text="0 canceladas" styleClass="footer-summary-text"
+                           style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
+                </HBox>
+            </VBox>
         </VBox>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnNuevaReunion" text="Nueva reunión" onAction="#abrirFormularioCrear" styleClass="primary-action">
-            <graphic><FontIcon iconLiteral="fth-calendar"/></graphic>
-        </Button>
-    </HBox>
-
-    <!-- Tarjetas de resumen métrico -->
-    <HBox spacing="14">
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-calendar"/></HBox>
-            <VBox spacing="3">
-                <Label text="TOTAL REUNIONES" styleClass="summary-label"/>
-                <Label fx:id="lblTotalReuniones" text="0 registradas" styleClass="summary-value"/>
-                <Label text="Historial de convocatorias" styleClass="summary-label"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon, summary-icon-success"><FontIcon iconLiteral="fth-clock"/></HBox>
-            <VBox spacing="3">
-                <Label text="PROGRAMADAS" styleClass="summary-label"/>
-                <Label fx:id="lblTotalProgramadas" text="0 activas" styleClass="summary-value-success"/>
-                <Label text="Próximas convocatorias" styleClass="summary-label"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-check-circle"/></HBox>
-            <VBox spacing="3">
-                <Label text="REALIZADAS" styleClass="summary-label"/>
-                <Label fx:id="lblTotalRealizadas" text="0 sesiones" styleClass="summary-value"/>
-                <Label text="Concluidas con asistencia" styleClass="summary-label"/>
-            </VBox>
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="summary-card, member-stat-card" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER" styleClass="summary-icon"><FontIcon iconLiteral="fth-x-circle"/></HBox>
-            <VBox spacing="3">
-                <Label text="CANCELADAS" styleClass="summary-label"/>
-                <Label fx:id="lblTotalCanceladas" text="0 suspendidas" styleClass="summary-value"/>
-                <Label text="Sin celebración" styleClass="summary-label"/>
-            </VBox>
-        </HBox>
-    </HBox>
-
-    <!-- Contenedor de la tabla con barra de filtros -->
-    <VBox spacing="14" styleClass="table-card" VBox.vgrow="ALWAYS">
-        <padding><Insets top="18" right="20" bottom="18" left="20"/></padding>
-
-        <HBox alignment="CENTER_LEFT" spacing="12">
-            <TextField fx:id="txtBuscar" promptText="Buscar por título o lugar..." styleClass="search-field" prefWidth="260"/>
-            <ComboBox fx:id="cbFiltroTipo" promptText="Tipo" prefWidth="150"/>
-            <ComboBox fx:id="cbFiltroEstado" promptText="Estado" prefWidth="150"/>
-            <ComboBox fx:id="cbFiltroTemporal" promptText="Período" prefWidth="150"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Limpiar filtros" onAction="#limpiarFiltros" styleClass="secondary-action">
-                <graphic><FontIcon iconLiteral="fth-refresh-cw"/></graphic>
-            </Button>
-        </HBox>
-
-        <TableView fx:id="tablaReuniones" VBox.vgrow="ALWAYS">
-            <columns>
-                <TableColumn fx:id="colTitulo" text="Título de la reunión" prefWidth="250"/>
-                <TableColumn fx:id="colFecha" text="Fecha y Hora" prefWidth="160"/>
-                <TableColumn fx:id="colLugar" text="Lugar" prefWidth="170"/>
-                <TableColumn fx:id="colTipo" text="Tipo" prefWidth="120"/>
-                <TableColumn fx:id="colEstado" text="Estado" prefWidth="120"/>
-                <TableColumn fx:id="colQuorum" text="Quórum / Asistencia" prefWidth="150"/>
-                <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="300"/>
-            </columns>
-            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
-            <placeholder>
-                <Label text="No se encontraron reuniones registradas." styleClass="text-muted"/>
-            </placeholder>
-        </TableView>
-    </VBox>
-</VBox>
+    </content>
+</ScrollPane>

@@ -45,6 +45,7 @@ void main() async {
   final homeViewModel = HomeViewModel(
     paymentsRepository: paymentsRepository,
     communityRepository: communityRepository,
+    votingRepository: votingRepository,
   );
   final paymentsViewModel = PaymentsViewModel(paymentsRepository: paymentsRepository);
   final communityViewModel = CommunityViewModel(communityRepository: communityRepository);

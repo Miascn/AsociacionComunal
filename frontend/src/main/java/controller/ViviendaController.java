@@ -19,7 +19,7 @@ import service.ViviendaApiClient;
 
 public class ViviendaController {
     @FXML private TableView<ViviendaModel> tablaViviendas;
-    @FXML private TableColumn<ViviendaModel,String> colCodigo,colSector,colDireccion,colRepresentante,colEstado;
+    @FXML private TableColumn<ViviendaModel,String> colCodigo,colSector,colDireccion,colEstado;
     @FXML private TableColumn<ViviendaModel,Integer> colAdultos,colMenores;
     @FXML private Label lblTotal,lblHabitantes,lblEstadoModulo;
     @FXML private TextField campoBusqueda;
@@ -35,7 +35,6 @@ public class ViviendaController {
         colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
         colSector.setCellValueFactory(new PropertyValueFactory<>("sector"));
         colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
-        colRepresentante.setCellValueFactory(new PropertyValueFactory<>("representante"));
         colAdultos.setCellValueFactory(new PropertyValueFactory<>("adultos"));
         colMenores.setCellValueFactory(new PropertyValueFactory<>("menores"));
         colEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
@@ -81,7 +80,6 @@ public class ViviendaController {
     }
 
     private void openForm(ViviendaModel house){
-        if(miembros.isEmpty()){error("No hay miembros disponibles para asignar como representantes.");return;}
         try{
             FXMLLoader loader=new FXMLLoader(getClass().getResource("/fxml/views/vivienda-form.fxml"));
             Parent content=loader.load(); ViviendaFormController form=loader.getController(); form.setMembers(miembros);
@@ -117,7 +115,7 @@ public class ViviendaController {
         task.setOnFailed(event->{lblEstadoModulo.setText("Error de conexión");error(task.getException()==null?"Error desconocido":task.getException().getMessage());});
         Thread thread=new Thread(task,"viviendas-api");thread.setDaemon(true);thread.start();
     }
-    private void filter(String text){String query=normalize(text);filtered.setPredicate(value->query.isBlank()||contains(value.getCodigo(),query)||contains(value.getSector(),query)||contains(value.getDireccion(),query)||contains(value.getRepresentante(),query));updateTotals();}
+    private void filter(String text){String query=normalize(text);filtered.setPredicate(value->query.isBlank()||contains(value.getCodigo(),query)||contains(value.getSector(),query)||contains(value.getDireccion(),query));updateTotals();}
     private void updateTotals(){lblTotal.setText(filtered.size()+" viviendas");lblHabitantes.setText(filtered.stream().mapToInt(ViviendaModel::getTotalResidentes).sum()+" residentes registrados");}
     private boolean contains(String value,String query){return value!=null&&normalize(value).contains(query);}
     private String normalize(String value){return value==null?"":Normalizer.normalize(value,Normalizer.Form.NFD).replaceAll("\\p{M}","").toLowerCase().trim();}

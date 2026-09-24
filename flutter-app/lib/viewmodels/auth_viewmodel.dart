@@ -79,8 +79,9 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  /// Cambia la contraseña obligatoria por una definitiva.
+  /// Cambia la contraseña (tanto obligatoria como voluntaria).
   Future<bool> changePassword(String currentPassword, String newPassword) async {
+    final previousStatus = _status;
     _status = AuthStatus.loading;
     _errorMessage = null;
     notifyListeners();
@@ -95,7 +96,9 @@ class AuthViewModel extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _status = AuthStatus.passwordChangeRequired;
+      _status = previousStatus == AuthStatus.passwordChangeRequired
+          ? AuthStatus.passwordChangeRequired
+          : AuthStatus.authenticated;
       _errorMessage = e.toString();
       notifyListeners();
       return false;

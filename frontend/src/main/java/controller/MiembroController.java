@@ -4,90 +4,231 @@ import java.io.IOException;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Alert;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.Tooltip;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.input.MouseButton;
-import javafx.stage.Stage;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
-import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+
+import service.HeroIcon;
+import service.MaterialAlertService;
 import service.MiembroApiClient;
-import service.ResponsiveWindowService;
 import service.MiembroApiClient.CreateMemberRequest;
 import service.MiembroApiClient.CreateMemberResult;
+import service.ResponsiveWindowService;
 import service.ViviendaApiClient;
 import models.MiembroModel;
+import models.ViviendaModel;
 import security.SessionManager;
 
 public class MiembroController {
     @FXML private TableView<MiembroModel> tablaMiembros;
-    @FXML private TableColumn<MiembroModel, String> columnaDui;
-    @FXML private TableColumn<MiembroModel, String> columnaNombres;
-    @FXML private TableColumn<MiembroModel, String> columnaApellidos;
-    @FXML private TableColumn<MiembroModel, String> columnaTelefono;
-    @FXML private TableColumn<MiembroModel, String> columnaCorreo;
-    @FXML private TableColumn<MiembroModel, String> columnaEstado;
+    @FXML private TableColumn<MiembroModel, String> columnaDui; // Columna ID
+    @FXML private TableColumn<MiembroModel, String> columnaNombres; // Columna NOMBRE
+    @FXML private TableColumn<MiembroModel, String> columnaTelefono; // Columna TELÉFONO
+    @FXML private TableColumn<MiembroModel, String> columnaCorreo; // Columna EMAIL
+    @FXML private TableColumn<MiembroModel, String> columnaEstado; // Columna ESTADO
+    @FXML private TableColumn<MiembroModel, Void> columnaAcciones; // Columna ACCIONES
+
+    @FXML private VBox contenedorPrincipal;
+    @FXML private VBox tarjetaTabla;
     @FXML private Label lblTotalMiembros;
     @FXML private Label lblEstadoModulo;
+    @FXML private Label lblSubtitulo;
+    @FXML private Label lblResumenPie;
+    @FXML private StackPane iconoBusquedaContainer;
     @FXML private TextField campoBusqueda;
-    @FXML private Button btnVerDetalle;
     @FXML private Button btnNuevoMiembro;
+    @FXML private Button btnToggleInactivos;
+
+    // Botones opcionales para compatibilidad
+    @FXML private Button btnVerDetalle;
     @FXML private Button btnEditar;
     @FXML private Button btnCambiarEstado;
     @FXML private Button btnVerAsistencia;
 
+    private boolean mostrarInactivos = false;
     private final ObservableList<MiembroModel> miembros = FXCollections.observableArrayList();
     private FilteredList<MiembroModel> miembrosFiltrados;
 
     @FXML
     private void initialize() {
-        tablaMiembros.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        columnaDui.setCellValueFactory(cell -> new SimpleStringProperty(formatearDocumento(cell.getValue())));
-        columnaNombres.setCellValueFactory(new PropertyValueFactory<>("nombres"));
-        columnaApellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
-        columnaTelefono.setCellValueFactory(new PropertyValueFactory<>("telefono"));
-        columnaCorreo.setCellValueFactory(new PropertyValueFactory<>("correo"));
-        columnaEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
+        if (iconoBusquedaContainer != null) {
+            iconoBusquedaContainer.getChildren().setAll(HeroIcon.create(HeroIcon.SEARCH, "#94a3b8", 16));
+        }
 
+        tablaMiembros.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        tablaMiembros.setFixedCellSize(50.0);
+
+        // Esquinas redondeadas superiores perfectas (radio 20px) para la tabla
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
+        clip.setArcWidth(40);
+        clip.setArcHeight(40);
+        clip.widthProperty().bind(tablaMiembros.widthProperty());
+        clip.heightProperty().bind(tablaMiembros.heightProperty().add(20));
+        tablaMiembros.setClip(clip);
+
+        // 1. Columna ID (muestra ID o documento formateado)
+        columnaDui.setCellValueFactory(cell -> {
+            MiembroModel m = cell.getValue();
+            if (m.getId() != null) {
+                return new SimpleStringProperty(String.valueOf(m.getId()));
+            }
+            return new SimpleStringProperty(formatearDocumento(m));
+        });
+
+        // 2. Columna NOMBRE (nombre completo)
+        columnaNombres.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombreCompleto()));
+
+        // 3. Columna TELÃ‰FONO (telÃ©fono o "00")
+        columnaTelefono.setCellValueFactory(cell -> {
+            String tel = cell.getValue().getTelefono();
+            return new SimpleStringProperty(tel != null && !tel.isBlank() ? tel : "00");
+        });
+
+        // 4. Columna EMAIL (correo o "â€”")
+        columnaCorreo.setCellValueFactory(cell -> {
+            String email = cell.getValue().getCorreo();
+            return new SimpleStringProperty(email != null && !email.isBlank() ? email : "â€”");
+        });
+
+        // 5. Columna ESTADO con pastilla (BadgePill)
+        columnaEstado.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getEstado()));
+        columnaEstado.setCellFactory(column -> new TableCell<>() {
+            private final Label badge = new Label();
+            @Override
+            protected void updateItem(String estado, boolean empty) {
+                super.updateItem(estado, empty);
+                if (empty || estado == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    String estLower = estado.toLowerCase(Locale.ROOT);
+                    badge.setText(estLower);
+                    badge.getStyleClass().setAll("badge-pill");
+                    if ("activo".equals(estLower)) {
+                        badge.getStyleClass().add("badge-pill-active");
+                    } else {
+                        badge.getStyleClass().add("badge-pill-inactive");
+                    }
+                    setGraphic(badge);
+                    setText(null);
+                    setAlignment(Pos.CENTER_LEFT);
+                }
+            }
+        });
+
+        // 6. Columna ACCIONES: Iconos SVG de Heroicons (outline)
+        if (columnaAcciones != null) {
+            columnaAcciones.setCellFactory(column -> new TableCell<>() {
+                private final Button btnVer = new Button();
+                private final Button btnEd = new Button();
+                private final Button btnDel = new Button();
+                private final HBox actionsBox = new HBox(8, btnVer, btnEd, btnDel);
+
+                {
+                    actionsBox.getStyleClass().add("row-actions-box");
+                    actionsBox.setAlignment(Pos.CENTER);
+
+                    // 1. Ver (.btn-action-view): Icono Ojo (eye) en Azul (text-blue-600)
+                    btnVer.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnVer.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.BLUE_600, 18));
+                    btnVer.setTooltip(new Tooltip("Ver cliente"));
+                    btnVer.setOnAction(e -> {
+                        MiembroModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) mostrarDetalle(item);
+                    });
+
+                    // 2. Editar (.btn-action-edit): Icono LÃ¡piz (pencil) en Ãmbar (text-amber-600)
+                    btnEd.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnEd.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
+                    btnEd.setTooltip(new Tooltip("Editar cliente"));
+                    btnEd.setOnAction(e -> {
+                        MiembroModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) editarMiembro(item);
+                    });
+
+                    // 3. Desactivar (.btn-action-delete): Icono Papelera (trash) en Rojo (text-red-600)
+                    btnDel.getStyleClass().addAll("btn-row-action", "btn-action-delete");
+                    btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                    btnDel.setTooltip(new Tooltip("Desactivar cliente"));
+                    btnDel.setOnAction(e -> {
+                        MiembroModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) cambiarEstadoMiembro(item);
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        MiembroModel m = getTableView().getItems().get(getIndex());
+                        boolean activo = "ACTIVO".equalsIgnoreCase(m.getEstado());
+
+                        if (activo) {
+                            btnDel.setGraphic(HeroIcon.create(HeroIcon.TRASH, HeroIcon.RED_600, 18));
+                            btnDel.setTooltip(new Tooltip("Desactivar cliente"));
+                        } else {
+                            btnDel.setGraphic(HeroIcon.create(HeroIcon.REFRESH, HeroIcon.GREEN_600, 18));
+                            btnDel.setTooltip(new Tooltip("Reactivar cliente"));
+                        }
+
+                        boolean puede = puedeGestionar(SessionManager.getInstance().requireCurrentUser().getRole());
+                        btnEd.setDisable(!puede);
+                        btnDel.setDisable(!puede);
+
+                        setGraphic(actionsBox);
+                    }
+                }
+            });
+        }
+
+        // ConfiguraciÃ³n de filtrado reactivo
         miembrosFiltrados = new FilteredList<>(miembros, miembro -> true);
         tablaMiembros.setItems(miembrosFiltrados);
         campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
-        btnVerDetalle.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
-        if (btnVerAsistencia != null) {
-            btnVerAsistencia.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
-        }
+
+        // Ajuste dinámico de altura: la tabla crece libremente según filas (el ScrollPane padre maneja el overflow)
+        miembrosFiltrados.addListener((ListChangeListener<MiembroModel>) c -> ajustarAlturaTabla());
+        Platform.runLater(this::ajustarAlturaTabla);
+
+        // Permisos de creaciÃ³n
         boolean puedeGestionar = puedeGestionar(SessionManager.getInstance().requireCurrentUser().getRole());
-        btnNuevoMiembro.setDisable(!puedeGestionar);
-        if (puedeGestionar) {
-            btnEditar.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
-            btnCambiarEstado.disableProperty().bind(tablaMiembros.getSelectionModel().selectedItemProperty().isNull());
-        } else {
-            btnEditar.setDisable(true);
-            btnCambiarEstado.setDisable(true);
+        if (btnNuevoMiembro != null) {
+            btnNuevoMiembro.setDisable(!puedeGestionar);
         }
-        tablaMiembros.getSelectionModel().selectedItemProperty().addListener((observable, previous, selected) ->
-            btnCambiarEstado.setText(selected != null && "INACTIVO".equals(selected.getEstado())
-                ? "Reactivar" : "Desactivar")
-        );
+
+        // Doble clic en fila para ver detalle
         tablaMiembros.setRowFactory(table -> {
             TableRow<MiembroModel> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -97,16 +238,42 @@ public class MiembroController {
             });
             return row;
         });
-        actualizarTotal();
+
+        actualizarVistaInactivos();
         cargarMiembros();
     }
 
-    static boolean puedeGestionar(String role) {
+    public static boolean puedeGestionar(String role) {
         return role != null && ("ADMIN".equalsIgnoreCase(role) || "ADMINISTRADOR".equalsIgnoreCase(role));
     }
 
     public ObservableList<MiembroModel> getMiembros() {
         return miembros;
+    }
+
+    @FXML
+    private void toggleFiltroInactivos() {
+        mostrarInactivos = !mostrarInactivos;
+        actualizarVistaInactivos();
+    }
+
+    private void actualizarVistaInactivos() {
+        if (btnToggleInactivos != null) {
+            btnToggleInactivos.setGraphic(HeroIcon.create(HeroIcon.ARCHIVE, HeroIcon.SLATE_700, 16));
+            if (mostrarInactivos) {
+                btnToggleInactivos.setText("Ver activos");
+                btnToggleInactivos.getStyleClass().add("active-toggle");
+            } else {
+                btnToggleInactivos.setText("Ver inactivos");
+                btnToggleInactivos.getStyleClass().remove("active-toggle");
+            }
+        }
+        if (lblSubtitulo != null) {
+            lblSubtitulo.setText(mostrarInactivos
+                ? "Listado de miembros inactivos."
+                : "Listado de miembros activos.");
+        }
+        filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
     }
 
     @FXML
@@ -117,13 +284,12 @@ public class MiembroController {
             );
             Parent content = loader.load();
             RegistrarMiembroController controller = loader.getController();
-            var viviendas = new ViviendaApiClient().findAll().stream()
-                .filter(vivienda -> "ACTIVA".equals(vivienda.getEstado()))
-                .toList();
-            if (viviendas.isEmpty()) {
-                mostrarError("Primero registra una vivienda activa para poder agregar miembros.");
-                return;
-            }
+            List<ViviendaModel> viviendas = List.of();
+            try {
+                viviendas = new ViviendaApiClient().findAll().stream()
+                    .filter(vivienda -> "ACTIVA".equals(vivienda.getEstado()))
+                    .toList();
+            } catch (Exception ignored) { }
             controller.setViviendas(viviendas);
             ButtonType guardarType = new ButtonType("Guardar miembro", ButtonBar.ButtonData.OK_DONE);
             Dialog<Void> dialog = new Dialog<>();
@@ -161,6 +327,10 @@ public class MiembroController {
     @FXML
     private void verAsistencia() {
         MiembroModel seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        if (seleccionado != null) verAsistenciaMiembro(seleccionado);
+    }
+
+    public void verAsistenciaMiembro(MiembroModel seleccionado) {
         if (seleccionado == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/historial-asistencia-modal.fxml"));
@@ -185,6 +355,10 @@ public class MiembroController {
     @FXML
     private void editar() {
         MiembroModel seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
+        if (seleccionado != null) editarMiembro(seleccionado);
+    }
+
+    public void editarMiembro(MiembroModel seleccionado) {
         if (seleccionado == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/registrar-miembro.fxml"));
@@ -198,7 +372,7 @@ public class MiembroController {
             controller.setMiembro(seleccionado);
 
             ButtonType guardarType = new ButtonType("Guardar cambios", ButtonBar.ButtonData.OK_DONE);
-            Dialog<Void> dialog = memberFormDialog("Editar miembro", content, guardarType);
+            Dialog<Void> dialog = memberFormDialog("Editar cliente", content, guardarType);
             Button guardar = (Button) dialog.getDialogPane().lookupButton(guardarType);
             guardar.addEventFilter(ActionEvent.ACTION, event -> {
                 event.consume();
@@ -217,19 +391,37 @@ public class MiembroController {
     @FXML
     private void cambiarEstado() {
         MiembroModel seleccionado = tablaMiembros.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) return;
-        String nuevoEstado = "ACTIVO".equals(seleccionado.getEstado()) ? "INACTIVO" : "ACTIVO";
-        String accion = "ACTIVO".equals(nuevoEstado) ? "reactivar" : "desactivar";
-        Alert confirmation = new Alert(
-            Alert.AlertType.CONFIRMATION,
-            "El miembro y su cuenta cambiarán a " + nuevoEstado + ". Se conservarán sus relaciones y su historial.",
-            ButtonType.YES, ButtonType.NO
-        );
-        confirmation.setHeaderText("¿Deseas " + accion + " a " + seleccionado.getNombres() + "?");
-        confirmation.initOwner(tablaMiembros.getScene().getWindow());
-        if (confirmation.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+        if (seleccionado != null) cambiarEstadoMiembro(seleccionado);
+    }
 
-        lblEstadoModulo.setText("ACTIVO".equals(nuevoEstado) ? "Reactivando miembro..." : "Desactivando miembro...");
+    public void cambiarEstadoMiembro(MiembroModel seleccionado) {
+        if (seleccionado == null) return;
+        boolean esActivo = "ACTIVO".equalsIgnoreCase(seleccionado.getEstado());
+        String nuevoEstado = esActivo ? "INACTIVO" : "ACTIVO";
+        Window owner = tablaMiembros.getScene() != null ? tablaMiembros.getScene().getWindow() : null;
+
+        String titulo = esActivo ? "Confirmar desactivación" : "Confirmar reactivación";
+        String mensaje = esActivo
+            ? seleccionado.getNombreCompleto() + " se desactivará y dejará de aparecer en el listado activo."
+            : seleccionado.getNombreCompleto() + " se reactivará y volverá a aparecer en el listado activo.";
+        String accionTexto = esActivo ? "Sí, desactivar" : "Sí, reactivar";
+
+        boolean confirmado = MaterialAlertService.confirmacion(
+            owner,
+            titulo,
+            mensaje,
+            accionTexto,
+            esActivo,
+            null
+        );
+
+        if (!confirmado) {
+            return;
+        }
+
+        if (lblEstadoModulo != null) {
+            lblEstadoModulo.setText("ACTIVO".equals(nuevoEstado) ? "Reactivando..." : "Desactivando...");
+        }
         Task<MiembroModel> task = new Task<>() {
             @Override protected MiembroModel call() throws Exception {
                 return new MiembroApiClient().changeState(seleccionado.getIdMiembro(), nuevoEstado);
@@ -237,10 +429,20 @@ public class MiembroController {
         };
         task.setOnSucceeded(event -> {
             reemplazarMiembro(seleccionado, task.getValue());
-            lblEstadoModulo.setText("ACTIVO".equals(nuevoEstado) ? "Miembro reactivado" : "Miembro desactivado");
+            if (lblEstadoModulo != null) {
+                lblEstadoModulo.setText("ACTIVO".equals(nuevoEstado) ? "Cliente reactivado" : "Cliente desactivado");
+            }
+            filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
+            MaterialAlertService.exito(
+                owner,
+                "ACTIVO".equals(nuevoEstado) ? "Cliente reactivado" : "Cliente desactivado",
+                "El estado de " + seleccionado.getNombreCompleto() + " fue actualizado a " + nuevoEstado.toLowerCase() + "."
+            );
         });
         task.setOnFailed(event -> {
-            lblEstadoModulo.setText("No fue posible cambiar el estado");
+            if (lblEstadoModulo != null) {
+                lblEstadoModulo.setText("No fue posible cambiar el estado");
+            }
             mostrarError(task.getException() == null ? "No fue posible cambiar el estado." : task.getException().getMessage());
         });
         Thread thread = new Thread(task, "cambiar-estado-miembro-api");
@@ -268,7 +470,7 @@ public class MiembroController {
         Dialog<Void> dialog,
         Button guardar
     ) {
-        lblEstadoModulo.setText("Actualizando miembro...");
+        if (lblEstadoModulo != null) lblEstadoModulo.setText("Actualizando...");
         Task<MiembroModel> task = new Task<>() {
             @Override protected MiembroModel call() throws Exception {
                 return new MiembroApiClient().update(original.getIdMiembro(), request);
@@ -276,13 +478,20 @@ public class MiembroController {
         };
         task.setOnSucceeded(event -> {
             reemplazarMiembro(original, task.getValue());
-            lblEstadoModulo.setText("Miembro actualizado");
+            if (lblEstadoModulo != null) lblEstadoModulo.setText("Cliente actualizado");
             dialog.close();
+            filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
+            Window owner = tablaMiembros.getScene() != null ? tablaMiembros.getScene().getWindow() : null;
+            MaterialAlertService.exito(
+                owner,
+                "Cambios guardados",
+                "Los datos de " + task.getValue().getNombreCompleto() + " fueron actualizados con éxito."
+            );
         });
         task.setOnFailed(event -> {
             guardar.setDisable(false);
-            lblEstadoModulo.setText("No fue posible actualizar");
-            form.showError(task.getException() == null ? "No fue posible actualizar el miembro." : task.getException().getMessage());
+            if (lblEstadoModulo != null) lblEstadoModulo.setText("No fue posible actualizar");
+            form.showError(task.getException() == null ? "No fue posible actualizar." : task.getException().getMessage());
         });
         Thread thread = new Thread(task, "actualizar-miembro-api");
         thread.setDaemon(true);
@@ -316,7 +525,7 @@ public class MiembroController {
             ResponsiveWindowService.fitDialog(dialog, tablaMiembros.getScene().getWindow(), 660);
             dialog.showAndWait();
         } catch (IOException exception) {
-            mostrarError("No fue posible abrir el detalle del miembro.");
+            mostrarError("No fue posible abrir el detalle.");
         }
     }
 
@@ -326,7 +535,7 @@ public class MiembroController {
         Dialog<Void> dialog,
         Button guardar
     ) {
-        lblEstadoModulo.setText("Guardando miembro...");
+        if (lblEstadoModulo != null) lblEstadoModulo.setText("Guardando miembro...");
         Task<CreateMemberResult> task = new Task<>() {
             @Override
             protected CreateMemberResult call() throws Exception {
@@ -335,16 +544,17 @@ public class MiembroController {
         };
         task.setOnSucceeded(event -> {
             miembros.add(task.getValue().member());
-            lblEstadoModulo.setText("Miembro registrado");
+            if (lblEstadoModulo != null) lblEstadoModulo.setText("Cliente registrado");
             actualizarTotal();
             dialog.close();
+            filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
             mostrarCredenciales(task.getValue());
         });
         task.setOnFailed(event -> {
             guardar.setDisable(false);
-            lblEstadoModulo.setText("No fue posible registrar");
+            if (lblEstadoModulo != null) lblEstadoModulo.setText("No fue posible registrar");
             String message = task.getException() == null
-                ? "No fue posible registrar el miembro."
+                ? "No fue posible registrar."
                 : task.getException().getMessage();
             form.showError(message);
         });
@@ -354,33 +564,17 @@ public class MiembroController {
     }
 
     private void mostrarCredenciales(CreateMemberResult result) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Cuenta del miembro creada");
-        alert.setHeaderText("Entregue estas credenciales una sola vez al miembro");
-        TextArea credentials = new TextArea("Usuario (documento): " + result.username()
-            + "\nContraseña temporal: " + result.temporaryPassword());
-        credentials.setEditable(false);
-        credentials.setWrapText(true);
-        credentials.setPrefRowCount(3);
-        credentials.getStyleClass().add("credentials-box");
-        alert.getDialogPane().setContent(credentials);
-        alert.setContentText(null);
-        alert.getDialogPane().getStyleClass().addAll("member-dialog", "credentials-dialog");
-        java.net.URL memberDialogCss = MiembroController.class.getResource("/styles/member-dialog.css");
-        if (memberDialogCss != null) {
-            alert.getDialogPane().getStylesheets().add(memberDialogCss.toExternalForm());
-        }
-        alert.showAndWait();
+        Window owner = tablaMiembros != null && tablaMiembros.getScene() != null ? tablaMiembros.getScene().getWindow() : null;
+        MaterialAlertService.credenciales(owner, result.username(), result.temporaryPassword());
     }
 
     private void mostrarError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-        alert.setHeaderText("Ocurrió un problema");
-        alert.showAndWait();
+        Window owner = tablaMiembros != null && tablaMiembros.getScene() != null ? tablaMiembros.getScene().getWindow() : null;
+        MaterialAlertService.error(owner, "Ocurrió un problema", message);
     }
 
     private void cargarMiembros() {
-        lblEstadoModulo.setText("Conectando al servidor...");
+        if (lblEstadoModulo != null) lblEstadoModulo.setText("Conectando...");
         Task<List<MiembroModel>> task = new Task<>() {
             @Override
             protected List<MiembroModel> call() throws Exception {
@@ -389,19 +583,19 @@ public class MiembroController {
         };
         task.setOnSucceeded(event -> {
             miembros.setAll(task.getValue());
-            lblEstadoModulo.setText("Conectado al servidor");
+            if (lblEstadoModulo != null) lblEstadoModulo.setText("Conectado");
+            filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
             actualizarTotal();
         });
         task.setOnFailed(event -> {
             Throwable error = task.getException();
             String detail = error == null || error.getMessage() == null
-                ? "Error desconocido"
+                ? "Error de conexión"
                 : error.getMessage();
-            lblEstadoModulo.setText("Sin conexión al servidor");
-            tablaMiembros.setPlaceholder(new Label(
-                "No fue posible obtener los miembros. " + detail
-            ));
+            if (lblEstadoModulo != null) lblEstadoModulo.setText("Sin conexión");
+            tablaMiembros.setPlaceholder(new Label("No fue posible cargar los miembros. " + detail));
             actualizarTotal();
+            ajustarAlturaTabla();
         });
         Thread thread = new Thread(task, "cargar-miembros-api");
         thread.setDaemon(true);
@@ -410,19 +604,69 @@ public class MiembroController {
 
     private void actualizarTotal() {
         int visibles = miembrosFiltrados == null ? miembros.size() : miembrosFiltrados.size();
-        lblTotalMiembros.setText(visibles == miembros.size()
-            ? miembros.size() + " miembros registrados"
-            : visibles + " de " + miembros.size() + " miembros");
+        long totalActivos = miembros.stream().filter(m -> "ACTIVO".equalsIgnoreCase(m.getEstado())).count();
+        long totalInactivos = miembros.size() - totalActivos;
+
+        if (lblTotalMiembros != null) {
+            lblTotalMiembros.setText(miembros.size() + " miembros en total (" + totalActivos + " activos)");
+        }
+
+        if (lblResumenPie != null) {
+            String tipo = mostrarInactivos ? "inactivos" : "activos";
+            lblResumenPie.setText(visibles + " miembros " + tipo + " mostrados Â· " + miembros.size() + " en total");
+        }
     }
 
     private void filtrar(String texto) {
         String criterio = normalizar(texto);
-        miembrosFiltrados.setPredicate(miembro -> criterio.isBlank()
-            || contiene(miembro.getDui(), criterio)
-            || contiene(miembro.getNombres(), criterio)
-            || contiene(miembro.getApellidos(), criterio)
-            || contiene(miembro.getCorreo(), criterio));
+        if (miembrosFiltrados != null) {
+            miembrosFiltrados.setPredicate(miembro -> {
+                boolean coincideEstado = mostrarInactivos
+                    ? !"ACTIVO".equalsIgnoreCase(miembro.getEstado())
+                    : "ACTIVO".equalsIgnoreCase(miembro.getEstado());
+
+                if (!coincideEstado) {
+                    return false;
+                }
+
+                return criterio.isBlank()
+                    || contiene(miembro.getDui(), criterio)
+                    || contiene(String.valueOf(miembro.getId()), criterio)
+                    || contiene(miembro.getNombres(), criterio)
+                    || contiene(miembro.getApellidos(), criterio)
+                    || contiene(miembro.getCorreo(), criterio);
+            });
+        }
         actualizarTotal();
+        ajustarAlturaTabla();
+    }
+
+    /**
+     * Ajusta la altura de la tabla según la cantidad de filas visibles.
+     * Como la vista está dentro de un ScrollPane, la tabla crece libremente
+     * y el usuario puede desplazarse verticalmente para ver todos los registros.
+     */
+    private void ajustarAlturaTabla() {
+        if (tablaMiembros == null) {
+            return;
+        }
+
+        int cantidad = (miembrosFiltrados != null) ? miembrosFiltrados.size() : 0;
+        double alturaFila = 50.0;
+        double alturaCabecera = 47.0;
+        double paddingTabla = 3.0;
+
+        double alturaFinal;
+        if (cantidad == 0) {
+            alturaFinal = alturaCabecera + 85.0; // Espacio limpio para el placeholder
+        } else {
+            // La tabla crece exactamente según las filas; el ScrollPane padre gestiona el overflow
+            alturaFinal = Math.max(130.0, alturaCabecera + (cantidad * alturaFila) + paddingTabla);
+        }
+
+        tablaMiembros.setPrefHeight(alturaFinal);
+        tablaMiembros.setMinHeight(alturaFinal);
+        tablaMiembros.setMaxHeight(alturaFinal);
     }
 
     private boolean contiene(String valor, String criterio) {

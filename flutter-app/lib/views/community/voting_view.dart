@@ -125,6 +125,15 @@ class _VotingViewState extends State<VotingView> {
 
                     final polls = widget.viewModel.polls;
                     if (polls.isEmpty) {
+                      if (widget.viewModel.errorMessage != null) {
+                        return EmptyStateWidget(
+                          icon: FluentIcons.warning_24_regular,
+                          title: 'No se pudieron cargar las votaciones',
+                          message: widget.viewModel.errorMessage!.replaceAll('Exception: ', ''),
+                          actionLabel: 'Reintentar',
+                          onAction: () => widget.viewModel.loadPolls(idMiembro: widget.idMiembro),
+                        );
+                      }
                       return EmptyStateWidget(
                         icon: FluentIcons.poll_24_regular,
                         title: 'No hay votaciones activas',
@@ -215,15 +224,40 @@ class _VotingViewState extends State<VotingView> {
           ),
           const SizedBox(height: 16),
 
-          // Lista de Opciones
-          ...poll.opciones.map((opcion) {
-            final isSelected = _selectedOptionId == opcion.idOpcion;
-            final percentage = poll.totalVotos > 0
-                ? (opcion.votos / poll.totalVotos)
-                : 0.0;
+          // CASO 1: Votación CERRADA -> Mostrar resultados agregados
+          if (poll.isClosed) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0x301E293B) : const Color(0x0A0F172A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? const Color(0x20FFFFFF) : const Color(0x140F172A),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(FluentIcons.data_pie_24_regular, size: 18, color: AppColors.brandBlue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Votación finalizada. Resultados agregados definitivos (${poll.totalVotos} votos registrados).',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...poll.opciones.map((opcion) {
+              final percentage = poll.totalVotos > 0
+                  ? (opcion.votos / poll.totalVotos)
+                  : 0.0;
 
-            // Si ya votó o la votación está cerrada, mostrar resultados
-            if (hasVoted || poll.isClosed) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Column(
@@ -267,57 +301,140 @@ class _VotingViewState extends State<VotingView> {
                   ],
                 ),
               );
-            }
-
-            // Si la votación está abierta y aún no vota, permitir selección con BouncyTap
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: BouncyTap(
-                scaleDown: 0.97,
-                onTap: () => setState(() => _selectedOptionId = opcion.idOpcion),
+            }),
+          ]
+          // CASO 2: Votación ABIERTA + Usuario YA VOTÓ -> Papeleta bloqueada, NO revelar resultados
+          else if (hasVoted) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: AppColors.successGreen.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.successGreen.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    FluentIcons.lock_closed_24_regular,
+                    color: AppColors.successGreen,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Has participado en esta votación.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.successGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Papeleta bloqueada. Tu voto fue registrado de forma secreta. Por transparencia electoral, los resultados se publicarán cuando la votación sea cerrada.',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...poll.opciones.map((opcion) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: isSelected
-                        ? (isDark ? const Color(0xFF1E293B) : AppColors.brandBlue.withValues(alpha: 0.10))
-                        : (isDark ? const Color(0x301E293B) : const Color(0x0A0F172A)),
+                    color: isDark ? const Color(0x201E293B) : const Color(0x080F172A),
                     border: Border.all(
-                      color: isSelected
-                          ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
-                          : (isDark ? const Color(0x20FFFFFF) : const Color(0x180F172A)),
-                      width: isSelected ? 1.6 : 1.0,
+                      color: isDark ? const Color(0x18FFFFFF) : const Color(0x100F172A),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        isSelected ? FluentIcons.radio_button_24_filled : FluentIcons.radio_button_24_regular,
-                        color: isSelected
-                            ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
-                            : (isDark ? Colors.grey : AppColors.textMutedLight),
-                        size: 20,
+                        FluentIcons.checkmark_16_regular,
+                        color: isDark ? Colors.white38 : Colors.black26,
+                        size: 16,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           opcion.descripcion,
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                            fontSize: 13.5,
+                            color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ]
+          // CASO 3: Votación ABIERTA + Usuario NO ha votado -> Papeleta interactiva
+          else ...[
+            ...poll.opciones.map((opcion) {
+              final isSelected = _selectedOptionId == opcion.idOpcion;
 
-          // Botón para emitir voto
-          if (poll.isOpen && !hasVoted) ...[
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: BouncyTap(
+                  scaleDown: 0.97,
+                  onTap: () => setState(() => _selectedOptionId = opcion.idOpcion),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: isSelected
+                          ? (isDark ? const Color(0xFF1E293B) : AppColors.brandBlue.withValues(alpha: 0.10))
+                          : (isDark ? const Color(0x301E293B) : const Color(0x0A0F172A)),
+                      border: Border.all(
+                        color: isSelected
+                            ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
+                            : (isDark ? const Color(0x20FFFFFF) : const Color(0x180F172A)),
+                        width: isSelected ? 1.6 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected ? FluentIcons.radio_button_24_filled : FluentIcons.radio_button_24_regular,
+                          color: isSelected
+                              ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
+                              : (isDark ? Colors.grey : AppColors.textMutedLight),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            opcion.descripcion,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 14),
             CustomButton(
               text: 'Emitir Mi Voto',

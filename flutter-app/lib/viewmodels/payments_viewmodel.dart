@@ -7,6 +7,7 @@ class PaymentsViewModel extends ChangeNotifier {
   final PaymentsRepository _paymentsRepository;
 
   bool _isLoading = false;
+  String? _errorMessage;
   List<PaymentModel> _payments = [];
   String _filter = 'TODOS'; // 'TODOS', 'PAGADOS', 'PENDIENTES'
 
@@ -14,6 +15,7 @@ class PaymentsViewModel extends ChangeNotifier {
       : _paymentsRepository = paymentsRepository;
 
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   String get filter => _filter;
 
   List<PaymentModel> get filteredPayments {
@@ -56,12 +58,13 @@ class PaymentsViewModel extends ChangeNotifier {
 
   Future<void> loadPayments({int? idMiembro}) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       _payments = await _paymentsRepository.getMyPayments(idMiembro: idMiembro);
-    } catch (_) {
-      // Ignorar fallo de red
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();

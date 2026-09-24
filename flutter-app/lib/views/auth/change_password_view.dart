@@ -37,20 +37,40 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
     super.dispose();
   }
 
-  void _handleSubmit() {
+  void _handleSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      widget.viewModel.changePassword(
+      final success = await widget.viewModel.changePassword(
         _currentPasswordController.text,
         _newPasswordController.text,
       );
+      if (success && mounted) {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Contraseña actualizada exitosamente!'),
+              backgroundColor: AppColors.successGreen,
+            ),
+          );
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final canGoBack = Navigator.canPop(context);
+    final isForced = widget.viewModel.status == AuthStatus.passwordChangeRequired;
 
     return Scaffold(
+      appBar: canGoBack
+          ? AppBar(
+              title: const Text('Seguridad de la Cuenta'),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            )
+          : null,
       body: AmbientBackground(
         child: Center(
           child: SingleChildScrollView(
@@ -88,7 +108,9 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Por seguridad debes reemplazar tu clave temporal antes de acceder.',
+                    isForced
+                        ? 'Por seguridad debes reemplazar tu clave temporal antes de acceder.'
+                        : 'Ingresa tu contraseña actual y define tu nueva clave de acceso.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -107,7 +129,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                         children: [
                           CustomTextField(
                             controller: _currentPasswordController,
-                            label: 'Contraseña Temporal',
+                            label: isForced ? 'Contraseña Temporal' : 'Contraseña Actual',
                             hint: '••••••••',
                             isPassword: true,
                             prefixIcon: Icons.key_outlined,

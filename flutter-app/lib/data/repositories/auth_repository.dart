@@ -15,8 +15,14 @@ class AuthRepository {
         _storage = storage;
 
   /// Prueba la conectividad con el servidor API.
-  Future<Map<String, dynamic>> checkConnection([String? url]) {
-    return _api.checkHealth(url);
+  Future<Map<String, dynamic>> checkConnection([String? url]) async {
+    try {
+      final res = await _api.get(ApiConstants.healthEndpoint, requiresAuth: false);
+      if (res is Map<String, dynamic>) return res;
+      return {'status': 'UP'};
+    } catch (e) {
+      return {'status': 'DOWN', 'error': e.toString()};
+    }
   }
 
   /// Inicia sesión con usuario y contraseña, guarda los tokens y obtiene el perfil de miembro.

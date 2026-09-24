@@ -42,6 +42,15 @@ class Formatters {
     }
   }
 
+  /// Formatea fecha y hora combinadas
+  static String dateTime(dynamic rawDate) {
+    if (rawDate == null) return 'N/D';
+    final d = date(rawDate);
+    final t = time(rawDate);
+    if (t.isEmpty) return d;
+    return '$d • $t';
+  }
+
   /// Obtiene las iniciales de un nombre
   static String initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';

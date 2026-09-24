@@ -3,9 +3,11 @@ package controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import service.MiembroApiClient.CreateMemberRequest;
+import models.CountryData;
 import models.MiembroModel;
 import models.ViviendaModel;
 import java.util.List;
@@ -16,8 +18,8 @@ public class RegistrarMiembroController {
     private static final String RESIDENTE = "Carnet de residente";
 
     @FXML private ComboBox<String> selectorTipoDocumento;
-    @FXML private ComboBox<String> selectorPais;
-    @FXML private ComboBox<String> selectorCodigoTelefono;
+    @FXML private ComboBox<CountryData> selectorPais;
+    @FXML private ComboBox<CountryData> selectorCodigoTelefono;
     @FXML private VBox contenedorPais;
     @FXML private Label lblNumeroDocumento;
     @FXML private Label lblModoFormulario;
@@ -35,10 +37,16 @@ public class RegistrarMiembroController {
     private boolean actualizandoTelefono;
 
     public void setViviendas(List<ViviendaModel> viviendas) {
-        selectorVivienda.getItems().setAll(viviendas);
+        selectorVivienda.getItems().clear();
+        if (viviendas != null) selectorVivienda.getItems().addAll(viviendas);
         selectorVivienda.setCellFactory(list -> viviendaCell());
         selectorVivienda.setButtonCell(viviendaCell());
-        if (viviendas.size() == 1) selectorVivienda.getSelectionModel().selectFirst();
+        if (viviendas == null || viviendas.isEmpty()) {
+            selectorVivienda.setPromptText("Sin viviendas registradas (crea una primero)");
+        } else {
+            selectorVivienda.setPromptText("Selecciona una vivienda");
+            if (viviendas.size() == 1) selectorVivienda.getSelectionModel().selectFirst();
+        }
     }
 
     public void setMiembro(MiembroModel miembro) {
@@ -49,14 +57,19 @@ public class RegistrarMiembroController {
         };
         selectorTipoDocumento.setValue(tipo);
         campoDui.setText(miembro.getDui() == null ? "" : miembro.getDui());
-        selectorPais.setValue(miembro.getPaisOrigen());
+        if (miembro.getPaisOrigen() != null && !miembro.getPaisOrigen().isBlank()) {
+            CountryData c = CountryData.findByName(miembro.getPaisOrigen());
+            if (c != null) selectorPais.setValue(c);
+        }
         campoNombres.setText(miembro.getNombres());
         campoApellidos.setText(miembro.getApellidos());
         campoCorreo.setText(miembro.getCorreo());
         String telefono = miembro.getTelefono() == null ? "" : miembro.getTelefono().trim();
         if (!DUI.equals(tipo) && telefono.startsWith("+") && telefono.contains(" ")) {
             int separator = telefono.indexOf(' ');
-            selectorCodigoTelefono.setValue(telefono.substring(0, separator));
+            String prefix = telefono.substring(0, separator);
+            CountryData c = CountryData.findByDialCode(prefix);
+            if (c != null) selectorCodigoTelefono.setValue(c);
             campoTelefono.setText(telefono.substring(separator + 1));
         } else {
             campoTelefono.setText(telefono);
@@ -79,18 +92,74 @@ public class RegistrarMiembroController {
         };
     }
 
+    private ListCell<CountryData> countryCell() {
+        return new ListCell<>() {
+            @Override protected void updateItem(CountryData item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item.name());
+                    setGraphic(item.createFlagView());
+                    setGraphicTextGap(8);
+                }
+            }
+        };
+    }
+
+    private ListCell<CountryData> phoneListCell() {
+        return new ListCell<>() {
+            @Override protected void updateItem(CountryData item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item.name() + " (" + item.dialCode() + ")");
+                    setGraphic(item.createFlagView());
+                    setGraphicTextGap(8);
+                }
+            }
+        };
+    }
+
+    private ListCell<CountryData> phoneButtonCell() {
+        return new ListCell<>() {
+            @Override protected void updateItem(CountryData item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item.dialCode());
+                    setGraphic(item.createFlagView());
+                    setGraphicTextGap(6);
+                }
+            }
+        };
+    }
+
     @FXML
     private void initialize() {
         selectorTipoDocumento.getItems().addAll(DUI, PASAPORTE, RESIDENTE);
-        selectorPais.getItems().addAll(
-            "El Salvador", "Guatemala", "Honduras", "Nicaragua", "Costa Rica", "Panamá", "Belice",
-            "México", "Estados Unidos", "Canadá", "Colombia", "Venezuela", "Ecuador",
-            "Perú", "Bolivia", "Chile", "Argentina", "Brasil", "España", "Otro"
-        );
-        selectorCodigoTelefono.getItems().addAll(
-            "+1", "+34", "+52", "+502", "+503", "+504", "+505", "+506", "+507",
-            "+501", "+57", "+58", "+593", "+51", "+591", "+56", "+54", "+55"
-        );
+        
+        List<CountryData> countries = CountryData.getAll();
+        selectorPais.getItems().setAll(countries);
+        selectorPais.setCellFactory(lv -> countryCell());
+        selectorPais.setButtonCell(countryCell());
+
+        selectorCodigoTelefono.getItems().setAll(countries);
+        selectorCodigoTelefono.setCellFactory(lv -> phoneListCell());
+        selectorCodigoTelefono.setButtonCell(phoneButtonCell());
+
+        // Al cambiar país, sincronizar automáticamente el código de teléfono
+        selectorPais.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && selectorCodigoTelefono.isVisible()) {
+                selectorCodigoTelefono.setValue(newVal);
+            }
+        });
+
         selectorTipoDocumento.getSelectionModel().select(DUI);
         selectorTipoDocumento.valueProperty().addListener((obs, oldValue, value) -> actualizarTipoDocumento());
         campoDui.textProperty().addListener((obs, oldValue, value) -> formatearDocumento(value));
@@ -112,6 +181,11 @@ public class RegistrarMiembroController {
         if (!extranjero) {
             selectorPais.getSelectionModel().clearSelection();
             selectorCodigoTelefono.getSelectionModel().clearSelection();
+        } else {
+            if (selectorCodigoTelefono.getValue() == null) {
+                CountryData sv = CountryData.findByIso2("sv");
+                if (sv != null) selectorCodigoTelefono.setValue(sv);
+            }
         }
     }
 
@@ -150,7 +224,8 @@ public class RegistrarMiembroController {
         boolean extranjero = !DUI.equals(tipo);
         String documentoVisible = campoDui.getText().trim();
         String documento = DUI.equals(tipo) ? documentoVisible.replaceAll("\\D", "") : documentoVisible.toUpperCase();
-        String pais = extranjero ? selectorPais.getValue() : null;
+        CountryData paisData = selectorPais.getValue();
+        String pais = extranjero && paisData != null ? paisData.name() : null;
         String nombres = campoNombres.getText().trim();
         String apellidos = campoApellidos.getText().trim();
         String telefonoLocal = campoTelefono.getText().trim();
@@ -162,14 +237,17 @@ public class RegistrarMiembroController {
         if (extranjero && (pais == null || pais.isBlank())) return invalid("Selecciona el país de origen.");
         if (nombres.isBlank() || apellidos.isBlank()) return invalid("Los nombres y apellidos son obligatorios.");
         if (!telefonoLocal.isBlank() && !telefonoLocal.matches("\\d{4}-\\d{4}")) return invalid("El teléfono debe tener el formato 0000-0000.");
-        if (extranjero && !telefonoLocal.isBlank() && selectorCodigoTelefono.getValue() == null) return invalid("Selecciona el código internacional del teléfono.");
+        CountryData phoneData = selectorCodigoTelefono.getValue();
+        String dialCode = phoneData != null ? phoneData.dialCode() : "";
+        if (extranjero && !telefonoLocal.isBlank() && dialCode.isBlank()) return invalid("Selecciona el código internacional del teléfono.");
         if (!correo.isBlank() && !correo.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) return invalid("Ingresa un correo electrónico válido.");
-        if (vivienda == null) return invalid("Selecciona la vivienda donde reside el miembro.");
+        if (vivienda == null) return invalid("Debes seleccionar la vivienda donde reside.");
+        Integer idVivienda = vivienda.getIdVivienda();
 
         String telefono = telefonoLocal.isBlank() ? ""
-            : extranjero ? selectorCodigoTelefono.getValue() + " " + telefonoLocal : telefonoLocal;
+            : extranjero ? dialCode + " " + telefonoLocal : telefonoLocal;
         lblErrorRegistro.setText("");
-        return new CreateMemberRequest(documento, tipoApi(tipo), pais, nombres, apellidos, telefono, correo, vivienda.getIdVivienda());
+        return new CreateMemberRequest(documento, tipoApi(tipo), pais, nombres, apellidos, telefono, correo, idVivienda);
     }
 
     public void showError(String message) { lblErrorRegistro.setText(message); }
