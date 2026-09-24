@@ -92,6 +92,10 @@ public class DashboardController {
      */
     public void activarEdicionMapaDirecta() {
         Platform.runLater(() -> {
+            if (panelDetalleViviendaMapa != null) {
+                panelDetalleViviendaMapa.setVisible(false);
+                panelDetalleViviendaMapa.setManaged(false);
+            }
             if (communityMapPane != null) {
                 communityMapPane.activarModoEdicionConMensaje("🛠️ Modo Mover y Girar Casas Activo: Arrastra las casas en el plano o usa la rueda para girarlas");
             }
@@ -99,6 +103,10 @@ public class DashboardController {
             pause.setOnFinished(e -> {
                 if (dashboardScrollPane != null) {
                     dashboardScrollPane.setVvalue(1.0);
+                }
+                if (panelDetalleViviendaMapa != null) {
+                    panelDetalleViviendaMapa.setVisible(false);
+                    panelDetalleViviendaMapa.setManaged(false);
                 }
                 if (communityMapPane != null) {
                     communityMapPane.activarModoEdicionConMensaje("🛠️ Modo Mover y Girar Casas Activo: Arrastra las casas en el plano o usa la rueda para girarlas");
@@ -361,7 +369,7 @@ public class DashboardController {
         this.viviendaSeleccionadaActual = v;
         if (panelDetalleViviendaMapa == null) return;
 
-        if (v == null) {
+        if (v == null || (communityMapPane != null && communityMapPane.isModoEdicion())) {
             panelDetalleViviendaMapa.setVisible(false);
             panelDetalleViviendaMapa.setManaged(false);
             return;

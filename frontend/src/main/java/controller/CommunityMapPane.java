@@ -1146,15 +1146,30 @@ public class CommunityMapPane extends HBox {
         if (!modoEdicion) {
             alternarModoEdicion();
         }
+        ocultarCallout();
+        deseleccionarLote();
+        if (onViviendaSelected != null) {
+            onViviendaSelected.accept(null);
+        }
         if (mensaje != null) {
             mostrarNotificacionFlotante(mensaje);
         }
+    }
+
+    public boolean isModoEdicion() {
+        return modoEdicion;
     }
 
     public void alternarModoEdicion() {
         modoEdicion = !modoEdicion;
         if (modoEdicion && modoColocacion) {
             alternarModoColocacion();
+        }
+
+        ocultarCallout();
+        deseleccionarLote();
+        if (onViviendaSelected != null) {
+            onViviendaSelected.accept(null);
         }
 
         boxEstadoEdicion.setVisible(modoEdicion);
@@ -1257,8 +1272,8 @@ public class CommunityMapPane extends HBox {
     }
 
     private void mostrarCalloutParaLote(LotSlot lot) {
-        if (modoEdicion) {
-            mostrarCalloutEdicion(lot);
+        if (modoEdicion || (lot != null && lot.isEditable())) {
+            ocultarCallout();
             return;
         }
 
@@ -1858,11 +1873,7 @@ public class CommunityMapPane extends HBox {
                 if (modoColocacion) return;
                 animarHover(true);
                 if (isEditable()) {
-                    if (loteEnEdicionExclusiva == this) {
-                        mostrarCalloutEdicionCasaNueva(this);
-                    } else {
-                        mostrarCalloutEdicion(this);
-                    }
+                    return; // En modo edición no mostrar callout ni información de la casa
                 }
             });
 
@@ -1883,11 +1894,7 @@ public class CommunityMapPane extends HBox {
                     if (e.getButton() == MouseButton.SECONDARY) {
                         girar(1.0);
                     }
-                    if (loteEnEdicionExclusiva == this) {
-                        mostrarCalloutEdicionCasaNueva(this);
-                    } else {
-                        mostrarCalloutEdicion(this);
-                    }
+                    // En modo edición no mostrar callout emergente ni datos de la casa
                 }
             });
 
@@ -1898,11 +1905,7 @@ public class CommunityMapPane extends HBox {
                     double newX = Math.round(Math.max(22, Math.min(MAP_WIDTH - 22, p.getX())));
                     double newY = Math.round(Math.max(17, Math.min(MAP_HEIGHT - 17, p.getY())));
                     setCoordenadas(newX, newY);
-                    if (loteEnEdicionExclusiva == this) {
-                        mostrarCalloutEdicionCasaNueva(this);
-                    } else {
-                        mostrarCalloutEdicion(this);
-                    }
+                    // Arrastre limpio y fluido sin callout que tape la casa o el mapa
                 }
             });
 
@@ -1918,11 +1921,7 @@ public class CommunityMapPane extends HBox {
                     event.consume();
                     double delta = event.getDeltaY() > 0 ? 1.0 : -1.0;
                     girar(delta);
-                    if (loteEnEdicionExclusiva == this) {
-                        mostrarCalloutEdicionCasaNueva(this);
-                    } else {
-                        mostrarCalloutEdicion(this);
-                    }
+                    // Rotación limpia sin callout emergente
                 }
             });
 
@@ -1936,6 +1935,7 @@ public class CommunityMapPane extends HBox {
                     return;
                 }
                 if (isEditable()) {
+                    // En modo edición no mostrar información de la casa
                     return;
                 }
                 seleccionarLote(this);
