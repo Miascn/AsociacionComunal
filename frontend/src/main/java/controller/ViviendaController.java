@@ -29,6 +29,7 @@ public class ViviendaController {
     @FXML private Label lblTotal,lblHabitantes,lblEstadoModulo;
     @FXML private TextField campoBusqueda;
     @FXML private HBox barraPie;
+    @FXML private Button btnMoverCasasMapa;
     @FXML private Button btnVerDetalle, btnEditar, btnDesactivar; // opcionales
 
     private final ObservableList<ViviendaModel> viviendas=FXCollections.observableArrayList();
@@ -105,6 +106,14 @@ public class ViviendaController {
     @FXML private void nueva(){openForm(null);}
     @FXML private void editar(){openForm(tablaViviendas.getSelectionModel().getSelectedItem());}
     @FXML private void verDetalle(){ViviendaModel selected=tablaViviendas.getSelectionModel().getSelectedItem();if(selected!=null)showDetail(selected);}
+
+    @FXML
+    private void moverCasasEnMapa() {
+        MainController main = MainController.getInstance();
+        if (main != null) {
+            main.mostrarDashboardYActivarEdicionMapa();
+        }
+    }
 
     private void showDetail(ViviendaModel house){
         run("Consultando vivienda...",()->api.find(house.getIdVivienda()),detail->{

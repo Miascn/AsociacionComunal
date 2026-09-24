@@ -56,6 +56,9 @@ public class DashboardController {
     @FXML private Label lblDetalleEstado;
     @FXML private Button btnAbrirExpediente;
 
+    // Scroll principal
+    @FXML private ScrollPane dashboardScrollPane;
+
     private final DashboardService dashboardService = new DashboardService();
     private CommunityMapPane communityMapPane;
     private ViviendaModel viviendaSeleccionadaActual;
@@ -81,6 +84,28 @@ public class DashboardController {
 
         // Cargar datos reales asíncronamente
         cargarDatos();
+    }
+
+    /**
+     * Activa directamente el modo de mover y girar casas en el mapa del dashboard,
+     * desplazando la vista suavemente hacia la sección del plano urbano.
+     */
+    public void activarEdicionMapaDirecta() {
+        Platform.runLater(() -> {
+            if (communityMapPane != null) {
+                communityMapPane.activarModoEdicionConMensaje("🛠️ Modo Mover y Girar Casas Activo: Arrastra las casas en el plano o usa la rueda para girarlas");
+            }
+            PauseTransition pause = new PauseTransition(Duration.millis(180));
+            pause.setOnFinished(e -> {
+                if (dashboardScrollPane != null) {
+                    dashboardScrollPane.setVvalue(1.0);
+                }
+                if (communityMapPane != null) {
+                    communityMapPane.activarModoEdicionConMensaje("🛠️ Modo Mover y Girar Casas Activo: Arrastra las casas en el plano o usa la rueda para girarlas");
+                }
+            });
+            pause.play();
+        });
     }
 
     @FXML

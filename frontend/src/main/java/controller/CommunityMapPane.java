@@ -485,8 +485,8 @@ public class CommunityMapPane extends HBox {
 
         btnModoEdicion = new Button("🛠️ Mover / Girar Casas");
         btnModoEdicion.setMaxWidth(Double.MAX_VALUE);
-        btnModoEdicion.setVisible(false);
-        btnModoEdicion.setManaged(false);
+        btnModoEdicion.setVisible(true);
+        btnModoEdicion.setManaged(true);
         btnModoEdicion.setTooltip(new Tooltip("Activar modo para arrastrar y rotar casas libremente"));
         btnModoEdicion.setStyle("-fx-background-color: #f8fafc; -fx-text-fill: #d97706; " +
                 "-fx-font-weight: bold; -fx-font-size: 11.5px; -fx-border-color: #f59e0b; " +
@@ -815,8 +815,15 @@ public class CommunityMapPane extends HBox {
         }
 
         if (btnModoEdicion != null) {
-            btnModoEdicion.setVisible(false);
-            btnModoEdicion.setManaged(false);
+            btnModoEdicion.setVisible(true);
+            btnModoEdicion.setManaged(true);
+            if (modoEdicion) {
+                btnModoEdicion.setText("✓ Terminar Mover");
+                btnModoEdicion.setStyle("-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11.5px; -fx-background-radius: 7px; -fx-padding: 7 12; -fx-cursor: hand;");
+            } else {
+                btnModoEdicion.setText("🛠️ Mover / Girar Casas");
+                btnModoEdicion.setStyle("-fx-background-color: #f8fafc; -fx-text-fill: #d97706; -fx-font-weight: bold; -fx-font-size: 11.5px; -fx-border-color: #f59e0b; -fx-border-radius: 7px; -fx-background-radius: 7px; -fx-padding: 7 12; -fx-cursor: hand;");
+            }
         }
 
         if (hayPendientes) {

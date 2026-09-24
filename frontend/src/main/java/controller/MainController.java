@@ -73,9 +73,15 @@ public class MainController {
     private boolean sidebarFijada = false;
     private Transition animacionSidebar;
     private Popup popupUsuario;
+    private static MainController instance;
+
+    public static MainController getInstance() {
+        return instance;
+    }
 
     @FXML
     private void initialize() {
+        instance = this;
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         if (lblNombreUsuario != null) lblNombreUsuario.setText(user.getDisplayName());
         if (lblRolUsuario != null) lblRolUsuario.setText(user.getRole());
@@ -401,6 +407,24 @@ public class MainController {
     private void mostrarDashboard() {
         marcarBotonActivo(btnNavDashboard);
         cargarVista("/fxml/views/dashboard.fxml");
+    }
+
+    /**
+     * Navega al dashboard y activa directamente el modo de mover y rotar casas en el plano interactivo.
+     */
+    public void mostrarDashboardYActivarEdicionMapa() {
+        marcarBotonActivo(btnNavDashboard);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/views/dashboard.fxml"));
+            Parent view = loader.load();
+            DashboardController dashboardCtrl = loader.getController();
+            contentArea.getChildren().setAll(view);
+            if (dashboardCtrl != null) {
+                dashboardCtrl.activarEdicionMapaDirecta();
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException("No fue posible cargar el dashboard.", exception);
+        }
     }
 
     @FXML

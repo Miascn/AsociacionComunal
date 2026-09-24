@@ -5,6 +5,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:id="dashboardScrollPane"
             fx:controller="controller.DashboardController"
             fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
  <VBox spacing="20" styleClass="dashboard-root">

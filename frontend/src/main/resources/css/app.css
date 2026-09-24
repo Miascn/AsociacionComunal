@@ -577,6 +577,41 @@
     -fx-background-color: #1d4ed8;
 }
 
+/* Botón para mover casas en el plano/mapa del dashboard */
+.btn-mover-mapa {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: #f59e0b;
+    -fx-border-width: 1.2px;
+    -fx-padding: 0 16px;
+    -fx-pref-height: 38px;
+    -fx-min-height: 38px;
+    -fx-max-height: 38px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 8px;
+    -fx-alignment: CENTER;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.20), 8, 0.12, 0, 2);
+}
+.btn-mover-mapa:hover {
+    -fx-background-color: #fde68a;
+    -fx-text-fill: #78350f;
+    -fx-border-color: #d97706;
+}
+.dark-theme .btn-mover-mapa {
+    -fx-background-color: rgba(245, 158, 11, 0.15);
+    -fx-text-fill: #fbbf24;
+    -fx-border-color: rgba(245, 158, 11, 0.45);
+}
+.dark-theme .btn-mover-mapa:hover {
+    -fx-background-color: rgba(245, 158, 11, 0.25);
+    -fx-text-fill: #fef3c7;
+    -fx-border-color: rgba(245, 158, 11, 0.7);
+}
+
 /* Tarjeta de tabla blanca con esquinas redondeadas bien definidas estilo imagen */
 .clean-table-card {
     -fx-background-color: #ffffff;
