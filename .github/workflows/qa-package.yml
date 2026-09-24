@@ -128,8 +128,57 @@ jobs:
             .\scripts\build-qa-package.ps1 -Version $env:RELEASE_VERSION
           }
 
-      - name: Publicar artefacto interno
+      - name: Publicar actualización en el servidor QA
+        shell: powershell
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/develop') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+        env:
+          QA_API_URL: ${{ secrets.QA_API_URL }}
+          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = (Get-Content dist/version.txt -Raw).Trim()
+          $full = "dist/AsociacionComunalQA-$version-win64.zip"
+          $delta = "dist/AsociacionComunalQA-$version-delta.zip"
+          $manifest = "dist/update-manifest.json"
+          $versionFile = "dist/version.txt"
+          $checksum = "dist/sha256.txt"
+          $auth = "Authorization: Bearer $env:QA_API_TOKEN"
+
+          if (-not (Test-Path $full)) { throw "No se encontro el paquete completo: $full" }
+          if (-not (Test-Path $delta)) { throw "No se encontro el paquete delta: $delta" }
+
+          & curl.exe --fail --show-error --silent --location `
+            --header $auth `
+            --header "ngrok-skip-browser-warning: 1" `
+            --form "full=@$full;type=application/zip" `
+            --form "delta=@$delta;type=application/zip" `
+            --form "manifest=@$manifest;type=application/json" `
+            --form "version=@$versionFile;type=text/plain" `
+            --form "checksum=@$checksum;type=text/plain" `
+            "$env:QA_API_URL/api/updates/windows/publish"
+          Write-Host "Versión QA $version publicada correctamente en el servidor QA."
+
+      - name: Crear GitHub Release
+        shell: powershell
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/develop') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = (Get-Content dist/version.txt -Raw).Trim()
+          $full = "dist/AsociacionComunalQA-$version-win64.zip"
+          & gh release create "qa-v$version" `
+            "$full" `
+            "dist/sha256.txt" `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --target "$env:GITHUB_SHA" `
+            --title "Asociación Comunal QA v$version" `
+            --notes "Primera instalación: descarga el ZIP, extráelo y abre AsociacionComunalQA.exe. Después, las versiones nuevas se detectan automáticamente al iniciar y mientras la aplicación permanece abierta."
+          Write-Host "GitHub Release qa-v$version creado exitosamente."
+
+      - name: Publicar artefacto interno (opcional)
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: qa-release-${{ env.RELEASE_VERSION }}
           path: |
@@ -138,70 +187,5 @@ jobs:
             dist/update-manifest.json
             dist/version.txt
             dist/sha256.txt
-          if-no-files-found: error
-          retention-days: 30
-
-  deploy-qa:
-    name: Activar actualización QA
-    needs: build-windows
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/develop') || (github.event_name == 'workflow_dispatch' && inputs.publish)
-    runs-on: ubuntu-latest
-    environment: qa
-    steps:
-      - name: Descargar paquete aprobado
-        uses: actions/download-artifact@v4
-        with:
-          name: qa-release-${{ env.RELEASE_VERSION }}
-          path: release
-
-      - name: Publicar mediante la API segura
-        shell: bash
-        env:
-          QA_API_URL: ${{ secrets.QA_API_URL }}
-          QA_API_TOKEN: ${{ secrets.QA_API_TOKEN }}
-        run: |
-          set -euo pipefail
-          version="$(tr -d '\r\n' < release/version.txt)"
-          full="release/AsociacionComunalQA-${version}-win64.zip"
-          delta="release/AsociacionComunalQA-${version}-delta.zip"
-          test -f "$full"
-          test -f "$delta"
-          curl --fail --show-error --silent --location \
-            --header "Authorization: Bearer $QA_API_TOKEN" \
-            --header "ngrok-skip-browser-warning: 1" \
-            --form "full=@$full;type=application/zip" \
-            --form "delta=@$delta;type=application/zip" \
-            --form "manifest=@release/update-manifest.json;type=application/json" \
-            --form "version=@release/version.txt;type=text/plain" \
-            --form "checksum=@release/sha256.txt;type=text/plain" \
-            "$QA_API_URL/api/updates/windows/publish"
-          echo "Versión QA $version publicada correctamente."
-
-  release-github:
-    name: Publicar aplicación en GitHub
-    needs: build-windows
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/develop') || (github.event_name == 'workflow_dispatch' && inputs.publish)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Descargar paquete aprobado
-        uses: actions/download-artifact@v4
-        with:
-          name: qa-release-${{ env.RELEASE_VERSION }}
-          path: release
-
-      - name: Crear GitHub Release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          version="$(tr -d '\r\n' < release/version.txt)"
-          full="release/AsociacionComunalQA-${version}-win64.zip"
-          test -f "$full"
-          gh release create "qa-v${version}" \
-            "$full" \
-            "release/sha256.txt" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "Asociación Comunal QA v${version}" \
-            --notes "Primera instalación: descarga el ZIP, extráelo y abre AsociacionComunalQA.exe. Después, las versiones nuevas se detectan automáticamente al iniciar y mientras la aplicación permanece abierta."
+          if-no-files-found: warn
+          retention-days: 1
