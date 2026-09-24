@@ -35,6 +35,7 @@ import security.SessionManager;
 import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.CargoApiClient;
+import service.TablePaginator;
 
 public class CargosController {
     @FXML private TableView<CargoModel> tablaCargos;
@@ -49,6 +50,7 @@ public class CargosController {
     @FXML private Label lblTotalCargos;
     @FXML private Label lblTotalAsignaciones;
     @FXML private Label lblContadorFiltrados;
+    @FXML private HBox barraPie;
 
     @FXML private ComboBox<String> comboEstado;
     @FXML private TextField campoBusqueda;
@@ -61,6 +63,7 @@ public class CargosController {
 
     private final ObservableList<CargoModel> cargos = FXCollections.observableArrayList();
     private FilteredList<CargoModel> cargosFiltrados;
+    private TablePaginator<CargoModel> paginator;
     private boolean puedeGestionar = false;
 
     @FXML
@@ -110,7 +113,10 @@ public class CargosController {
         });
 
         cargosFiltrados = new FilteredList<>(cargos, c -> true);
-        tablaCargos.setItems(cargosFiltrados);
+        paginator = new TablePaginator<>(tablaCargos, cargosFiltrados, "cargos", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
 
         comboEstado.getItems().setAll("TODOS", "ACTIVOS", "INACTIVOS");
         comboEstado.setValue("TODOS");
@@ -202,6 +208,10 @@ public class CargosController {
         });
 
         task.setOnFailed(event -> {
+            cargos.clear();
+            if (paginator != null) {
+                paginator.updatePagination();
+            }
             tablaCargos.setPlaceholder(new Label("No fue posible obtener los cargos directivos."));
         });
 
@@ -226,10 +236,9 @@ public class CargosController {
             return true;
         });
 
-        int visibles = cargosFiltrados.size();
-        lblContadorFiltrados.setText(visibles == cargos.size()
-            ? cargos.size() + " cargos registrados"
-            : visibles + " de " + cargos.size() + " cargos");
+        if (paginator != null) {
+            paginator.updatePagination();
+        }
     }
 
     private void actualizarMetricas() {

@@ -31,6 +31,7 @@ import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.RolApiClient;
 import service.RolApiClient.RolRequest;
+import service.TablePaginator;
 
 public class RolController {
     @FXML private TableView<RolModel> tablaRoles;
@@ -42,11 +43,13 @@ public class RolController {
     @FXML private TextField campoBusqueda;
     @FXML private Label lblTotalRoles;
     @FXML private Label lblEstadoModulo;
+    @FXML private HBox barraPie;
     @FXML private Button btnEditar;   // opcional
     @FXML private Button btnEliminar; // opcional
 
     private final ObservableList<RolModel> roles = FXCollections.observableArrayList();
     private FilteredList<RolModel> filtered;
+    private TablePaginator<RolModel> paginator;
 
     @FXML
     private void initialize() {
@@ -60,7 +63,10 @@ public class RolController {
         columnaUsuarios.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().getUsuariosAsociadosCount()));
 
         filtered = new FilteredList<>(roles, value -> true);
-        tablaRoles.setItems(filtered);
+        paginator = new TablePaginator<>(tablaRoles, filtered, "roles", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
 
         campoBusqueda.textProperty().addListener((obs, previous, value) -> filter(value));
         if (btnEditar   != null) btnEditar.disableProperty().bind(tablaRoles.getSelectionModel().selectedItemProperty().isNull());
@@ -218,11 +224,12 @@ public class RolController {
         };
         task.setOnSucceeded(event -> {
             roles.setAll(task.getValue());
-            tablaRoles.refresh();
+            paginator.updatePagination();
             lblEstadoModulo.setText("Conectado al servidor");
-            updateTotal();
         });
         task.setOnFailed(event -> {
+            roles.clear();
+            paginator.updatePagination();
             lblEstadoModulo.setText("Sin conexión al servidor");
             tablaRoles.setPlaceholder(new Label("No fue posible obtener los roles. " + message(task.getException())));
         });
@@ -236,9 +243,8 @@ public class RolController {
         } else {
             roles.add(updated);
         }
+        paginator.updatePagination();
         tablaRoles.getSelectionModel().select(updated);
-        tablaRoles.refresh();
-        updateTotal();
     }
 
     private void filter(String text) {
@@ -248,7 +254,7 @@ public class RolController {
             || (rol.descripcion() != null && normalize(rol.descripcion()).contains(query))
             || String.valueOf(rol.idRol()).contains(query)
         );
-        updateTotal();
+        paginator.updatePagination();
     }
 
     private void updateTotal() {

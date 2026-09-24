@@ -17,6 +17,7 @@ import models.MiembroModel;
 import models.ViviendaModel;
 import service.HeroIcon;
 import service.ResponsiveWindowService;
+import service.TablePaginator;
 import service.MiembroApiClient;
 import service.ViviendaApiClient;
 
@@ -27,11 +28,13 @@ public class ViviendaController {
     @FXML private TableColumn<ViviendaModel,Void>    colAcciones;
     @FXML private Label lblTotal,lblHabitantes,lblEstadoModulo;
     @FXML private TextField campoBusqueda;
+    @FXML private HBox barraPie;
     @FXML private Button btnVerDetalle, btnEditar, btnDesactivar; // opcionales
 
     private final ObservableList<ViviendaModel> viviendas=FXCollections.observableArrayList();
     private final List<MiembroModel> miembros=new ArrayList<>();
     private FilteredList<ViviendaModel> filtered;
+    private TablePaginator<ViviendaModel> paginator;
     private final ViviendaApiClient api=new ViviendaApiClient();
 
     @FXML private void initialize(){
@@ -43,7 +46,10 @@ public class ViviendaController {
         colMenores.setCellValueFactory(new PropertyValueFactory<>("menores"));
         colEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
         filtered=new FilteredList<>(viviendas,value->true);
-        tablaViviendas.setItems(filtered);
+        paginator = new TablePaginator<>(tablaViviendas, filtered, "viviendas", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
         campoBusqueda.textProperty().addListener((observable,oldValue,value)->filter(value));
         if (btnVerDetalle != null) btnVerDetalle.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
         if (btnEditar     != null) btnEditar.disableProperty().bind(tablaViviendas.getSelectionModel().selectedItemProperty().isNull());
@@ -150,7 +156,12 @@ public class ViviendaController {
         task.setOnFailed(event->{lblEstadoModulo.setText("Error de conexión");error(task.getException()==null?"Error desconocido":task.getException().getMessage());});
         Thread thread=new Thread(task,"viviendas-api");thread.setDaemon(true);thread.start();
     }
-    private void filter(String text){String query=normalize(text);filtered.setPredicate(value->query.isBlank()||contains(value.getCodigo(),query)||contains(value.getSector(),query)||contains(value.getDireccion(),query));updateTotals();}
+    private void filter(String text){
+        String query=normalize(text);
+        filtered.setPredicate(value->query.isBlank()||contains(value.getCodigo(),query)||contains(value.getSector(),query)||contains(value.getDireccion(),query));
+        if (paginator != null) paginator.updatePagination();
+        updateTotals();
+    }
     private void updateTotals(){lblTotal.setText(filtered.size()+" viviendas");lblHabitantes.setText(filtered.stream().mapToInt(ViviendaModel::getTotalResidentes).sum()+" residentes registrados");}
     private boolean contains(String value,String query){return value!=null&&normalize(value).contains(query);}
     private String normalize(String value){return value==null?"":Normalizer.normalize(value,Normalizer.Form.NFD).replaceAll("\\p{M}","").toLowerCase().trim();}

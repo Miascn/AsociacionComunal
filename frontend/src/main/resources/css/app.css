@@ -628,6 +628,84 @@
     -fx-text-fill: #64748b;
 }
 
+/* ---------- Paginación universal de tablas ---------- */
+.pagination-box {
+    -fx-alignment: CENTER_RIGHT;
+    -fx-spacing: 8px;
+}
+.pagination-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #64748b;
+    -fx-font-weight: 600;
+}
+.pagination-info {
+    -fx-font-size: 11px;
+    -fx-text-fill: #475569;
+    -fx-font-weight: 500;
+}
+.combo-pagination {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-font-size: 11px;
+    -fx-pref-height: 28px;
+    -fx-min-height: 28px;
+    -fx-max-height: 28px;
+    -fx-cursor: hand;
+}
+.combo-pagination:hover {
+    -fx-border-color: #2563eb;
+    -fx-background-color: #ffffff;
+}
+.btn-pagination {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+    -fx-pref-width: 30px;
+    -fx-min-width: 30px;
+    -fx-max-width: 30px;
+    -fx-pref-height: 28px;
+    -fx-min-height: 28px;
+    -fx-max-height: 28px;
+    -fx-cursor: hand;
+    -fx-alignment: CENTER;
+    -fx-padding: 0;
+}
+.btn-pagination:hover:not(:disabled) {
+    -fx-background-color: #2563eb;
+    -fx-border-color: #2563eb;
+    -fx-text-fill: #ffffff;
+}
+.btn-pagination:disabled {
+    -fx-opacity: 0.35;
+    -fx-cursor: default;
+}
+
+.dark-theme .table-footer-bar {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #1e293b transparent transparent transparent;
+}
+.dark-theme .combo-pagination {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #334155;
+    -fx-text-fill: #f8fafc;
+}
+.dark-theme .btn-pagination {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #334155;
+    -fx-text-fill: #f8fafc;
+}
+.dark-theme .btn-pagination:hover:not(:disabled) {
+    -fx-background-color: #3b82f6;
+    -fx-border-color: #3b82f6;
+    -fx-text-fill: #ffffff;
+}
+
 
 
 /* ---------- Tarjetas del dashboard ---------- */

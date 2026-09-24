@@ -40,6 +40,7 @@ import javafx.stage.Window;
 
 import service.HeroIcon;
 import service.MaterialAlertService;
+import service.TablePaginator;
 import service.MiembroApiClient;
 import service.MiembroApiClient.CreateMemberRequest;
 import service.MiembroApiClient.CreateMemberResult;
@@ -60,6 +61,7 @@ public class MiembroController {
 
     @FXML private VBox contenedorPrincipal;
     @FXML private VBox tarjetaTabla;
+    @FXML private HBox barraPie;
     @FXML private Label lblTotalMiembros;
     @FXML private Label lblEstadoModulo;
     @FXML private Label lblSubtitulo;
@@ -78,6 +80,7 @@ public class MiembroController {
     private boolean mostrarInactivos = false;
     private final ObservableList<MiembroModel> miembros = FXCollections.observableArrayList();
     private FilteredList<MiembroModel> miembrosFiltrados;
+    private TablePaginator<MiembroModel> paginator;
 
     @FXML
     private void initialize() {
@@ -213,14 +216,13 @@ public class MiembroController {
             });
         }
 
-        // ConfiguraciÃ³n de filtrado reactivo
+        // Configuración de paginación y filtrado reactivo
         miembrosFiltrados = new FilteredList<>(miembros, miembro -> true);
-        tablaMiembros.setItems(miembrosFiltrados);
+        paginator = new TablePaginator<>(tablaMiembros, miembrosFiltrados, "miembros", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
         campoBusqueda.textProperty().addListener((observable, anterior, actual) -> filtrar(actual));
-
-        // Ajuste dinámico de altura: la tabla crece libremente según filas (el ScrollPane padre maneja el overflow)
-        miembrosFiltrados.addListener((ListChangeListener<MiembroModel>) c -> ajustarAlturaTabla());
-        Platform.runLater(this::ajustarAlturaTabla);
 
         // Permisos de creaciÃ³n
         boolean puedeGestionar = puedeGestionar(SessionManager.getInstance().requireCurrentUser().getRole());
@@ -638,7 +640,11 @@ public class MiembroController {
             });
         }
         actualizarTotal();
-        ajustarAlturaTabla();
+        if (paginator != null) {
+            paginator.updatePagination();
+        } else {
+            ajustarAlturaTabla();
+        }
     }
 
     /**

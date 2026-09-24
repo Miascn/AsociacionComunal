@@ -23,6 +23,7 @@ import models.UsuarioModel;
 import security.SessionManager;
 import service.HeroIcon;
 import service.ResponsiveWindowService;
+import service.TablePaginator;
 import service.MiembroApiClient;
 import service.RolApiClient;
 import service.UsuarioApiClient;
@@ -39,6 +40,7 @@ public class UsuarioController {
     @FXML private TextField campoBusqueda;
     @FXML private Label lblTotalUsuarios;
     @FXML private Label lblEstadoModulo;
+    @FXML private HBox barraPie;
     @FXML private Button btnEditar;         // opcional, puede no estar en FXML
     @FXML private Button btnCambiarEstado;  // opcional
     @FXML private Button btnBloquear;       // opcional
@@ -48,6 +50,7 @@ public class UsuarioController {
     private final Map<Integer, RolModel> roles = new HashMap<>();
     private final Map<Integer, MiembroModel> members = new HashMap<>();
     private FilteredList<UsuarioModel> filtered;
+    private TablePaginator<UsuarioModel> paginator;
 
     @FXML private void initialize() {
         columnaUsuario.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombreUsuario()));
@@ -81,7 +84,10 @@ public class UsuarioController {
             cell.getValue().getUltimoAcceso() == null ? "Nunca" : cell.getValue().getUltimoAcceso()));
         
         filtered = new FilteredList<>(users, value -> true);
-        tablaUsuarios.setItems(filtered);
+        paginator = new TablePaginator<>(tablaUsuarios, filtered, "usuarios", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
         campoBusqueda.textProperty().addListener((obs, previous, value) -> filter(value));
 
         // Botones del hero son opcionales (pueden no estar en el FXML si se usan inline)
@@ -367,11 +373,12 @@ public class UsuarioController {
             members.clear();
             task.getValue().members().forEach(member -> members.put(member.getIdMiembro(), member));
             users.setAll(task.getValue().users());
-            tablaUsuarios.refresh();
+            paginator.updatePagination();
             lblEstadoModulo.setText("Conectado al servidor");
-            updateTotal();
         });
         task.setOnFailed(event -> {
+            users.clear();
+            paginator.updatePagination();
             lblEstadoModulo.setText("Sin conexión al servidor");
             tablaUsuarios.setPlaceholder(new Label("No fue posible obtener los usuarios. " + message(task.getException())));
         });
@@ -381,9 +388,8 @@ public class UsuarioController {
     private void replace(UsuarioModel original, UsuarioModel updated) {
         int index = original == null ? -1 : users.indexOf(original);
         if (index >= 0) users.set(index, updated); else users.add(updated);
+        paginator.updatePagination();
         tablaUsuarios.getSelectionModel().select(updated);
-        tablaUsuarios.refresh();
-        updateTotal();
     }
 
     private void filter(String text) {
@@ -391,7 +397,7 @@ public class UsuarioController {
         filtered.setPredicate(user -> query.isBlank() || normalize(user.getNombreUsuario()).contains(query)
             || normalize(roleName(user.getIdRol())).contains(query) || normalize(memberName(user.getIdMiembro())).contains(query)
             || normalize(user.getEstado()).contains(query));
-        updateTotal();
+        paginator.updatePagination();
     }
 
     private String roleName(Integer id) { return id == null || !roles.containsKey(id) ? "Rol " + id : roles.get(id).nombre(); }

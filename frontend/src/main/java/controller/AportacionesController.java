@@ -53,6 +53,7 @@ public class AportacionesController {
     @FXML private TextField campoFiltroPeriodo;
     @FXML private ComboBox<String> comboMetodo;
     @FXML private ComboBox<String> comboEstado;
+    @FXML private ComboBox<String> comboPageSize;
     @FXML private TextField campoBusqueda;
 
     @FXML private Button btnNuevaAportacion;
@@ -65,7 +66,7 @@ public class AportacionesController {
 
     private final ObservableList<AportacionModel> aportaciones = FXCollections.observableArrayList();
     private int currentPage = 1;
-    private final int pageSize = 25;
+    private int pageSize = 10;
     private int totalPages = 1;
     private int totalRegistros = 0;
     private BigDecimal totalRecaudado = BigDecimal.ZERO;
@@ -75,6 +76,20 @@ public class AportacionesController {
     private void initialize() {
         AuthUser user = SessionManager.getInstance().requireCurrentUser();
         puedeGestionar = isAdministrator(user.getRole()) || "TESORERO".equalsIgnoreCase(user.getRole());
+
+        if (comboPageSize != null) {
+            comboPageSize.getItems().setAll("5", "10", "25", "50");
+            comboPageSize.setValue("10");
+            comboPageSize.valueProperty().addListener((obs, o, n) -> {
+                if (n != null) {
+                    try {
+                        pageSize = Integer.parseInt(n.trim());
+                        currentPage = 1;
+                        loadPage();
+                    } catch (NumberFormatException ignored) {}
+                }
+            });
+        }
 
         if (btnNuevaAportacion != null) {
             btnNuevaAportacion.setVisible(false);

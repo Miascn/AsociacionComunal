@@ -36,6 +36,7 @@ import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.DirectivaApiClient;
 import service.PeriodoApiClient;
+import service.TablePaginator;
 
 public class DirectivaController {
     @FXML private TableView<AsignacionCargoModel> tablaDirectiva;
@@ -52,6 +53,7 @@ public class DirectivaController {
     @FXML private Label lblTotalDirectivos;
     @FXML private Label lblNombrePresidente;
     @FXML private Label lblContadorFiltrados;
+    @FXML private HBox barraPie;
 
     @FXML private ComboBox<PeriodoItem> comboPeriodo;
     @FXML private ComboBox<String> comboEstado;
@@ -65,6 +67,7 @@ public class DirectivaController {
 
     private final ObservableList<AsignacionCargoModel> asignaciones = FXCollections.observableArrayList();
     private FilteredList<AsignacionCargoModel> asignacionesFiltradas;
+    private TablePaginator<AsignacionCargoModel> paginator;
     private boolean puedeGestionar = false;
 
     public record PeriodoItem(Integer id, String nombre, String estado) {
@@ -193,7 +196,10 @@ public class DirectivaController {
         }
 
         asignacionesFiltradas = new FilteredList<>(asignaciones, a -> true);
-        tablaDirectiva.setItems(asignacionesFiltradas);
+        paginator = new TablePaginator<>(tablaDirectiva, asignacionesFiltradas, "cargos asignados", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
 
         comboEstado.getItems().setAll("TODOS", "ACTIVO", "REVOCADO", "FINALIZADO");
         comboEstado.setValue("TODOS");
@@ -288,6 +294,10 @@ public class DirectivaController {
         });
 
         task.setOnFailed(event -> {
+            asignaciones.clear();
+            if (paginator != null) {
+                paginator.updatePagination();
+            }
             tablaDirectiva.setPlaceholder(new Label("No fue posible cargar la junta directiva."));
         });
 
@@ -315,10 +325,9 @@ public class DirectivaController {
             return true;
         });
 
-        int visibles = asignacionesFiltradas.size();
-        lblContadorFiltrados.setText(visibles == asignaciones.size()
-            ? asignaciones.size() + " cargos asignados"
-            : visibles + " de " + asignaciones.size() + " cargos");
+        if (paginator != null) {
+            paginator.updatePagination();
+        }
     }
 
     private void actualizarMetricas() {

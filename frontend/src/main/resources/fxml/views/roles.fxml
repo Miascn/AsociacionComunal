@@ -41,7 +41,7 @@
                     </columns>
                     <placeholder><Label text="Aún no hay roles para mostrar" styleClass="page-subtitle"/></placeholder>
                 </TableView>
-                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblTotalRoles" text="0 roles registrados" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblEstadoModulo" text="" styleClass="footer-summary-text"

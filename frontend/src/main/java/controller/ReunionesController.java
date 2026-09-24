@@ -19,6 +19,7 @@ import models.ReunionModel;
 import security.SessionManager;
 import service.ResponsiveWindowService;
 import service.ReunionApiClient;
+import service.TablePaginator;
 
 public class ReunionesController {
     @FXML private Button btnNuevaReunion;
@@ -26,6 +27,7 @@ public class ReunionesController {
     @FXML private Label lblTotalProgramadas;
     @FXML private Label lblTotalRealizadas;
     @FXML private Label lblTotalCanceladas;
+    @FXML private HBox barraPie;
 
     @FXML private TextField txtBuscar;
     @FXML private ComboBox<String> cbFiltroTipo;
@@ -43,6 +45,7 @@ public class ReunionesController {
 
     private final ReunionApiClient apiClient = new ReunionApiClient();
     private final ObservableList<ReunionModel> reunionesList = FXCollections.observableArrayList();
+    private TablePaginator<ReunionModel> paginator;
 
     @FXML
     public void initialize() {
@@ -56,6 +59,12 @@ public class ReunionesController {
         cbFiltroTemporal.getSelectionModel().select("TODAS");
 
         configurarTabla();
+
+        paginator = new TablePaginator<>(tablaReuniones, reunionesList, "reuniones", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
+
         configurarPermisos();
 
         txtBuscar.textProperty().addListener((obs, oldVal, newVal) -> cargarDatos());
@@ -255,7 +264,7 @@ public class ReunionesController {
             }
         });
 
-        tablaReuniones.setItems(reunionesList);
+        // tablaReuniones.setItems is managed by paginator
     }
 
     public void cargarDatos() {
@@ -284,10 +293,13 @@ public class ReunionesController {
 
         task.setOnSucceeded(e -> {
             reunionesList.setAll(task.getValue());
+            paginator.updatePagination();
             actualizarResumen(task.getValue());
         });
 
         task.setOnFailed(e -> {
+            reunionesList.clear();
+            paginator.updatePagination();
             Throwable ex = task.getException();
             mostrarAlerta(Alert.AlertType.ERROR, "Error de carga",
                 "No se pudieron consultar las reuniones comunitarias: " + (ex != null ? ex.getMessage() : "Desconocido"));

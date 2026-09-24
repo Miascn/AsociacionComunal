@@ -34,6 +34,7 @@ import security.SessionManager;
 import service.HeroIcon;
 import service.ResponsiveWindowService;
 import service.PeriodoApiClient;
+import service.TablePaginator;
 
 public class PeriodosController {
     @FXML private TableView<PeriodoDirectivaModel> tablaPeriodos;
@@ -49,6 +50,7 @@ public class PeriodosController {
     @FXML private Label lblTotalPlanificados;
     @FXML private Label lblTotalFinalizados;
     @FXML private Label lblContadorFiltrados;
+    @FXML private HBox barraPie;
 
     @FXML private ComboBox<String> comboEstado;
     @FXML private TextField campoBusqueda;
@@ -62,6 +64,7 @@ public class PeriodosController {
 
     private final ObservableList<PeriodoDirectivaModel> periodos = FXCollections.observableArrayList();
     private FilteredList<PeriodoDirectivaModel> periodosFiltrados;
+    private TablePaginator<PeriodoDirectivaModel> paginator;
     private boolean puedeGestionar = false;
 
     @FXML
@@ -202,7 +205,10 @@ public class PeriodosController {
         }
 
         periodosFiltrados = new FilteredList<>(periodos, p -> true);
-        tablaPeriodos.setItems(periodosFiltrados);
+        paginator = new TablePaginator<>(tablaPeriodos, periodosFiltrados, "períodos", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
 
         comboEstado.getItems().setAll("TODOS", "ACTIVO", "PLANIFICADO", "FINALIZADO");
         comboEstado.setValue("TODOS");
@@ -253,6 +259,10 @@ public class PeriodosController {
         });
 
         task.setOnFailed(event -> {
+            periodos.clear();
+            if (paginator != null) {
+                paginator.updatePagination();
+            }
             tablaPeriodos.setPlaceholder(new Label("No fue posible obtener los períodos de directiva."));
         });
 
@@ -279,10 +289,9 @@ public class PeriodosController {
             return true;
         });
 
-        int visibles = periodosFiltrados.size();
-        lblContadorFiltrados.setText(visibles == periodos.size()
-            ? periodos.size() + " períodos registrados"
-            : visibles + " de " + periodos.size() + " períodos");
+        if (paginator != null) {
+            paginator.updatePagination();
+        }
     }
 
     private void actualizarMetricas() {

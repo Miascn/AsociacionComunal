@@ -44,7 +44,7 @@
                     </columns>
                     <placeholder><Label text="No hay cargos directivos registrados" styleClass="page-subtitle"/></placeholder>
                 </TableView>
-                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblContadorFiltrados" text="0 cargos listados" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblCargosActivos"    text="0 activos" styleClass="footer-summary-text"/>

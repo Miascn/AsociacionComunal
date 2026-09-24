@@ -34,6 +34,7 @@ import models.ProyectoModel;
 import security.SessionManager;
 import service.HeroIcon;
 import service.ResponsiveWindowService;
+import service.TablePaginator;
 import service.ProyectoApiClient;
 
 public class ProyectoController {
@@ -50,6 +51,7 @@ public class ProyectoController {
     @FXML private Label lblAprobadosPropuestos;
     @FXML private Label lblPresupuestoTotal;
     @FXML private Label lblTotalProyectos;
+    @FXML private HBox barraPie;
 
     @FXML private ComboBox<String> comboEstado;
     @FXML private TextField campoBusqueda;
@@ -62,6 +64,7 @@ public class ProyectoController {
 
     private final ObservableList<ProyectoModel> proyectos = FXCollections.observableArrayList();
     private FilteredList<ProyectoModel> proyectosFiltrados;
+    private TablePaginator<ProyectoModel> paginator;
     private boolean puedeGestionar = false;
 
     @FXML
@@ -182,7 +185,10 @@ public class ProyectoController {
         }
 
         proyectosFiltrados = new FilteredList<>(proyectos, p -> true);
-        tablaProyectos.setItems(proyectosFiltrados);
+        paginator = new TablePaginator<>(tablaProyectos, proyectosFiltrados, "proyectos", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
 
         comboEstado.getItems().setAll("TODOS", "BORRADOR", "PROPUESTO", "APROBADO", "EN_EJECUCION", "FINALIZADO", "RECHAZADO");
         comboEstado.setValue("TODOS");
@@ -248,6 +254,9 @@ public class ProyectoController {
         lblTotalProyectos.setText(visibles == proyectos.size()
             ? proyectos.size() + " proyectos registrados"
             : visibles + " de " + proyectos.size() + " proyectos");
+        if (paginator != null) {
+            paginator.updatePagination();
+        }
     }
 
     private void actualizarMetricas() {

@@ -63,7 +63,7 @@
                 </VBox>
 
                 <!-- Pie de tabla -->
-                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblContadorFiltrados" text="0 procesos registrados" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblTotalAbiertas" text="0 abiertas" styleClass="footer-summary-text"/>

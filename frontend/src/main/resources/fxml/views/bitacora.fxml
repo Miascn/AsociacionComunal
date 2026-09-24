@@ -48,9 +48,13 @@
                 <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblTotalEventos" text="0 eventos registrados" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="lblPaginacion" text="Página 1 de 1" styleClass="footer-summary-text"/>
-                    <Button fx:id="btnAnterior" text="← Anterior" onAction="#paginaAnterior" styleClass="btn-toggle-inactivos"/>
-                    <Button fx:id="btnSiguiente" text="Siguiente →" onAction="#paginaSiguiente" styleClass="btn-toggle-inactivos"/>
+                    <HBox alignment="CENTER_RIGHT" spacing="8" styleClass="pagination-box">
+                        <Label text="Filas:" styleClass="pagination-label"/>
+                        <ComboBox fx:id="comboPageSize" prefWidth="75" styleClass="combo-pagination"/>
+                        <Button fx:id="btnAnterior" text="←" onAction="#paginaAnterior" styleClass="btn-pagination"/>
+                        <Label fx:id="lblPaginacion" text="Pág. 1 de 1" styleClass="pagination-info"/>
+                        <Button fx:id="btnSiguiente" text="→" onAction="#paginaSiguiente" styleClass="btn-pagination"/>
+                    </HBox>
                     <Label fx:id="lblEstadoModulo" text="Inmutable · Solo lectura" styleClass="footer-summary-text"
                            style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
                 </HBox>

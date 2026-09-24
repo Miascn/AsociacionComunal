@@ -46,6 +46,7 @@ public class BitacoraController {
     @FXML private ComboBox<String> comboEntidad;
     @FXML private ComboBox<String> comboAccion;
     @FXML private TextField campoBusqueda;
+    @FXML private ComboBox<Integer> comboPageSize;
 
     @FXML private Button btnVerDetalle;
     @FXML private Button btnRefrescar;
@@ -54,7 +55,7 @@ public class BitacoraController {
 
     private final ObservableList<BitacoraModel> eventos = FXCollections.observableArrayList();
     private int currentPage = 1;
-    private final int pageSize = 25;
+    private int pageSize = 5;
     private int totalPages = 1;
     private int totalRegistros = 0;
 
@@ -119,6 +120,18 @@ public class BitacoraController {
             currentPage = 1;
             loadPage();
         });
+
+        if (comboPageSize != null) {
+            comboPageSize.getItems().addAll(5, 10, 25, 50);
+            comboPageSize.setValue(pageSize);
+            comboPageSize.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && newVal != pageSize) {
+                    pageSize = newVal;
+                    currentPage = 1;
+                    loadPage();
+                }
+            });
+        }
 
         if (btnVerDetalle != null) {
             btnVerDetalle.disableProperty().bind(tablaBitacora.getSelectionModel().selectedItemProperty().isNull());
@@ -226,11 +239,20 @@ public class BitacoraController {
 
             lblTotalEventos.setText(totalRegistros + " eventos");
             lblEstadoModulo.setText("Inmutable • Solo lectura");
-            lblPaginacion.setText("Página " + currentPage + " de " + totalPages + " (" + totalRegistros + " registros)");
+            lblPaginacion.setText("Pág. " + currentPage + " de " + totalPages);
 
             btnAnterior.setDisable(currentPage <= 1);
             btnSiguiente.setDisable(currentPage >= totalPages);
             tablaBitacora.refresh();
+
+            double fixedCellSize = 50.0;
+            tablaBitacora.setFixedCellSize(fixedCellSize);
+            double headerHeight = 47.0;
+            double rowCount = Math.max(1, eventos.size());
+            double targetHeight = headerHeight + (rowCount * fixedCellSize) + 3;
+            tablaBitacora.setPrefHeight(targetHeight);
+            tablaBitacora.setMinHeight(targetHeight);
+            tablaBitacora.setMaxHeight(targetHeight);
         });
 
         task.setOnFailed(event -> {

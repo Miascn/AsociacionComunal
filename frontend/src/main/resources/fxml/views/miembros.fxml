@@ -57,7 +57,7 @@
                 </TableView>
 
                 <!-- Pie de tabla -->
-                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblResumenPie" text="0 miembros · Mostrando activos" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblTotalMiembros" text="0 registrados" styleClass="footer-summary-text"/>

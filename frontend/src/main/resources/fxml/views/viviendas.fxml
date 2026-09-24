@@ -43,7 +43,7 @@
                     </columns>
                     <placeholder><Label text="No hay viviendas registradas" styleClass="page-subtitle"/></placeholder>
                 </TableView>
-                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
                     <Label fx:id="lblTotal" text="0 viviendas" styleClass="footer-summary-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblHabitantes" text="0 residentes" styleClass="footer-summary-text"/>

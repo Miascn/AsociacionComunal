@@ -20,8 +20,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import models.VotacionModel;
 import security.SessionManager;
+import javafx.collections.ObservableList;
 import service.HeroIcon;
 import service.ResponsiveWindowService;
+import service.TablePaginator;
 import service.VotacionApiClient;
 
 public class VotacionesController {
@@ -48,6 +50,10 @@ public class VotacionesController {
     @FXML private Label lblDetalleTitulo;
     @FXML private Label lblDetalleEstado;
     @FXML private FlowPane flowOpciones;
+    @FXML private HBox barraPie;
+
+    private final ObservableList<VotacionModel> votacionesList = FXCollections.observableArrayList();
+    private TablePaginator<VotacionModel> paginator;
 
     private final VotacionApiClient apiClient = new VotacionApiClient();
 
@@ -63,6 +69,11 @@ public class VotacionesController {
         boolean canManage = canManage();
         btnNuevaVotacion.setVisible(canManage);
         btnNuevaVotacion.setManaged(canManage);
+
+        paginator = new TablePaginator<>(tablaVotaciones, votacionesList, "procesos", 5);
+        if (barraPie != null) {
+            paginator.attachTo(barraPie);
+        }
 
         configurarFiltros();
         configurarTabla();
@@ -270,8 +281,8 @@ public class VotacionesController {
             participacionPorVotacion.clear();
             participacionPorVotacion.putAll(carga.participacion());
 
-            tablaVotaciones.setItems(FXCollections.observableArrayList(lista));
-            lblContadorFiltrados.setText(lista.size() + " procesos registrados");
+            votacionesList.setAll(lista);
+            paginator.updatePagination();
 
             actualizarResumen(lista);
 
@@ -285,8 +296,8 @@ public class VotacionesController {
         task.setOnFailed(e -> {
             // Un fallo al cargar se trata igual que el de cualquier acción: visible.
             participacionPorVotacion.clear();
-            tablaVotaciones.setItems(FXCollections.observableArrayList());
-            lblContadorFiltrados.setText("Error al cargar votaciones");
+            votacionesList.clear();
+            paginator.updatePagination();
             limpiarDetalle();
 
             Throwable ex = task.getException();
