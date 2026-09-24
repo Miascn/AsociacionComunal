@@ -71,7 +71,7 @@ public class ViviendaController {
                 private final HBox box = new HBox(8, btnVer, btnEdit, btnDes);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
                     btnVer.getStyleClass().addAll("btn-row-action", "btn-action-view");
                     btnVer.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.BLUE_600, 18));
                     btnVer.setTooltip(new Tooltip("Ver detalle"));
@@ -88,6 +88,7 @@ public class ViviendaController {
                 @Override
                 protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER_RIGHT);
                     setGraphic(empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() ? null : box);
                 }
             });

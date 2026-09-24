@@ -132,7 +132,7 @@ public class ProyectoController {
                 private final HBox box = new HBox(8, btnCiclo, btnEdit, btnDel);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     btnCiclo.getStyleClass().addAll("btn-row-action", "btn-action-view");
                     btnCiclo.setGraphic(HeroIcon.create(HeroIcon.SLIDERS, HeroIcon.BLUE_600, 18));
@@ -174,6 +174,7 @@ public class ProyectoController {
                     if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                         setGraphic(null);
                     } else {
+                        setAlignment(Pos.CENTER_RIGHT);
                         if (!puedeGestionar) {
                             setGraphic(null);
                         } else {

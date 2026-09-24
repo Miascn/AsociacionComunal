@@ -127,7 +127,7 @@ public class PeriodosController {
                 private final HBox box = new HBox(8);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     btnPlay.getStyleClass().addAll("btn-row-action", "btn-action-view");
                     btnPlay.setGraphic(HeroIcon.create(HeroIcon.PLAY, HeroIcon.GREEN_600, 18));
@@ -180,6 +180,7 @@ public class PeriodosController {
                     if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() || !puedeGestionar) {
                         setGraphic(null);
                     } else {
+                        setAlignment(Pos.CENTER_RIGHT);
                         PeriodoDirectivaModel p = getTableView().getItems().get(getIndex());
                         String st = p.getEstado() != null ? p.getEstado().toUpperCase() : "";
                         box.getChildren().clear();

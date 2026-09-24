@@ -177,10 +177,11 @@ public class VotacionesController {
                 if (empty || getTableRow() == null || getTableRow().getItem() == null) {
                     setGraphic(null);
                 } else {
+                    setAlignment(Pos.CENTER_RIGHT);
                     VotacionModel m = getTableRow().getItem();
                     HBox box = new HBox(8);
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     if (m.isAbierta()) {
                         box.getChildren().add(construirBotonVoto(m));

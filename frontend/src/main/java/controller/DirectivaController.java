@@ -138,7 +138,7 @@ public class DirectivaController {
                 private final HBox box = new HBox(8);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     btnRev.getStyleClass().addAll("btn-row-action", "btn-action-edit");
                     btnRev.setGraphic(HeroIcon.create(HeroIcon.USER_MINUS, HeroIcon.AMBER_600, 18));
@@ -180,6 +180,7 @@ public class DirectivaController {
                     if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() || !puedeGestionar) {
                         setGraphic(null);
                     } else {
+                        setAlignment(Pos.CENTER_RIGHT);
                         AsignacionCargoModel a = getTableView().getItems().get(getIndex());
                         boolean isActivo = "ACTIVO".equalsIgnoreCase(a.getEstado());
                         box.getChildren().clear();

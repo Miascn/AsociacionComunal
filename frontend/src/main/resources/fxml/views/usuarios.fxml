@@ -33,13 +33,14 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaUsuarios" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaUsuario"     text="USUARIO"          prefWidth="150"/>
-                        <TableColumn fx:id="columnaRol"         text="ROL"              prefWidth="130"/>
-                        <TableColumn fx:id="columnaMiembro"     text="MIEMBRO ASOCIADO" prefWidth="210"/>
-                        <TableColumn fx:id="columnaEstado"      text="ESTADO"           prefWidth="95"/>
-                        <TableColumn fx:id="columnaUltimoAcceso" text="ÚLTIMO ACCESO"   prefWidth="155"/>
-                        <TableColumn fx:id="columnaAcciones"    text="ACCIONES"         prefWidth="130" sortable="false"/>
+                        <TableColumn fx:id="columnaUsuario"     text="USUARIO"          prefWidth="140" minWidth="120" maxWidth="170"/>
+                        <TableColumn fx:id="columnaRol"         text="ROL"              prefWidth="130" minWidth="110" maxWidth="150"/>
+                        <TableColumn fx:id="columnaMiembro"     text="MIEMBRO ASOCIADO" prefWidth="210" minWidth="180"/>
+                        <TableColumn fx:id="columnaEstado"      text="ESTADO"           prefWidth="90"  minWidth="80"  maxWidth="105"/>
+                        <TableColumn fx:id="columnaUltimoAcceso" text="ÚLTIMO ACCESO"   prefWidth="150" minWidth="130" maxWidth="170"/>
+                        <TableColumn fx:id="columnaAcciones"    text="ACCIONES"         prefWidth="130" minWidth="120" maxWidth="140" sortable="false" styleClass="col-acciones-header"/>
                     </columns>
+                    <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
                     <placeholder><Label text="Aún no hay usuarios para mostrar" styleClass="page-subtitle"/></placeholder>
                 </TableView>
                 <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">

@@ -80,7 +80,7 @@ public class RolController {
                 private final HBox box = new HBox(8, btnEdit, btnDel);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
                     btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
@@ -102,6 +102,7 @@ public class RolController {
                 @Override
                 protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER_RIGHT);
                     if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                         setGraphic(null);
                     } else {

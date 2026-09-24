@@ -78,7 +78,7 @@ public class BitacoraController {
                 private final HBox box = new HBox(8, btnEye);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     btnEye.getStyleClass().addAll("btn-row-action", "btn-action-view");
                     btnEye.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.BLUE_600, 18));
@@ -95,7 +95,12 @@ public class BitacoraController {
                 @Override
                 protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
-                    setGraphic(empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size() ? null : box);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setGraphic(null);
+                    } else {
+                        setAlignment(Pos.CENTER_RIGHT);
+                        setGraphic(box);
+                    }
                 }
             });
         }

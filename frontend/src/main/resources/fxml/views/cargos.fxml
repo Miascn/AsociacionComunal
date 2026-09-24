@@ -35,13 +35,14 @@
             <VBox spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaCargos" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaJerarquia"    text="JERARQUÍA"         prefWidth="110"/>
-                        <TableColumn fx:id="columnaNombre"       text="CARGO"             prefWidth="180"/>
-                        <TableColumn fx:id="columnaDescripcion"  text="RESPONSABILIDADES" prefWidth="280"/>
-                        <TableColumn fx:id="columnaAsignaciones" text="ASIGNACIONES"      prefWidth="110"/>
-                        <TableColumn fx:id="columnaEstado"       text="ESTADO"            prefWidth="90"/>
-                        <TableColumn fx:id="columnaAcciones"     text="ACCIONES"          prefWidth="110" sortable="false"/>
+                        <TableColumn fx:id="columnaJerarquia"    text="JERARQUÍA"         prefWidth="105" minWidth="90"  maxWidth="120"/>
+                        <TableColumn fx:id="columnaNombre"       text="CARGO"             prefWidth="170" minWidth="140" maxWidth="200"/>
+                        <TableColumn fx:id="columnaDescripcion"  text="RESPONSABILIDADES" prefWidth="280" minWidth="200"/>
+                        <TableColumn fx:id="columnaAsignaciones" text="ASIGNACIONES"      prefWidth="110" minWidth="95"  maxWidth="130"/>
+                        <TableColumn fx:id="columnaEstado"       text="ESTADO"            prefWidth="85"  minWidth="75"  maxWidth="100"/>
+                        <TableColumn fx:id="columnaAcciones"     text="ACCIONES"          prefWidth="130" minWidth="120" maxWidth="140" sortable="false" styleClass="col-acciones-header"/>
                     </columns>
+                    <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
                     <placeholder><Label text="No hay cargos directivos registrados" styleClass="page-subtitle"/></placeholder>
                 </TableView>
                 <HBox fx:id="barraPie" alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">

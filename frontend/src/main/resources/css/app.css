@@ -492,8 +492,23 @@
 }
 
 .row-actions-box {
-    -fx-alignment: CENTER;
+    -fx-alignment: CENTER_RIGHT;
     -fx-spacing: 8px;
+}
+.col-acciones-header,
+.members-table .column-header.col-acciones-header {
+    -fx-alignment: CENTER_RIGHT;
+}
+.col-acciones-header .label,
+.members-table .col-acciones-header .label,
+.members-table .column-header.col-acciones-header .label {
+    -fx-alignment: CENTER_RIGHT;
+    -fx-padding: 0 16px 0 0;
+}
+.col-acciones-cell,
+.members-table .col-acciones-cell {
+    -fx-alignment: CENTER_RIGHT;
+    -fx-padding: 0 16px 0 0;
 }
 .btn-row-action {
     -fx-background-color: transparent;

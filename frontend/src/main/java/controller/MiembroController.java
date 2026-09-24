@@ -159,7 +159,7 @@ public class MiembroController {
 
                 {
                     actionsBox.getStyleClass().add("row-actions-box");
-                    actionsBox.setAlignment(Pos.CENTER);
+                    actionsBox.setAlignment(Pos.CENTER_RIGHT);
 
                     // 1. Ver (.btn-action-view): Icono Ojo (eye) en Azul (text-blue-600)
                     btnVer.getStyleClass().addAll("btn-row-action", "btn-action-view");
@@ -170,7 +170,7 @@ public class MiembroController {
                         if (item != null) mostrarDetalle(item);
                     });
 
-                    // 2. Editar (.btn-action-edit): Icono LÃ¡piz (pencil) en Ãmbar (text-amber-600)
+                    // 2. Editar (.btn-action-edit): Icono LÃ¡piz (pencil) en Ã mbar (text-amber-600)
                     btnEd.getStyleClass().addAll("btn-row-action", "btn-action-edit");
                     btnEd.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
                     btnEd.setTooltip(new Tooltip("Editar cliente"));
@@ -192,6 +192,7 @@ public class MiembroController {
                 @Override
                 protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER_RIGHT);
                     if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                         setGraphic(null);
                     } else {

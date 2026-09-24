@@ -202,7 +202,7 @@ public class ReunionesController {
 
             {
                 box.getStyleClass().add("row-actions-box");
-                box.setAlignment(Pos.CENTER);
+                box.setAlignment(Pos.CENTER_RIGHT);
 
                 btnAsistencias.getStyleClass().addAll("btn-row-action", "btn-action-view");
                 btnAsistencias.setGraphic(service.HeroIcon.create(service.HeroIcon.USERS, service.HeroIcon.BLUE_600, 18));
@@ -251,6 +251,7 @@ public class ReunionesController {
                 if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                     setGraphic(null);
                 } else {
+                    setAlignment(Pos.CENTER_RIGHT);
                     ReunionModel m = getTableView().getItems().get(getIndex());
                     box.getChildren().clear();
 

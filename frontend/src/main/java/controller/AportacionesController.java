@@ -144,7 +144,7 @@ public class AportacionesController {
                 private final HBox box = new HBox(8);
                 {
                     box.getStyleClass().add("row-actions-box");
-                    box.setAlignment(Pos.CENTER);
+                    box.setAlignment(Pos.CENTER_RIGHT);
 
                     btnRecibo.getStyleClass().addAll("btn-row-action", "btn-action-view");
                     btnRecibo.setGraphic(HeroIcon.create(HeroIcon.DOCUMENT_TEXT, HeroIcon.BLUE_600, 18));
@@ -175,6 +175,7 @@ public class AportacionesController {
                     if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                         setGraphic(null);
                     } else {
+                        setAlignment(Pos.CENTER_RIGHT);
                         AportacionModel a = getTableView().getItems().get(getIndex());
                         box.getChildren().clear();
                         box.getChildren().add(btnRecibo);

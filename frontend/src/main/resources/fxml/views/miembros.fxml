@@ -46,13 +46,14 @@
             <VBox fx:id="tarjetaTabla" spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaMiembros" styleClass="members-table">
                     <columns>
-                        <TableColumn fx:id="columnaDui" text="ID" prefWidth="75"/>
-                        <TableColumn fx:id="columnaNombres" text="NOMBRE" prefWidth="270"/>
-                        <TableColumn fx:id="columnaTelefono" text="TELÉFONO" prefWidth="150"/>
-                        <TableColumn fx:id="columnaCorreo" text="EMAIL" prefWidth="240"/>
-                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="120"/>
-                        <TableColumn fx:id="columnaAcciones" text="ACCIONES" prefWidth="130" sortable="false"/>
+                        <TableColumn fx:id="columnaDui" text="ID" prefWidth="75" minWidth="65" maxWidth="90"/>
+                        <TableColumn fx:id="columnaNombres" text="NOMBRE" prefWidth="250" minWidth="180"/>
+                        <TableColumn fx:id="columnaTelefono" text="TELÉFONO" prefWidth="130" minWidth="110" maxWidth="150"/>
+                        <TableColumn fx:id="columnaCorreo" text="EMAIL" prefWidth="220" minWidth="150"/>
+                        <TableColumn fx:id="columnaEstado" text="ESTADO" prefWidth="110" minWidth="95" maxWidth="130"/>
+                        <TableColumn fx:id="columnaAcciones" text="ACCIONES" prefWidth="125" minWidth="115" maxWidth="135" sortable="false" styleClass="col-acciones-header"/>
                     </columns>
+                    <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
                     <placeholder><Label text="No hay miembros para mostrar en este filtro." styleClass="page-subtitle"/></placeholder>
                 </TableView>
 
