@@ -9,8 +9,12 @@ class VotingOptionModel {
     required this.idOpcion,
     required this.descripcion,
     required this.orden,
-    required this.votos,
+    this.votos = 0,
   });
+
+  int get id => idOpcion;
+  String get texto => descripcion;
+  int get cantidadVotos => votos;
 
   factory VotingOptionModel.fromJson(Map<String, dynamic> json) {
     return VotingOptionModel(
@@ -58,6 +62,7 @@ class VotingModel {
 
   bool get isOpen => estado.toUpperCase() == 'ABIERTA';
   bool get isClosed => estado.toUpperCase() == 'CERRADA';
+  bool get yaVoto => false;
 
   factory VotingModel.fromJson(Map<String, dynamic> json) {
     var rawOpciones = json['opciones'] as List? ?? [];

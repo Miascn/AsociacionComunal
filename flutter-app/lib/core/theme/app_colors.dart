@@ -120,4 +120,44 @@ class AppColors {
       Color(0x0038B6FF),
     ],
   );
+
+  // ==========================================
+  // STITCH DESIGN SYSTEM (Colonia Conecta)
+  // ==========================================
+  static const Color stitchSapphire = Color(0xFF1E3A8A);
+  static const Color stitchNavy = Color(0xFF0B224E);
+  static const Color stitchNavyContainer = Color(0xFF0D2B68);
+  static const Color stitchBlueLight = Color(0xFF2563EB);
+  static const Color stitchEmerald = Color(0xFF10B981);
+  static const Color stitchEmeraldMint = Color(0xFF34D399);
+  static const Color stitchEmeraldContainer = Color(0xFFD1FAE5);
+  static const Color stitchTeal = Color(0xFF0D9488);
+  static const Color stitchTealContainer = Color(0xFFCCFBF1);
+  static const Color stitchCanvasLight = Color(0xFFF8FAFC);
+  static const Color stitchSurfaceContainer = Color(0xFFEEF2FF);
+  static const Color stitchSurfaceLow = Color(0xFFF1F5F9);
+  static const Color stitchSurfaceBorder = Color(0xFFE2E8F0);
+  static const Color stitchTextPrimary = Color(0xFF0F172A);
+  static const Color stitchTextSecondary = Color(0xFF475569);
+  static const Color stitchTextMuted = Color(0xFF94A3B8);
+
+  static const LinearGradient stitchHeroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF0B224E),
+      Color(0xFF0F3E3A),
+      Color(0xFF0A3832),
+    ],
+  );
+
+  static const LinearGradient stitchPaymentGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF0D2B68),
+      Color(0xFF1E3A8A),
+      Color(0xFF10357E),
+    ],
+  );
 }

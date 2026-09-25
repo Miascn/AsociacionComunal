@@ -17,6 +17,12 @@ class PaymentsViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String get filter => _filter;
+  List<PaymentModel> get payments => _payments;
+  bool get hasPendingCuota => !isCurrentMonthPaid;
+  double get totalPagado => totalPaid;
+  List<PaymentModel> get cuotasList => monthlyFees;
+  List<PaymentModel> get proyectosList => projectContributions;
+  List<PaymentModel> get cuotasPagadas => _payments.where((p) => p.isMonthlyFee && p.isPaid).toList();
 
   List<PaymentModel> get filteredPayments {
     if (_filter == 'PAGADOS') {

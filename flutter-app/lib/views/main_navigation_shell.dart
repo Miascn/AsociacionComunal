@@ -56,6 +56,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final screens = [
       HomeView(
         viewModel: widget.homeViewModel,
+        paymentsViewModel: widget.paymentsViewModel,
         profile: widget.profile,
         onNavigateToPayments: () => _navigateToTab(1),
         onNavigateToCommunity: () => _navigateToTab(2),

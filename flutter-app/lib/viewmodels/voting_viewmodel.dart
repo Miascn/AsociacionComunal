@@ -41,6 +41,12 @@ class VotingViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> submitVote({
+    required int idVotacion,
+    required int idOpcion,
+    int? idMiembro,
+  }) => castVote(idVotacion: idVotacion, idOpcion: idOpcion, idMiembro: idMiembro);
+
   Future<bool> castVote({
     required int idVotacion,
     required int idOpcion,
