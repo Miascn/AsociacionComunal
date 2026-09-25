@@ -27,20 +27,20 @@ public class ProyectoService {
 
     public List<ProyectoResponse> findAll() {
         return proyectoDAO.findFiltered(null, null, null).stream()
-            .map(d -> ProyectoResponse.from(d.proyecto(), d.nombreCreador()))
+            .map(d -> buildResponse(d.proyecto(), d.nombreCreador()))
             .toList();
     }
 
     public List<ProyectoResponse> findFiltered(Proyecto.Estado estado, Integer creadoPor, String busqueda) {
         return proyectoDAO.findFiltered(estado, creadoPor, busqueda).stream()
-            .map(d -> ProyectoResponse.from(d.proyecto(), d.nombreCreador()))
+            .map(d -> buildResponse(d.proyecto(), d.nombreCreador()))
             .toList();
     }
 
     public ProyectoResponse findById(Integer id) {
         if (id == null) return null;
         return proyectoDAO.findByIdWithCreator(id)
-            .map(d -> ProyectoResponse.from(d.proyecto(), d.nombreCreador()))
+            .map(d -> buildResponse(d.proyecto(), d.nombreCreador()))
             .orElse(null);
     }
 
@@ -162,5 +162,44 @@ public class ProyectoService {
                 throw new IllegalStateException("Ya existe un proyecto con el nombre '" + req.nombre().trim() + "'.");
             }
         });
+    }
+
+    private ProyectoResponse buildResponse(Proyecto proyecto, String nombreCreador) {
+        BigDecimal montoRecaudado = BigDecimal.ZERO;
+        int totalAportantes = 0;
+        if (aportacionDAO != null && proyecto.getIdProyecto() != null) {
+            try {
+                montoRecaudado = aportacionDAO.sumFiltered(null, proyecto.getIdProyecto(), null, null, null, null, "REGISTRADA", null);
+                totalAportantes = aportacionDAO.countFiltered(null, proyecto.getIdProyecto(), null, null, null, null, "REGISTRADA", null);
+            } catch (Exception ignored) {}
+        }
+
+        Integer idVotacion = null;
+        String tituloVotacion = null;
+        if (votacionDAO != null && proyecto.getIdProyecto() != null) {
+            try {
+                var votaciones = votacionDAO.findByProyecto(proyecto.getIdProyecto());
+                if (!votaciones.isEmpty()) {
+                    idVotacion = votaciones.get(0).getIdVotacion();
+                    tituloVotacion = votaciones.get(0).getTitulo();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        BigDecimal aportePorMiembro = BigDecimal.ZERO;
+        if (proyecto.getPresupuesto() != null && proyecto.getPresupuesto().compareTo(BigDecimal.ZERO) > 0) {
+            int baseMembers = 50;
+            aportePorMiembro = proyecto.getPresupuesto().divide(BigDecimal.valueOf(baseMembers), 2, java.math.RoundingMode.HALF_UP);
+        }
+
+        return ProyectoResponse.from(
+            proyecto,
+            nombreCreador,
+            montoRecaudado,
+            idVotacion,
+            tituloVotacion,
+            totalAportantes,
+            aportePorMiembro
+        );
     }
 }

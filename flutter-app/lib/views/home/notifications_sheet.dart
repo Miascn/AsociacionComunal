@@ -7,16 +7,38 @@ import '../../core/widgets/glass_container.dart';
 import '../../core/widgets/pulsing_badge.dart';
 import '../../data/models/notification_model.dart';
 
-/// Modal Glassmórfico de Centro de Notificaciones y Avisos.
+/// Modal Glassmórfico de Centro de Notificaciones y Avisos Comunitarios con Deep-Linking.
 class NotificationsSheet extends StatefulWidget {
-  const NotificationsSheet({super.key});
+  final List<NotificationModel> initialNotifications;
+  final VoidCallback? onNavigateToPayments;
+  final VoidCallback? onNavigateToCommunity;
+  final VoidCallback? onNavigateToVoting;
 
-  static void show(BuildContext context) {
+  const NotificationsSheet({
+    super.key,
+    required this.initialNotifications,
+    this.onNavigateToPayments,
+    this.onNavigateToCommunity,
+    this.onNavigateToVoting,
+  });
+
+  static void show(
+    BuildContext context, {
+    required List<NotificationModel> notifications,
+    VoidCallback? onNavigateToPayments,
+    VoidCallback? onNavigateToCommunity,
+    VoidCallback? onNavigateToVoting,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => const NotificationsSheet(),
+      builder: (ctx) => NotificationsSheet(
+        initialNotifications: notifications,
+        onNavigateToPayments: onNavigateToPayments,
+        onNavigateToCommunity: onNavigateToCommunity,
+        onNavigateToVoting: onNavigateToVoting,
+      ),
     );
   }
 
@@ -25,30 +47,30 @@ class NotificationsSheet extends StatefulWidget {
 }
 
 class _NotificationsSheetState extends State<NotificationsSheet> {
-  final List<NotificationModel> _notifications = [
-    NotificationModel(
-      id: '1',
-      title: 'Próxima Asamblea General',
-      message: 'Se convoca a todos los miembros a la asamblea del mes en la Casa Comunal.',
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      type: 'MEETING',
-    ),
-    NotificationModel(
-      id: '2',
-      title: 'Proceso de Votación Abierto',
-      message: 'Participa en la consulta sobre la instalación de luminarias solares.',
-      timestamp: DateTime.now().subtract(const Duration(hours: 8)),
-      type: 'VOTE',
-    ),
-    NotificationModel(
-      id: '3',
-      title: 'Aportación Mensual',
-      message: 'Recuerda que la cuota de mantenimiento de este período ya está disponible.',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      type: 'PAYMENT',
-      isRead: true,
-    ),
-  ];
+  late List<NotificationModel> _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifications = List.from(widget.initialNotifications);
+  }
+
+  void _handleNotificationTap(NotificationModel notif, int index) {
+    setState(() {
+      _notifications[index] = notif.copyWith(isRead: true);
+    });
+
+    Navigator.pop(context);
+
+    // Deep link según el tab destino
+    if (notif.targetTabIndex == 1) {
+      widget.onNavigateToPayments?.call();
+    } else if (notif.targetTabIndex == 2) {
+      widget.onNavigateToCommunity?.call();
+    } else if (notif.targetTabIndex == 3) {
+      widget.onNavigateToVoting?.call();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,13 +105,33 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Centro de Avisos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Centro de Avisos',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandBlue.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_notifications.where((n) => !n.isRead).length} nuevos',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brandBlue,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               TextButton(
                 onPressed: () {
@@ -105,104 +147,177 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
           ),
           const SizedBox(height: 14),
 
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: _notifications.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final notif = _notifications[index];
-                final iconData = notif.type == 'MEETING'
-                    ? FluentIcons.calendar_clock_24_filled
-                    : (notif.type == 'VOTE'
-                        ? FluentIcons.vote_24_filled
-                        : FluentIcons.payment_24_filled);
-                final iconColor = notif.type == 'MEETING'
-                    ? AppColors.actionMint
-                    : (notif.type == 'VOTE'
-                        ? AppColors.actionPurple
-                        : AppColors.actionCoral);
-
-                final iconWidget = Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: iconColor.withValues(alpha: 0.15),
+          if (_notifications.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+              alignment: Alignment.center,
+              child: Column(
+                children: [
+                  Icon(
+                    FluentIcons.alert_off_24_regular,
+                    size: 40,
+                    color: isDark ? Colors.white38 : AppColors.textSecondaryLight,
                   ),
-                  child: Icon(iconData, color: iconColor, size: 20),
-                );
-
-                return BouncyTap(
-                  scaleDown: 0.98,
-                  onTap: () {
-                    setState(() {
-                      _notifications[index] = notif.copyWith(isRead: true);
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18),
-                      color: notif.isRead
-                          ? (isDark ? const Color(0x201E293B) : const Color(0x20FFFFFF))
-                          : (isDark ? const Color(0x401E293B) : Colors.white),
-                      border: Border.all(
-                        color: notif.isRead
-                            ? Colors.transparent
-                            : AppColors.brandBlue.withValues(alpha: 0.2),
-                      ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No tienes avisos pendientes',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        notif.isRead
-                            ? iconWidget
-                            : PulsingBadge(
-                                minScale: 0.94,
-                                maxScale: 1.08,
-                                child: iconWidget,
-                              ),
-                        const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              notif.title,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: notif.isRead ? FontWeight.w600 : FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              notif.message,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              Formatters.time(notif.timestamp),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                              ),
-                            ),
-                          ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Te notificaremos sobre nuevas asambleas, votaciones y cuotas.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.58,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _notifications.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final notif = _notifications[index];
+                  final iconData = notif.type == 'MEETING'
+                      ? FluentIcons.calendar_clock_24_filled
+                      : (notif.type == 'VOTE'
+                          ? FluentIcons.vote_24_filled
+                          : (notif.type == 'PROJECT'
+                              ? FluentIcons.building_retail_toolbox_24_filled
+                              : FluentIcons.payment_24_filled));
+                  final iconColor = notif.type == 'MEETING'
+                      ? AppColors.actionMint
+                      : (notif.type == 'VOTE'
+                          ? AppColors.actionPurple
+                          : (notif.type == 'PROJECT'
+                              ? AppColors.brandSky
+                              : AppColors.actionCoral));
+
+                  final iconWidget = Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: iconColor.withValues(alpha: 0.15),
+                    ),
+                    child: Icon(iconData, color: iconColor, size: 20),
+                  );
+
+                  return BouncyTap(
+                    scaleDown: 0.98,
+                    onTap: () => _handleNotificationTap(notif, index),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        color: notif.isRead
+                            ? (isDark ? const Color(0x201E293B) : const Color(0x20FFFFFF))
+                            : (isDark ? const Color(0x401E293B) : Colors.white),
+                        border: Border.all(
+                          color: notif.isRead
+                              ? Colors.transparent
+                              : AppColors.brandBlue.withValues(alpha: 0.25),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          notif.isRead
+                              ? iconWidget
+                              : PulsingBadge(
+                                  minScale: 0.94,
+                                  maxScale: 1.08,
+                                  child: iconWidget,
+                                ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        notif.title,
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: notif.isRead ? FontWeight.w600 : FontWeight.bold,
+                                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                        ),
+                                      ),
+                                    ),
+                                    if (!notif.isRead)
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.brandBlue,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  notif.message,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      Formatters.time(notif.timestamp),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Ver detalle',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark ? AppColors.brandSky : AppColors.brandBlue,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Icon(
+                                          FluentIcons.chevron_right_12_regular,
+                                          size: 11,
+                                          color: isDark ? AppColors.brandSky : AppColors.brandBlue,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );

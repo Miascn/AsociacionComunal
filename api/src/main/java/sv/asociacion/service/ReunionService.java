@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import sv.asociacion.dao.AsistenciaDAO;
+import sv.asociacion.dao.ProyectoDAO;
 import sv.asociacion.dao.ReunionDAO;
 import sv.asociacion.domain.dto.ReunionRequest;
 import sv.asociacion.domain.dto.ReunionResponse;
@@ -13,10 +14,16 @@ import sv.asociacion.util.DateUtils;
 public class ReunionService {
     private final ReunionDAO reunionDAO;
     private final AsistenciaDAO asistenciaDAO;
+    private final ProyectoDAO proyectoDAO;
 
     public ReunionService(ReunionDAO reunionDAO, AsistenciaDAO asistenciaDAO) {
+        this(reunionDAO, asistenciaDAO, new ProyectoDAO());
+    }
+
+    public ReunionService(ReunionDAO reunionDAO, AsistenciaDAO asistenciaDAO, ProyectoDAO proyectoDAO) {
         this.reunionDAO = reunionDAO;
         this.asistenciaDAO = asistenciaDAO;
+        this.proyectoDAO = proyectoDAO;
     }
 
     public List<ReunionResponse> getAll(String search, String tipoStr, String estadoStr) {
@@ -70,6 +77,8 @@ public class ReunionService {
         r.setLugar(req.lugar() != null ? req.lugar().trim() : null);
         r.setTipo(tipo);
         r.setEstado(Reunion.Estado.PROGRAMADA);
+        r.setIdProyecto(req.idProyecto());
+        r.setDescripcion(req.descripcion() != null ? req.descripcion().trim() : null);
 
         Reunion saved = reunionDAO.save(r);
         return toResponse(saved);
@@ -99,6 +108,8 @@ public class ReunionService {
         r.setFechaHora(fechaHora);
         r.setLugar(req.lugar() != null ? req.lugar().trim() : null);
         r.setTipo(parseTipo(req.tipo()));
+        r.setIdProyecto(req.idProyecto());
+        r.setDescripcion(req.descripcion() != null ? req.descripcion().trim() : null);
 
         Reunion updated = reunionDAO.update(r);
         return toResponse(updated);
@@ -174,15 +185,33 @@ public class ReunionService {
         }
     }
 
+    public List<ReunionResponse> getByProyecto(Integer idProyecto) {
+        return reunionDAO.findByProyecto(idProyecto).stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+    }
+
     private ReunionResponse toResponse(Reunion r) {
         int totalConvocados = asistenciaDAO.countByReunion(r.getIdReunion());
         int totalAsistentes = asistenciaDAO.countAsistieronByReunion(r.getIdReunion());
         double porcentaje = totalConvocados > 0 ? (totalAsistentes * 100.0) / totalConvocados : 0.0;
         boolean editable = r.getEstado() == Reunion.Estado.PROGRAMADA;
 
+        String nombreProyecto = null;
+        if (r.getIdProyecto() != null && proyectoDAO != null) {
+            try {
+                nombreProyecto = proyectoDAO.findById(r.getIdProyecto())
+                    .map(sv.asociacion.domain.entity.Proyecto::getNombre)
+                    .orElse(null);
+            } catch (Exception ignored) {}
+        }
+
         return new ReunionResponse(
             r.getIdReunion(),
+            r.getIdProyecto(),
+            nombreProyecto,
             r.getTitulo(),
+            r.getDescripcion(),
             DateUtils.formatDateTime(r.getFechaHora()),
             r.getLugar(),
             r.getTipo().name(),

@@ -9,6 +9,9 @@ class MeetingModel {
   final int totalConvocados;
   final int totalAsistentes;
   final double porcentajeAsistencia;
+  final int? idProyecto;
+  final String? nombreProyecto;
+  final String? descripcion;
 
   const MeetingModel({
     required this.id,
@@ -20,10 +23,15 @@ class MeetingModel {
     required this.totalConvocados,
     required this.totalAsistentes,
     required this.porcentajeAsistencia,
+    this.idProyecto,
+    this.nombreProyecto,
+    this.descripcion,
   });
 
   bool get isUpcoming =>
       estado.toUpperCase() == 'PROGRAMADA' || estado.toUpperCase() == 'CONVOCADA';
+
+  bool get hasLinkedProject => idProyecto != null;
 
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
     return MeetingModel(
@@ -37,6 +45,9 @@ class MeetingModel {
       totalAsistentes: json['totalAsistentes'] as int? ?? 0,
       porcentajeAsistencia:
           (json['porcentajeAsistencia'] as num?)?.toDouble() ?? 0.0,
+      idProyecto: json['idProyecto'] as int?,
+      nombreProyecto: json['nombreProyecto'] as String?,
+      descripcion: json['descripcion'] as String?,
     );
   }
 
@@ -50,5 +61,8 @@ class MeetingModel {
         'totalConvocados': totalConvocados,
         'totalAsistentes': totalAsistentes,
         'porcentajeAsistencia': porcentajeAsistencia,
+        'idProyecto': idProyecto,
+        'nombreProyecto': nombreProyecto,
+        'descripcion': descripcion,
       };
 }

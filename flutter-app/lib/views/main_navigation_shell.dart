@@ -67,6 +67,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       ),
       CommunityView(
         viewModel: widget.communityViewModel,
+        paymentsViewModel: widget.paymentsViewModel,
         votingViewModel: widget.votingViewModel,
         idMiembro: widget.profile.member?.id,
       ),

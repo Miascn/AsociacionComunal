@@ -38,39 +38,141 @@ class _VotingViewState extends State<VotingView> {
   }
 
   void _confirmVote(VotingModel poll, VotingOptionModel option) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Voto'),
-        content: Text(
-          '¿Estás seguro de que deseas registrar tu voto por:\n\n"${option.descripcion}"?\n\nEsta acción no se puede revertir.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final success = await widget.viewModel.castVote(
-                idVotacion: poll.id,
-                idOpcion: option.idOpcion,
-                idMiembro: widget.idMiembro,
-              );
-              if (mounted && success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('¡Tu voto ha sido registrado exitosamente!'),
-                    backgroundColor: AppColors.successGreen,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: NeoGlassContainer(
+          padding: const EdgeInsets.all(22),
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              NeoGlassContainer.circle(
+                size: 52,
+                accentColor: AppColors.actionPurple.withValues(alpha: 0.15),
+                child: const Icon(
+                  FluentIcons.vote_24_filled,
+                  color: AppColors.actionPurple,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Confirmar Voto Democrático',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '¿Confirmas tu elección para "${poll.titulo}"?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.brandBlue.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.brandBlue.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'OPCIÓN SELECCIONADA',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brandBlue,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      option.descripcion,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(FluentIcons.shield_checkmark_16_regular, size: 16, color: AppColors.neoEmerald),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tu voto es secreto y definitivo. Una vez emitido, tu papeleta quedará sellada.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
+                      ),
+                    ),
                   ),
-                );
-                setState(() => _selectedOptionId = null);
-              }
-            },
-            child: const Text('Emitir Voto'),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final success = await widget.viewModel.castVote(
+                          idVotacion: poll.id,
+                          idOpcion: option.idOpcion,
+                          idMiembro: widget.idMiembro,
+                        );
+                        if (mounted && success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('¡Tu voto ha sido registrado y sellado exitosamente!'),
+                              backgroundColor: AppColors.successGreen,
+                            ),
+                          );
+                          setState(() => _selectedOptionId = null);
+                        }
+                      },
+                      child: const Text('Emitir Voto'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

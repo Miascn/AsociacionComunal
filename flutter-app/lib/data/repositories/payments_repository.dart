@@ -70,4 +70,27 @@ class PaymentsRepository {
     }
     throw Exception('Error al registrar el pago en el servidor.');
   }
+
+  /// Procesa un pago simulado y lo registra como una aportación real en el backend.
+  Future<PaymentModel> processSimulatedPayment({
+    required int idMiembro,
+    required String periodoMes,
+    required double monto,
+    required String metodoSeleccionado,
+    String? referenciaGenerada,
+    int? idProyecto,
+  }) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+    final prefix = idProyecto != null ? 'PROY' : 'CUOTA';
+    final ref = referenciaGenerada ?? 'SIM-$prefix-$periodoMes-$timestamp';
+
+    return await createPayment(
+      idMiembro: idMiembro,
+      periodoMes: periodoMes,
+      monto: monto,
+      metodoPago: 'TRANSFERENCIA',
+      referencia: ref,
+      idProyecto: idProyecto,
+    );
+  }
 }

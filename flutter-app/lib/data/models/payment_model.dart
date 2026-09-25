@@ -29,6 +29,9 @@ class PaymentModel {
   });
 
   bool get isPaid => estado.toUpperCase() == 'PAGADA' || estado.toUpperCase() == 'REGISTRADA';
+  bool get isProjectContribution => idProyecto != null;
+  bool get isMonthlyFee => idProyecto == null;
+  String get tipoEtiqueta => isProjectContribution ? 'Aporte a Proyecto' : 'Cuota Mensual';
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(

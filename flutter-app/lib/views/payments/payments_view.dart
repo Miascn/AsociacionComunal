@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/widgets/glass_container.dart';
 import '../../core/widgets/bouncy_tap.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fade_slide_entrance.dart';
-import '../../core/widgets/glass_container.dart';
 import '../../core/widgets/neo_glass_container.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../data/models/payment_model.dart';
 import '../../viewmodels/payments_viewmodel.dart';
+import 'payment_receipt_dialog.dart';
+import 'simulated_payment_sheet.dart';
 
-/// Pantalla de Pagos y Aportaciones con filtros e historial detallado.
+/// Pantalla de Pagos y Aportaciones con filtros avanzados, pasarela simulada y recibos oficiales.
 class PaymentsView extends StatefulWidget {
   final PaymentsViewModel viewModel;
   final int? idMiembro;
@@ -36,435 +38,41 @@ class _PaymentsViewState extends State<PaymentsView> {
   }
 
   void _showPayVigilanciaSheet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    String selectedMethod = 'TRANSFERENCIA';
-    final refController = TextEditingController();
-    bool isSubmitting = false;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: NeoGlassContainer(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      NeoGlassContainer.circle(
-                        size: 44,
-                        accentColor: AppColors.brandBlue.withValues(alpha: 0.12),
-                        child: const Icon(FluentIcons.shield_checkmark_24_filled, color: AppColors.brandBlue, size: 22),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Cuota Mensual de Vigilancia',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Pago obligatorio de seguridad comunal',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Período y Monto
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: isDark ? const Color(0x301E293B) : const Color(0x0A0F172A),
-                      border: Border.all(
-                        color: isDark ? const Color(0x20FFFFFF) : const Color(0x140F172A),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'PERÍODO',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.viewModel.currentPeriod,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'MONTO OBLIGATORIO',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              Formatters.currency(PaymentsViewModel.cuotaVigilanciaMensual),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.brandBlue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Método de Pago
-                  Text(
-                    'Método de pago',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: BouncyTap(
-                          scaleDown: 0.96,
-                          onTap: () => setSheetState(() => selectedMethod = 'TRANSFERENCIA'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              color: selectedMethod == 'TRANSFERENCIA'
-                                  ? (isDark ? const Color(0xFF1E293B) : AppColors.brandBlue)
-                                  : (isDark ? const Color(0x201E293B) : const Color(0x0A0F172A)),
-                              border: Border.all(
-                                color: selectedMethod == 'TRANSFERENCIA'
-                                    ? AppColors.brandBlue
-                                    : (isDark ? const Color(0x20FFFFFF) : const Color(0x140F172A)),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Transferencia',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: selectedMethod == 'TRANSFERENCIA' ? FontWeight.bold : FontWeight.normal,
-                                  color: selectedMethod == 'TRANSFERENCIA'
-                                      ? Colors.white
-                                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: BouncyTap(
-                          scaleDown: 0.96,
-                          onTap: () => setSheetState(() => selectedMethod = 'EFECTIVO'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              color: selectedMethod == 'EFECTIVO'
-                                  ? (isDark ? const Color(0xFF1E293B) : AppColors.brandBlue)
-                                  : (isDark ? const Color(0x201E293B) : const Color(0x0A0F172A)),
-                              border: Border.all(
-                                color: selectedMethod == 'EFECTIVO'
-                                    ? AppColors.brandBlue
-                                    : (isDark ? const Color(0x20FFFFFF) : const Color(0x140F172A)),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Efectivo',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: selectedMethod == 'EFECTIVO' ? FontWeight.bold : FontWeight.normal,
-                                  color: selectedMethod == 'EFECTIVO'
-                                      ? Colors.white
-                                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Referencia / Comprobante
-                  Text(
-                    'Referencia o comprobante bancario (opcional)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Ingresa el número o código de tu comprobante. (La carga de archivos físicos estará disponible en una próxima versión).',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: refController,
-                    decoration: InputDecoration(
-                      hintText: selectedMethod == 'TRANSFERENCIA'
-                          ? 'Ej. Banco Agrícola #49281'
-                          : 'Ej. Entregado a tesorero en asamblea',
-                      filled: true,
-                      fillColor: isDark ? const Color(0x251E293B) : const Color(0x0A0F172A),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: isDark ? const Color(0x20FFFFFF) : const Color(0x180F172A),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: isDark ? const Color(0x20FFFFFF) : const Color(0x180F172A),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Botón Confirmar
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: BouncyTap(
-                      scaleDown: 0.98,
-                      onTap: isSubmitting
-                          ? null
-                          : () async {
-                              final idM = widget.idMiembro ?? 1;
-                              setSheetState(() => isSubmitting = true);
-                              try {
-                                await widget.viewModel.registerPayment(
-                                  idMiembro: idM,
-                                  periodoMes: widget.viewModel.currentPeriod,
-                                  monto: PaymentsViewModel.cuotaVigilanciaMensual,
-                                  metodoPago: selectedMethod,
-                                  referencia: refController.text.trim().isNotEmpty
-                                      ? refController.text.trim()
-                                      : 'Pago vigilancia ${widget.viewModel.currentPeriod}',
-                                );
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('¡Pago de cuota de vigilancia registrado correctamente!'),
-                                      backgroundColor: AppColors.neoEmerald,
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                setSheetState(() => isSubmitting = false);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
-                                      backgroundColor: AppColors.errorRed,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: AppColors.brandGradient,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.brandBlue.withValues(alpha: 0.35),
-                              blurRadius: 14,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: isSubmitting
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(FluentIcons.send_24_filled, color: Colors.white, size: 20),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Confirmar Pago de Vigilancia',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showPaymentDetails(PaymentModel payment) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-
-        return NeoGlassContainer(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Detalle de Aportación',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                  StatusBadge.fromStatus(payment.estado),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildDetailRow('Concepto / Proyecto', payment.nombreProyecto ?? 'Cuota Mensual Comunal', isDark),
-              _buildDetailRow('Período', payment.periodoMes, isDark),
-              _buildDetailRow('Monto', Formatters.currency(payment.monto), isDark, isBold: true),
-              _buildDetailRow('Fecha de Pago', Formatters.date(payment.fechaPago), isDark),
-              _buildDetailRow('Método de Pago', payment.metodoPago, isDark),
-              if (payment.referencia != null && payment.referencia!.isNotEmpty)
-                _buildDetailRow('Referencia', payment.referencia!, isDark),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cerrar'),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        );
+    SimulatedPaymentSheet.show(
+      context,
+      viewModel: widget.viewModel,
+      idMiembro: widget.idMiembro ?? 1,
+      title: 'Cuota Mensual de Vigilancia',
+      description: 'Seguridad y mantenimiento de la colonia (${widget.viewModel.currentPeriod})',
+      defaultAmount: PaymentsViewModel.cuotaVigilanciaMensual,
+      isAmountEditable: false,
+      periodoMes: widget.viewModel.currentPeriod,
+      onPaymentSuccess: (p) {
+        widget.viewModel.loadPayments(idMiembro: widget.idMiembro);
       },
     );
   }
 
-  Widget _buildDetailRow(String title, String value, bool isDark, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-            ),
-          ),
-        ],
-      ),
+  void _showPayProjectContributionSheet() {
+    SimulatedPaymentSheet.show(
+      context,
+      viewModel: widget.viewModel,
+      idMiembro: widget.idMiembro ?? 1,
+      title: 'Aporte Voluntario a Proyecto Comunal',
+      description: 'Contribución solidaria para el desarrollo de obras (${widget.viewModel.currentPeriod})',
+      defaultAmount: 25.00,
+      isAmountEditable: true,
+      periodoMes: widget.viewModel.currentPeriod,
+      onPaymentSuccess: (p) {
+        widget.viewModel.loadPayments(idMiembro: widget.idMiembro);
+      },
+    );
+  }
+
+  void _showPaymentDetails(PaymentModel payment) {
+    PaymentReceiptDialog.show(
+      context,
+      payment: payment,
     );
   }
 
@@ -482,13 +90,14 @@ class _PaymentsViewState extends State<PaymentsView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Encabezado
               FadeSlideEntrance(
                 delay: Duration.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pagos y Cuotas',
+                      'Pagos y Aportaciones',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -497,7 +106,7 @@ class _PaymentsViewState extends State<PaymentsView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Historial financiero y aportaciones a la asociación',
+                      'Gestión de cuotas de vigilancia y aportes para proyectos comunitarios',
                       style: TextStyle(
                         fontSize: 13,
                         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -506,9 +115,9 @@ class _PaymentsViewState extends State<PaymentsView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Resumen de Saldo con NeoGlassContainer y BouncyTap
+              // Tarjetas de Resumen Financiero
               FadeSlideEntrance(
                 delay: const Duration(milliseconds: 90),
                 child: ListenableBuilder(
@@ -517,85 +126,87 @@ class _PaymentsViewState extends State<PaymentsView> {
                     return Row(
                       children: [
                         Expanded(
-                          child: BouncyTap(
-                            scaleDown: 0.96,
-                            child: NeoGlassContainer(
-                              padding: const EdgeInsets.all(16),
-                              borderRadius: BorderRadius.circular(22),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Total Pagado',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                        ),
+                          child: NeoGlassContainer(
+                            padding: const EdgeInsets.all(16),
+                            borderRadius: BorderRadius.circular(22),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Total Aportado',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                       ),
-                                      NeoGlassContainer.circle(
-                                        size: 28,
-                                        child: const Icon(FluentIcons.checkmark_circle_24_regular, size: 16, color: AppColors.neoEmerald),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    Formatters.currency(widget.viewModel.totalPaid),
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                     ),
+                                    NeoGlassContainer.circle(
+                                      size: 28,
+                                      child: const Icon(
+                                        FluentIcons.checkmark_circle_24_regular,
+                                        size: 16,
+                                        color: AppColors.neoEmerald,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  Formatters.currency(widget.viewModel.totalPaid),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: BouncyTap(
-                            scaleDown: 0.96,
-                            child: NeoGlassContainer(
-                              padding: const EdgeInsets.all(16),
-                              borderRadius: BorderRadius.circular(22),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Pendiente',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                        ),
+                          child: NeoGlassContainer(
+                            padding: const EdgeInsets.all(16),
+                            borderRadius: BorderRadius.circular(22),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Cuota Pendiente',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                       ),
-                                      NeoGlassContainer.circle(
-                                        size: 28,
-                                        child: const Icon(FluentIcons.clock_24_regular, size: 16, color: AppColors.warningAmber),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    Formatters.currency(widget.viewModel.totalPending),
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: widget.viewModel.totalPending > 0
-                                          ? AppColors.warningAmber
-                                          : (isDark ? Colors.white : AppColors.textPrimaryLight),
                                     ),
+                                    NeoGlassContainer.circle(
+                                      size: 28,
+                                      child: const Icon(
+                                        FluentIcons.clock_24_regular,
+                                        size: 16,
+                                        color: AppColors.warningAmber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  Formatters.currency(widget.viewModel.totalPending),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: widget.viewModel.totalPending > 0
+                                        ? AppColors.warningAmber
+                                        : (isDark ? Colors.white : AppColors.textPrimaryLight),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -606,7 +217,7 @@ class _PaymentsViewState extends State<PaymentsView> {
               ),
               const SizedBox(height: 16),
 
-              // Tarjeta de Estado y Pago: Cuota Mensual de Vigilancia (Obligatorio)
+              // Tarjeta de Cuota Mensual de Vigilancia
               FadeSlideEntrance(
                 delay: const Duration(milliseconds: 140),
                 child: ListenableBuilder(
@@ -614,148 +225,234 @@ class _PaymentsViewState extends State<PaymentsView> {
                   builder: (context, _) {
                     final isPaid = widget.viewModel.isCurrentMonthPaid;
 
-                    return BouncyTap(
-                      scaleDown: 0.98,
-                      onTap: isPaid ? null : _showPayVigilanciaSheet,
-                      child: NeoGlassContainer(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                        borderRadius: BorderRadius.circular(20),
-                        accentColor: isPaid
-                            ? AppColors.neoEmerald.withValues(alpha: 0.08)
-                            : AppColors.brandBlue.withValues(alpha: 0.08),
-                        child: Row(
-                          children: [
-                            NeoGlassContainer.circle(
-                              size: 44,
-                              accentColor: isPaid
-                                  ? AppColors.neoEmerald.withValues(alpha: 0.15)
-                                  : AppColors.brandBlue.withValues(alpha: 0.15),
-                              child: Icon(
-                                isPaid
-                                    ? FluentIcons.shield_checkmark_24_filled
-                                    : FluentIcons.shield_dismiss_24_filled,
-                                color: isPaid ? AppColors.neoEmerald : AppColors.brandBlue,
-                                size: 22,
+                    return NeoGlassContainer(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      borderRadius: BorderRadius.circular(22),
+                      accentColor: isPaid
+                          ? AppColors.neoEmerald.withValues(alpha: 0.08)
+                          : AppColors.brandBlue.withValues(alpha: 0.08),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              NeoGlassContainer.circle(
+                                size: 46,
+                                accentColor: isPaid
+                                    ? AppColors.neoEmerald.withValues(alpha: 0.15)
+                                    : AppColors.brandBlue.withValues(alpha: 0.15),
+                                child: Icon(
+                                  isPaid
+                                      ? FluentIcons.shield_checkmark_24_filled
+                                      : FluentIcons.shield_dismiss_24_filled,
+                                  color: isPaid ? AppColors.neoEmerald : AppColors.brandBlue,
+                                  size: 24,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Vigilancia ${widget.viewModel.currentPeriod}',
-                                        style: TextStyle(
-                                          fontSize: 14.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(6),
-                                          color: isPaid
-                                              ? AppColors.neoEmerald.withValues(alpha: 0.15)
-                                              : AppColors.warningAmber.withValues(alpha: 0.15),
-                                        ),
-                                        child: Text(
-                                          isPaid ? 'AL DÍA' : 'OBLIGATORIO',
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Vigilancia ${widget.viewModel.currentPeriod}',
                                           style: TextStyle(
-                                            fontSize: 9.5,
+                                            fontSize: 15,
                                             fontWeight: FontWeight.bold,
-                                            color: isPaid ? AppColors.neoEmerald : AppColors.warningAmber,
+                                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    isPaid
-                                        ? 'Cuota de seguridad comunal cubierta.'
-                                        : 'Toca para registrar tu pago (\$10.00 / mes).',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(6),
+                                            color: isPaid
+                                                ? AppColors.neoEmerald.withValues(alpha: 0.15)
+                                                : AppColors.warningAmber.withValues(alpha: 0.15),
+                                          ),
+                                          child: Text(
+                                            isPaid ? 'PAGADA' : 'PENDIENTE',
+                                            style: TextStyle(
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: isPaid ? AppColors.neoEmerald : AppColors.warningAmber,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (!isPaid)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  gradient: AppColors.brandGradient,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.brandBlue.withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      isPaid
+                                          ? 'Cuota de \$10.00 cubierta para este período.'
+                                          : 'Cuota obligatoria de seguridad: \$10.00 / mes.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                      ),
                                     ),
                                   ],
                                 ),
-                                child: const Text(
-                                  'Pagar',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
+                              ),
+                            ],
+                          ),
+                          if (!isPaid) ...[
+                            const SizedBox(height: 14),
+                            BouncyTap(
+                              onTap: _showPayVigilanciaSheet,
+                              child: Container(
+                                width: double.infinity,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [AppColors.brandBlue, AppColors.electricIndigo],
                                   ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.brandBlue.withValues(alpha: 0.3),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(FluentIcons.payment_20_filled, color: Colors.white, size: 18),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Pagar Cuota Mensual (\$10.00)',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Filtros de estado Neo-Glass (Selector unificado)
+              // Botón de Aporte Voluntario a Proyecto
               FadeSlideEntrance(
-                delay: const Duration(milliseconds: 180),
+                delay: const Duration(milliseconds: 170),
+                child: BouncyTap(
+                  onTap: _showPayProjectContributionSheet,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0x221E293B) : const Color(0x0C0F172A),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: AppColors.electricIndigo.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        NeoGlassContainer.circle(
+                          size: 38,
+                          accentColor: AppColors.electricIndigo.withValues(alpha: 0.15),
+                          child: const Icon(
+                            FluentIcons.handshake_24_regular,
+                            color: AppColors.electricIndigo,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Aportar a un Proyecto Comunal',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Realiza aportes solidarios para obras aprobadas',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          FluentIcons.chevron_right_20_regular,
+                          size: 16,
+                          color: AppColors.electricIndigo,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Filtros de navegación
+              FadeSlideEntrance(
+                delay: const Duration(milliseconds: 200),
                 child: ListenableBuilder(
                   listenable: widget.viewModel,
                   builder: (context, _) {
                     final currentFilter = widget.viewModel.filter;
-                    final filters = ['TODOS', 'PAGADOS', 'PENDIENTES'];
+                    final filters = [
+                      {'key': 'TODOS', 'label': 'Todos'},
+                      {'key': 'CUOTAS', 'label': 'Cuotas'},
+                      {'key': 'PROYECTOS', 'label': 'Proyectos'},
+                      {'key': 'PAGADOS', 'label': 'Pagadas'},
+                    ];
 
-                    return NeoGlassContainer(
-                      padding: const EdgeInsets.all(5),
-                      borderRadius: BorderRadius.circular(20),
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       child: Row(
                         children: filters.map((f) {
-                          final isSelected = currentFilter == f;
-                          return Expanded(
+                          final key = f['key']!;
+                          final label = f['label']!;
+                          final isSelected = currentFilter == key;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
                             child: BouncyTap(
-                              scaleDown: 0.94,
-                              onTap: () => widget.viewModel.setFilter(f),
+                              onTap: () => widget.viewModel.setFilter(key),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(14),
                                   color: isSelected
-                                      ? (isDark ? const Color(0xFF1E293B) : AppColors.brandBlue)
-                                      : Colors.transparent,
+                                      ? (isDark ? const Color(0xFF1E3A8A) : AppColors.brandBlue)
+                                      : (isDark ? const Color(0x221E293B) : const Color(0x0C0F172A)),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.brandBlue
+                                        : (isDark ? const Color(0x20FFFFFF) : const Color(0x140F172A)),
+                                  ),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    f,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                                    ),
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                                   ),
                                 ),
                               ),
@@ -767,11 +464,11 @@ class _PaymentsViewState extends State<PaymentsView> {
                   },
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-              // Lista de Pagos con NeoGlassContainer y BouncyTap
+              // Lista de Pagos
               FadeSlideEntrance(
-                delay: const Duration(milliseconds: 270),
+                delay: const Duration(milliseconds: 240),
                 child: ListenableBuilder(
                   listenable: widget.viewModel,
                   builder: (context, _) {
@@ -798,7 +495,7 @@ class _PaymentsViewState extends State<PaymentsView> {
                       return EmptyStateWidget(
                         icon: FluentIcons.receipt_24_regular,
                         title: 'No hay aportaciones registradas',
-                        message: 'Tus pagos aparecerán aquí una vez registrados en tesorería.',
+                        message: 'Tus cuotas y aportes registrados aparecerán aquí con su recibo oficial.',
                         actionLabel: 'Actualizar',
                         onAction: () => widget.viewModel.loadPayments(idMiembro: widget.idMiembro),
                       );
@@ -811,6 +508,8 @@ class _PaymentsViewState extends State<PaymentsView> {
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final payment = list[index];
+                        final isProject = payment.isProjectContribution;
+
                         return BouncyTap(
                           scaleDown: 0.97,
                           onTap: () => _showPaymentDetails(payment),
@@ -821,12 +520,15 @@ class _PaymentsViewState extends State<PaymentsView> {
                               children: [
                                 NeoGlassContainer.circle(
                                   size: 42,
+                                  accentColor: isProject
+                                      ? AppColors.electricIndigo.withValues(alpha: 0.15)
+                                      : AppColors.brandBlue.withValues(alpha: 0.15),
                                   child: Icon(
-                                    payment.isPaid
-                                        ? FluentIcons.checkmark_circle_24_regular
-                                        : FluentIcons.clock_24_regular,
-                                    color: payment.isPaid ? AppColors.neoEmerald : AppColors.warningAmber,
-                                    size: 22,
+                                    isProject
+                                        ? FluentIcons.handshake_24_filled
+                                        : FluentIcons.shield_checkmark_24_filled,
+                                    color: isProject ? AppColors.electricIndigo : AppColors.brandBlue,
+                                    size: 20,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
@@ -834,19 +536,51 @@ class _PaymentsViewState extends State<PaymentsView> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: (isProject ? AppColors.electricIndigo : AppColors.brandBlue)
+                                                  .withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(5),
+                                            ),
+                                            child: Text(
+                                              payment.tipoEtiqueta.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: isProject ? AppColors.electricIndigo : AppColors.brandBlue,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            payment.periodoMes,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
                                       Text(
-                                        payment.nombreProyecto ?? 'Cuota Mensual Comunal',
+                                        isProject
+                                            ? (payment.nombreProyecto ?? 'Proyecto Comunal')
+                                            : 'Cuota Mensual de Vigilancia',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                          fontSize: 13.5,
                                           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '${payment.periodoMes} • ${Formatters.date(payment.fechaPago)}',
+                                        'Ref: ${payment.referencia ?? "SIM-${payment.id}"}',
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
+                                          fontFamily: 'monospace',
                                           color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
                                         ),
                                       ),
@@ -859,7 +593,7 @@ class _PaymentsViewState extends State<PaymentsView> {
                                     Text(
                                       Formatters.currency(payment.monto),
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w900,
                                         fontSize: 15,
                                         color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                       ),

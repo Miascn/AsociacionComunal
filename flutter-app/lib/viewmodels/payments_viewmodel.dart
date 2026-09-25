@@ -23,9 +23,27 @@ class PaymentsViewModel extends ChangeNotifier {
       return _payments.where((p) => p.isPaid).toList();
     } else if (_filter == 'PENDIENTES') {
       return _payments.where((p) => !p.isPaid).toList();
+    } else if (_filter == 'CUOTAS') {
+      return _payments.where((p) => p.isMonthlyFee).toList();
+    } else if (_filter == 'PROYECTOS') {
+      return _payments.where((p) => p.isProjectContribution).toList();
     }
     return _payments;
   }
+
+  List<PaymentModel> get monthlyFees =>
+      _payments.where((p) => p.isMonthlyFee).toList();
+
+  List<PaymentModel> get projectContributions =>
+      _payments.where((p) => p.isProjectContribution).toList();
+
+  double get totalMonthlyFeesPaid => _payments
+      .where((p) => p.isMonthlyFee && p.isPaid)
+      .fold(0.0, (sum, p) => sum + p.monto);
+
+  double get totalProjectContributionsPaid => _payments
+      .where((p) => p.isProjectContribution && p.isPaid)
+      .fold(0.0, (sum, p) => sum + p.monto);
 
   static const double cuotaVigilanciaMensual = 10.00;
 
@@ -35,7 +53,7 @@ class PaymentsViewModel extends ChangeNotifier {
   }
 
   bool get isCurrentMonthPaid {
-    return _payments.any((p) => p.periodoMes == currentPeriod && p.isPaid);
+    return _payments.any((p) => p.isMonthlyFee && p.periodoMes == currentPeriod && p.isPaid);
   }
 
   double get totalPaid =>
@@ -65,6 +83,37 @@ class PaymentsViewModel extends ChangeNotifier {
       _payments = await _paymentsRepository.getMyPayments(idMiembro: idMiembro);
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<PaymentModel> processSimulatedPayment({
+    required int idMiembro,
+    required String periodoMes,
+    required double monto,
+    required String metodoSeleccionado,
+    String? referenciaGenerada,
+    int? idProyecto,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final payment = await _paymentsRepository.processSimulatedPayment(
+        idMiembro: idMiembro,
+        periodoMes: periodoMes,
+        monto: monto,
+        metodoSeleccionado: metodoSeleccionado,
+        referenciaGenerada: referenciaGenerada,
+        idProyecto: idProyecto,
+      );
+      await loadPayments(idMiembro: idMiembro);
+      return payment;
+    } catch (e) {
+      await loadPayments(idMiembro: idMiembro);
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

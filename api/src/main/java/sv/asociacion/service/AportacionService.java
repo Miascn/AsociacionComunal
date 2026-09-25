@@ -131,7 +131,7 @@ public class AportacionService {
         if (req.metodoPago() == null) {
             throw new IllegalArgumentException("El método de pago es obligatorio.");
         }
-        if (aportacionDAO.existsByMiembroAndPeriodo(req.idMiembro(), req.periodoMes().trim(), excludeId)) {
+        if (aportacionDAO.existsByMiembroAndPeriodo(req.idMiembro(), req.idProyecto(), req.periodoMes().trim(), excludeId)) {
             throw new IllegalStateException("Ya existe una aportación registrada para este miembro en el período " + req.periodoMes().trim() + ".");
         }
     }

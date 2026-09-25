@@ -43,7 +43,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
 
     @Override
     public Reunion save(Reunion entity) {
-        String sql = "INSERT INTO reunion (titulo, fecha_hora, lugar, tipo, estado) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO reunion (titulo, fecha_hora, lugar, tipo, estado, id_proyecto, descripcion) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, entity.getTitulo());
@@ -51,6 +51,12 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
             ps.setString(3, entity.getLugar());
             ps.setString(4, entity.getTipo().name());
             ps.setString(5, entity.getEstado().name());
+            if (entity.getIdProyecto() != null) {
+                ps.setInt(6, entity.getIdProyecto());
+            } else {
+                ps.setNull(6, Types.INTEGER);
+            }
+            ps.setString(7, entity.getDescripcion());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -65,7 +71,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
 
     @Override
     public Reunion update(Reunion entity) {
-        String sql = "UPDATE reunion SET titulo = ?, fecha_hora = ?, lugar = ?, tipo = ?, estado = ? WHERE id_reunion = ?";
+        String sql = "UPDATE reunion SET titulo = ?, fecha_hora = ?, lugar = ?, tipo = ?, estado = ?, id_proyecto = ?, descripcion = ? WHERE id_reunion = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, entity.getTitulo());
@@ -73,7 +79,13 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
             ps.setString(3, entity.getLugar());
             ps.setString(4, entity.getTipo().name());
             ps.setString(5, entity.getEstado().name());
-            ps.setInt(6, entity.getIdReunion());
+            if (entity.getIdProyecto() != null) {
+                ps.setInt(6, entity.getIdProyecto());
+            } else {
+                ps.setNull(6, Types.INTEGER);
+            }
+            ps.setString(7, entity.getDescripcion());
+            ps.setInt(8, entity.getIdReunion());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -173,14 +185,46 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
         return false;
     }
 
+    public List<Reunion> findByProyecto(Integer idProyecto) {
+        List<Reunion> list = new ArrayList<>();
+        String sql = "SELECT * FROM reunion WHERE id_proyecto = ? ORDER BY fecha_hora DESC";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idProyecto);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     private Reunion mapResultSet(ResultSet rs) throws SQLException {
+        Integer idProyecto = null;
+        try {
+            Object obj = rs.getObject("id_proyecto");
+            if (obj != null) {
+                idProyecto = rs.getInt("id_proyecto");
+            }
+        } catch (SQLException ignored) {}
+
+        String descripcion = null;
+        try {
+            descripcion = rs.getString("descripcion");
+        } catch (SQLException ignored) {}
+
         return new Reunion(
             rs.getInt("id_reunion"),
             rs.getString("titulo"),
             DateUtils.parseDateTime(rs.getString("fecha_hora")),
             rs.getString("lugar"),
             Reunion.Tipo.valueOf(rs.getString("tipo")),
-            Reunion.Estado.valueOf(rs.getString("estado"))
+            Reunion.Estado.valueOf(rs.getString("estado")),
+            idProyecto,
+            descripcion
         );
     }
 }

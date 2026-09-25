@@ -12,6 +12,7 @@ import '../../core/widgets/status_badge.dart';
 import '../../data/models/auth_models.dart';
 import '../../data/models/meeting_model.dart';
 import '../../data/models/voting_model.dart';
+import '../../data/repositories/notifications_repository.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import 'notifications_sheet.dart';
 
@@ -37,6 +38,8 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  final NotificationsRepository _notificationsRepo = NotificationsRepository();
+
   @override
   void initState() {
     super.initState();
@@ -190,41 +193,64 @@ class _HomeViewState extends State<HomeView> {
             ],
           ),
         ),
-        // Botón de Notificaciones Neo-Glass con PulsingBadge
-        BouncyTap(
-          scaleDown: 0.88,
-          onTap: () => NotificationsSheet.show(context),
-          child: NeoGlassContainer.circle(
-            size: 44,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  FluentIcons.alert_24_regular,
-                  size: 22,
-                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                ),
-                const Positioned(
-                  right: 0,
-                  top: 0,
-                  child: PulsingBadge(
-                    minScale: 0.8,
-                    maxScale: 1.3,
-                    child: SizedBox(
-                      width: 8,
-                      height: 8,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: AppColors.errorRed,
-                          shape: BoxShape.circle,
+        // Botón de Notificaciones Neo-Glass con PulsingBadge dinámico
+        ListenableBuilder(
+          listenable: widget.viewModel,
+          builder: (context, _) {
+            final dynamicNotifs = _notificationsRepo.buildNotifications(
+              payments: widget.viewModel.recentPayments,
+              polls: widget.viewModel.pendingVoting != null ? [widget.viewModel.pendingVoting!] : [],
+              meetings: widget.viewModel.nextMeeting != null ? [widget.viewModel.nextMeeting!] : [],
+              projects: widget.viewModel.activeProjects,
+              currentMemberId: widget.profile.member?.id,
+            );
+            final unreadCount = _notificationsRepo.countUnread(dynamicNotifs);
+
+            return BouncyTap(
+              scaleDown: 0.88,
+              onTap: () {
+                NotificationsSheet.show(
+                  context,
+                  notifications: dynamicNotifs,
+                  onNavigateToPayments: widget.onNavigateToPayments,
+                  onNavigateToCommunity: widget.onNavigateToCommunity,
+                  onNavigateToVoting: widget.onNavigateToVoting,
+                );
+              },
+              child: NeoGlassContainer.circle(
+                size: 44,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      FluentIcons.alert_24_regular,
+                      size: 22,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    ),
+                    if (unreadCount > 0)
+                      const Positioned(
+                        right: 0,
+                        top: 0,
+                        child: PulsingBadge(
+                          minScale: 0.8,
+                          maxScale: 1.3,
+                          child: SizedBox(
+                            width: 8,
+                            height: 8,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: AppColors.errorRed,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ],
     );

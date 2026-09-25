@@ -118,6 +118,24 @@ class AportacionServiceTest {
     }
 
     @Test
+    void allowsMonthlyFeeAndProjectContributionInSamePeriod() {
+        AportacionRequest cuotaMensual = new AportacionRequest(
+            1, null, "2026-03", new BigDecimal("10.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, "REC-CUOTA"
+        );
+        AportacionResponse resCuota = service.create(cuotaMensual);
+        assertNotNull(resCuota.idAportacion());
+
+        AportacionRequest aporteProyecto = new AportacionRequest(
+            1, 10, "2026-03", new BigDecimal("25.00"),
+            LocalDate.now(), Aportacion.MetodoPago.TRANSFERENCIA, "REC-PROY"
+        );
+        AportacionResponse resProy = service.create(aporteProyecto);
+        assertNotNull(resProy.idAportacion());
+        assertEquals(10, resProy.idProyecto());
+    }
+
+    @Test
     void rejectsNonExistentMember() {
         AportacionRequest req = new AportacionRequest(
             999, null, "2026-03", new BigDecimal("10.00"),
@@ -219,8 +237,14 @@ class AportacionServiceTest {
 
         @Override
         public boolean existsByMiembroAndPeriodo(Integer idMiembro, String periodoMes, Long excludeId) {
+            return existsByMiembroAndPeriodo(idMiembro, null, periodoMes, excludeId);
+        }
+
+        @Override
+        public boolean existsByMiembroAndPeriodo(Integer idMiembro, Integer idProyecto, String periodoMes, Long excludeId) {
             return store.stream().anyMatch(a ->
                 a.getIdMiembro().equals(idMiembro)
+                && java.util.Objects.equals(a.getIdProyecto(), idProyecto)
                 && a.getPeriodoMes().equals(periodoMes)
                 && a.getEstado() == Aportacion.Estado.REGISTRADA
                 && (excludeId == null || !a.getIdAportacion().equals(excludeId))

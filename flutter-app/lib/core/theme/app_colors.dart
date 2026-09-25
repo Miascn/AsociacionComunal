@@ -18,6 +18,8 @@ class AppColors {
   static const Color errorRed = Color(0xFFE53935);
   static const Color errorRedLight = Color(0xFFFFEBEE);
   static const Color infoIndigo = Color(0xFF4F46E5);
+  static const Color electricIndigo = Color(0xFF4F46E5);
+  static const Color charcoalGrey = Color(0xFF1E293B);
 
   // Tarjetas de Acciones Rápidas (Inspiradas en diseño Fintech / Glassmorphism)
   static const Color actionCoral = Color(0xFFFF7B60);
