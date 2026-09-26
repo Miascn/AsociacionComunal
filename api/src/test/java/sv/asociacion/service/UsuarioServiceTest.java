@@ -119,12 +119,21 @@ class UsuarioServiceTest {
             return value.isPresent();
         }
         @Override public boolean resetPassword(Integer id, String claveHash, boolean requiereCambioClave) {
+            return resetPassword(id, claveHash, requiereCambioClave, null);
+        }
+        @Override public boolean resetPassword(Integer id, String claveHash, boolean requiereCambioClave, String claveTemporal) {
             Optional<Usuario> value = findById(id);
             if (value.isPresent()) {
                 value.get().setClaveHash(claveHash);
+                value.get().setClaveTemporal(claveTemporal);
+                value.get().setRequiereCambioClave(requiereCambioClave);
                 return true;
             }
             return false;
+        }
+        @Override public Optional<Usuario> findByIdMiembro(Integer idMiembro) {
+            if (idMiembro == null) return Optional.empty();
+            return values.stream().filter(v -> idMiembro.equals(v.getIdMiembro())).findFirst();
         }
     }
 
