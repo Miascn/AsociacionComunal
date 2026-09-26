@@ -83,6 +83,8 @@ CREATE TABLE usuario (
     nombre_usuario VARCHAR(50) NOT NULL UNIQUE,
     clave_hash VARCHAR(255) NOT NULL,
     estado ENUM('ACTIVO', 'BLOQUEADO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO',
+    requiere_cambio_clave BOOLEAN NOT NULL DEFAULT FALSE,
+    clave_temporal VARCHAR(255) NULL,
     ultimo_acceso DATETIME,
     CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol) REFERENCES rol(id_rol),
     CONSTRAINT fk_usuario_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro)
@@ -284,6 +286,20 @@ INSERT INTO cargo (nombre, descripcion) VALUES
 
 INSERT INTO periodo_directiva (nombre, fecha_inicio, fecha_fin, estado) VALUES
 ('Directiva 2024-2026', '2024-01-01', '2026-12-31', 'ACTIVO');
+
+-- =====================================================
+-- TABLA: configuracion
+-- Parametros globales y cuotas del sistema comunal
+-- =====================================================
+CREATE TABLE IF NOT EXISTS configuracion (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+('cuota_mantenimiento_mensual', '10.00', 'Monto de la cuota mensual de mantenimiento y vigilancia de la colonia');
 
 -- Cree la primera cuenta administrativa con una contraseña aleatoria mediante
 -- una herramienta operativa segura. El repositorio no contiene credenciales predeterminadas.

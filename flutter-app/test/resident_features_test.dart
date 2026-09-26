@@ -205,7 +205,7 @@ void main() {
     });
 
     test('PaymentModel distingue correctamente cuota mensual de aporte a proyecto', () {
-      final cuota = PaymentModel(
+      const cuota = PaymentModel(
         id: 101,
         idMiembro: 5,
         nombreMiembro: 'Carlos Martínez',
@@ -218,7 +218,7 @@ void main() {
         idProyecto: null,
       );
 
-      final aporte = PaymentModel(
+      const aporte = PaymentModel(
         id: 102,
         idMiembro: 5,
         nombreMiembro: 'Carlos Martínez',
@@ -299,7 +299,7 @@ void main() {
 
   group('Resident Features - UI Components', () {
     testWidgets('PaymentReceiptDialog muestra datos completos de comprobante', (tester) async {
-      final payment = PaymentModel(
+      const payment = PaymentModel(
         id: 777,
         idMiembro: 12,
         nombreMiembro: 'Carlos Martínez',
@@ -313,7 +313,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: PaymentReceiptDialog(
               payment: payment,
@@ -362,5 +362,102 @@ void main() {
       expect(find.text('+ Otra Tarjeta'), findsOneWidget);
       expect(find.text('Pagar \$10.00'), findsOneWidget);
     });
+
+    testWidgets('SimulatedPaymentSheet muestra alerta no bloqueante si ya aportó a proyecto y permite confirmar aporte adicional', (tester) async {
+      final mockClient = MockClient((request) async => http.Response('{}', 200));
+      final storage = FakeSecureStorage();
+      final sessionStorage = await SessionStorageService.init(secureStorage: storage);
+      final apiClient = ApiClient(storage: sessionStorage, client: mockClient);
+      final repo = PaymentsRepository(api: apiClient);
+      final vm = PaymentsViewModel(paymentsRepository: repo);
+
+      // Simular que el usuario ya realizó un aporte previo de $30.00 al proyecto 5
+      vm.payments.add(
+        const PaymentModel(
+          id: 101,
+          idMiembro: 10,
+          nombreMiembro: 'Carlos',
+          duiMiembro: '00000000-0',
+          idProyecto: 5,
+          nombreProyecto: 'Cámaras de Seguridad',
+          periodoMes: '2026-09',
+          monto: 30.0,
+          fechaPago: '2026-09-20',
+          metodoPago: 'TARJETA_CREDITO',
+          estado: 'REGISTRADA',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SimulatedPaymentSheet(
+              viewModel: vm,
+              idMiembro: 10,
+              title: 'Aporte a Cámaras de Seguridad',
+              description: 'Contribución solidaria para financiamiento comunal.',
+              defaultAmount: 25.0,
+              isAmountEditable: true,
+              periodoMes: '2026-09',
+              idProyecto: 5,
+              nombreProyecto: 'Cámaras de Seguridad',
+            ),
+          ),
+        ),
+      );
+
+      // Debe mostrar la alerta informativa de aportación previa acumulada
+      expect(find.text('Aviso de Aportación Adicional'), findsOneWidget);
+      expect(find.textContaining('1 aporte previo por un total acumulado de \$30.00'), findsOneWidget);
+      // El botón debe permitir confirmar el aporte adicional sin bloquear
+      expect(find.text('Confirmar aporte adicional (\$25.00)'), findsOneWidget);
+    });
+
+    testWidgets('SimulatedPaymentSheet bloquea aportación principal si la cuota del período ya fue saldada', (tester) async {
+      final mockClient = MockClient((request) async => http.Response('{}', 200));
+      final storage = FakeSecureStorage();
+      final sessionStorage = await SessionStorageService.init(secureStorage: storage);
+      final apiClient = ApiClient(storage: sessionStorage, client: mockClient);
+      final repo = PaymentsRepository(api: apiClient);
+      final vm = PaymentsViewModel(paymentsRepository: repo);
+
+      // Simular cuota mensual ordinaria ya pagada para 2026-09
+      vm.payments.add(
+        const PaymentModel(
+          id: 102,
+          idMiembro: 10,
+          nombreMiembro: 'Carlos',
+          duiMiembro: '00000000-0',
+          idProyecto: null,
+          nombreProyecto: null,
+          periodoMes: '2026-09',
+          monto: 15.0,
+          fechaPago: '2026-09-05',
+          metodoPago: 'TARJETA_CREDITO',
+          estado: 'REGISTRADA',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SimulatedPaymentSheet(
+              viewModel: vm,
+              idMiembro: 10,
+              title: 'Cuota de Mantenimiento',
+              description: 'Período 2026-09.',
+              defaultAmount: 15.0,
+              periodoMes: '2026-09',
+              idProyecto: null,
+            ),
+          ),
+        ),
+      );
+
+      // Debe mostrar el banner de cuota saldada y botón bloqueado
+      expect(find.text('Cuota mensual ya saldada'), findsOneWidget);
+      expect(find.text('Cuota del período ya liquidada'), findsOneWidget);
+    });
   });
 }
+

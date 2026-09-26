@@ -30,10 +30,29 @@ class ProjectModel {
     this.aportePorMiembro = 0.0,
   });
 
-  bool get canReceiveContributions =>
-      estado.toUpperCase() == 'APROBADO' ||
+  bool get isFinalizado =>
+      estado.toUpperCase() == 'FINALIZADO' ||
+      estado.toUpperCase() == 'COMPLETADO';
+
+  bool get isEnEjecucion =>
       estado.toUpperCase() == 'EN_EJECUCION' ||
-      estado.toUpperCase() == 'EN_RECAUDACION';
+      estado.toUpperCase() == 'EN_PROCESO';
+
+  bool get isEnRecaudacion =>
+      estado.toUpperCase() == 'APROBADO' ||
+      estado.toUpperCase() == 'EN_RECAUDACION' ||
+      estado.toUpperCase() == 'PROPUESTO';
+
+  bool get isActive =>
+      !isFinalizado &&
+      estado.toUpperCase() != 'RECHAZADO' &&
+      estado.toUpperCase() != 'BORRADOR';
+
+  bool get canReceiveContributions =>
+      !isFinalizado &&
+      (estado.toUpperCase() == 'APROBADO' ||
+       estado.toUpperCase() == 'EN_EJECUCION' ||
+       estado.toUpperCase() == 'EN_RECAUDACION');
 
   bool get hasVoting => tituloVotacion != null && tituloVotacion!.isNotEmpty;
 

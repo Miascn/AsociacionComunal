@@ -218,13 +218,13 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
 
         return new Reunion(
             rs.getInt("id_reunion"),
+            idProyecto,
             rs.getString("titulo"),
+            descripcion,
             DateUtils.parseDateTime(rs.getString("fecha_hora")),
             rs.getString("lugar"),
             Reunion.Tipo.valueOf(rs.getString("tipo")),
-            Reunion.Estado.valueOf(rs.getString("estado")),
-            idProyecto,
-            descripcion
+            Reunion.Estado.valueOf(rs.getString("estado"))
         );
     }
 }

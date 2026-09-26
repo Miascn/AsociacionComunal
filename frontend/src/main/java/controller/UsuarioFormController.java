@@ -25,6 +25,7 @@ public class UsuarioFormController {
     @FXML private ComboBox<MiembroModel> selectorMiembro;
     @FXML private ComboBox<String> selectorEstado;
     private boolean editing;
+    private List<RolModel> allRoles = List.of();
 
     @FXML private void initialize() {
         selectorEstado.getItems().addAll("ACTIVO", "BLOQUEADO", "INACTIVO");
@@ -40,12 +41,18 @@ public class UsuarioFormController {
     }
 
     public void setCatalogs(List<RolModel> roles, List<MiembroModel> members) {
-        selectorRol.getItems().setAll(roles);
+        this.allRoles = roles != null ? roles : List.of();
+        // Separamos roles de sistema para usuarios de escritorio Java; los miembros se gestionan desde el módulo de Miembros
+        List<RolModel> rolesPermitidos = this.allRoles.stream()
+            .filter(r -> r.nombre() != null && !"MIEMBRO".equalsIgnoreCase(r.nombre().trim()))
+            .toList();
+        selectorRol.getItems().setAll(rolesPermitidos);
+
         MiembroModel none = new MiembroModel(0, "", "DUI", null, null, "Sin miembro", "asociado", null, null, null, null, "ACTIVO");
         selectorMiembro.getItems().setAll(none);
         selectorMiembro.getItems().addAll(members);
         selectorMiembro.setValue(none);
-        if (roles.size() == 1) selectorRol.setValue(roles.get(0));
+        if (rolesPermitidos.size() == 1) selectorRol.setValue(rolesPermitidos.get(0));
     }
 
     public void setUsuario(UsuarioModel user) {
@@ -54,7 +61,12 @@ public class UsuarioFormController {
         lblTitulo.setText("Editar usuario");
         campoUsuario.setText(user.getNombreUsuario());
         campoClave.setPromptText("Dejar vacío para conservar la contraseña");
-        selectorRol.getItems().stream().filter(role -> role.idRol().equals(user.getIdRol())).findFirst().ifPresent(selectorRol::setValue);
+        allRoles.stream().filter(role -> role.idRol().equals(user.getIdRol())).findFirst().ifPresent(role -> {
+            if (!selectorRol.getItems().contains(role)) {
+                selectorRol.getItems().add(role);
+            }
+            selectorRol.setValue(role);
+        });
         selectorMiembro.getItems().stream().filter(member -> java.util.Objects.equals(member.getIdMiembro(), user.getIdMiembro()))
             .findFirst().ifPresent(selectorMiembro::setValue);
         selectorEstado.setValue(user.getEstado());

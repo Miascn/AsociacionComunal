@@ -26,7 +26,8 @@ class AuthViewModel extends ChangeNotifier {
   AuthStatus get status => _status;
   MeResponse? get profile => _profile;
   String? get errorMessage => _errorMessage;
-  String? get temporaryPassword => _temporaryPassword;
+  String? get temporaryPassword =>
+      _temporaryPassword ?? _authRepository.temporaryPassword;
   bool get isLoading => _status == AuthStatus.loading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
 
@@ -40,6 +41,7 @@ class AuthViewModel extends ChangeNotifier {
       if (restored != null) {
         _profile = restored;
         if (restored.user.passwordChangeRequired) {
+          _temporaryPassword = _authRepository.temporaryPassword;
           _status = AuthStatus.passwordChangeRequired;
         } else {
           _status = AuthStatus.authenticated;
@@ -92,6 +94,7 @@ class AuthViewModel extends ChangeNotifier {
         newPassword,
       );
       _profile = updatedProfile;
+      _temporaryPassword = null;
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;

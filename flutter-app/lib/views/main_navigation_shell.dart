@@ -47,6 +47,17 @@ class MainNavigationShell extends StatefulWidget {
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final memberId = widget.profile.member?.id;
+      widget.paymentsViewModel.loadPayments(idMiembro: memberId);
+      widget.communityViewModel.loadCommunityData();
+      widget.votingViewModel.loadVotaciones();
+    });
+  }
+
   void _navigateToTab(int index) {
     setState(() => _currentIndex = index);
   }

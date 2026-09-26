@@ -91,6 +91,21 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _payMonthlyDues() {
+    final pending = widget.viewModel.pendingBalance;
+    final isPaid = pending <= 0;
+    if (isPaid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '¡Tu cuota de mantenimiento de este período ya está saldada! Podrás realizar el siguiente pago cuando inicie el próximo período mensual.',
+          ),
+          backgroundColor: AppColors.stitchEmerald,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     final member = widget.profile.member;
     final now = DateTime.now();
     final nextPeriod = '${now.year}-${now.month.toString().padLeft(2, '0')}';
@@ -195,41 +210,48 @@ class _HomeViewState extends State<HomeView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: hasPendingDues
-                    ? const Color(0xFFFEF3C7)
-                    : AppColors.stitchEmeraldContainer,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: hasPendingDues
-                          ? const Color(0xFFD97706)
-                          : AppColors.stitchEmerald,
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: hasPendingDues
+                      ? const Color(0xFFFEF3C7)
+                      : AppColors.stitchEmeraldContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: hasPendingDues
+                            ? const Color(0xFFD97706)
+                            : AppColors.stitchEmerald,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    hasPendingDues ? '1 Cuota Pendiente' : 'Al día con la colonia',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: hasPendingDues
-                          ? const Color(0xFF92400E)
-                          : const Color(0xFF065F46),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        hasPendingDues ? '1 Cuota Pendiente' : 'Al día con la colonia',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: hasPendingDues
+                              ? const Color(0xFF92400E)
+                              : const Color(0xFF065F46),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               monthName,
               style: TextStyle(
@@ -419,6 +441,7 @@ class _HomeViewState extends State<HomeView> {
                         onTap: _payMonthlyDues,
                         child: Container(
                           height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
                             gradient: const LinearGradient(
@@ -432,21 +455,31 @@ class _HomeViewState extends State<HomeView> {
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.credit_card_rounded, color: Color(0xFF064E3B), size: 18),
-                              SizedBox(width: 8),
-                              Text(
-                                'Pagar cuota ahora',
-                                style: TextStyle(
-                                  color: Color(0xFF064E3B),
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
+                              Icon(
+                                isPaid ? Icons.check_circle_rounded : Icons.credit_card_rounded,
+                                color: const Color(0xFF064E3B),
+                                size: 17,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  isPaid ? 'Cuota ya saldada' : 'Pagar cuota ahora',
+                                  style: const TextStyle(
+                                    color: Color(0xFF064E3B),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
-                              SizedBox(width: 4),
-                              Icon(Icons.arrow_forward_rounded, color: Color(0xFF064E3B), size: 16),
+                              if (!isPaid) ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward_rounded, color: Color(0xFF064E3B), size: 15),
+                              ],
                             ],
                           ),
                         ),
@@ -459,6 +492,7 @@ class _HomeViewState extends State<HomeView> {
                         onTap: widget.onNavigateToPayments,
                         child: Container(
                           height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
                             color: Colors.white.withValues(alpha: 0.12),
@@ -470,13 +504,17 @@ class _HomeViewState extends State<HomeView> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.history_rounded, color: Colors.white, size: 16),
-                              SizedBox(width: 6),
-                              Text(
-                                'Ver historial',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
+                              SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  'Ver historial',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                             ],

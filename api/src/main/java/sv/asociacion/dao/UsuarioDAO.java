@@ -104,16 +104,46 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
     }
 
     public boolean resetPassword(Integer id, String claveHash, boolean requiereCambioClave) {
-        String sql = "UPDATE usuario SET clave_hash = ?, requiere_cambio_clave = ? WHERE id_usuario = ?";
+        return resetPassword(id, claveHash, requiereCambioClave, null);
+    }
+
+    public boolean resetPassword(Integer id, String claveHash, boolean requiereCambioClave, String claveTemporal) {
+        String sql = "UPDATE usuario SET clave_hash = ?, requiere_cambio_clave = ?, clave_temporal = ? WHERE id_usuario = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, claveHash);
             ps.setBoolean(2, requiereCambioClave);
-            ps.setInt(3, id);
+            ps.setString(3, claveTemporal);
+            ps.setInt(4, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible restablecer la contraseña.", e);
+            // Fallback en caso de que la columna clave_temporal no exista
+            String fallbackSql = "UPDATE usuario SET clave_hash = ?, requiere_cambio_clave = ? WHERE id_usuario = ?";
+            try (Connection conn = DBConnection.getInstance().getConnection();
+                 PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
+                ps.setString(1, claveHash);
+                ps.setBoolean(2, requiereCambioClave);
+                ps.setInt(3, id);
+                return ps.executeUpdate() > 0;
+            } catch (SQLException ex) {
+                throw new IllegalStateException("No fue posible restablecer la contraseña.", ex);
+            }
         }
+    }
+
+    public Optional<Usuario> findByIdMiembro(Integer idMiembro) {
+        if (idMiembro == null) return Optional.empty();
+        String sql = "SELECT * FROM usuario WHERE id_miembro = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idMiembro);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
     }
 
     public Usuario findByNombreUsuario(String nombreUsuario) {
@@ -147,6 +177,15 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
 
     private Usuario mapResultSet(ResultSet rs) throws SQLException {
         Integer idMiembro = rs.getObject("id_miembro", Integer.class);
+        boolean reqCambio = false;
+        String claveTemp = null;
+        try {
+            reqCambio = rs.getBoolean("requiere_cambio_clave");
+        } catch (SQLException ignored) {}
+        try {
+            claveTemp = rs.getString("clave_temporal");
+        } catch (SQLException ignored) {}
+
         return new Usuario(
             rs.getInt("id_usuario"),
             rs.getInt("id_rol"),
@@ -154,6 +193,8 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             rs.getString("nombre_usuario"),
             rs.getString("clave_hash"),
             Usuario.Estado.valueOf(rs.getString("estado")),
+            reqCambio,
+            claveTemp,
             DateUtils.parseDateTime(rs.getString("ultimo_acceso"))
         );
     }

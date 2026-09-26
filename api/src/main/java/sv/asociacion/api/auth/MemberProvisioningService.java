@@ -25,10 +25,16 @@ public final class MemberProvisioningService {
                     statement.setDate(9, Date.valueOf(LocalDate.now())); statement.executeUpdate();
                     try (ResultSet keys = statement.getGeneratedKeys()) { if (!keys.next()) throw new SQLException("Sin identificador de miembro."); memberId = keys.getInt(1); }
                 }
-                String userSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave) SELECT id_rol,?,?,?,'ACTIVO',TRUE FROM rol WHERE nombre='MIEMBRO'";
+                String userSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave,clave_temporal) SELECT id_rol,?,?,?,'ACTIVO',TRUE,? FROM rol WHERE nombre='MIEMBRO'";
                 try (PreparedStatement statement = connection.prepareStatement(userSql)) {
-                    statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary));
+                    statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary)); statement.setString(4, temporary);
                     if (statement.executeUpdate() != 1) throw new SQLException("No existe el rol MIEMBRO.");
+                } catch (SQLException sqle) {
+                    String fallbackSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave) SELECT id_rol,?,?,?,'ACTIVO',TRUE FROM rol WHERE nombre='MIEMBRO'";
+                    try (PreparedStatement statement = connection.prepareStatement(fallbackSql)) {
+                        statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary));
+                        if (statement.executeUpdate() != 1) throw new SQLException("No existe el rol MIEMBRO.");
+                    }
                 }
                 connection.commit(); return new Result(memberId, temporary);
             } catch (Exception exception) { connection.rollback(); throw exception; }

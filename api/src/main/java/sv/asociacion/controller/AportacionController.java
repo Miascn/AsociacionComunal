@@ -120,6 +120,37 @@ public class AportacionController {
         }
     }
 
+    public void ajustarMonto(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Se requiere rol de Administrador o Tesorero para ajustar aportaciones."));
+            return;
+        }
+
+        Long id = context.pathParamAsClass("id", Long.class).getOrNull();
+        if (id == null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de aportación inválido."));
+            return;
+        }
+
+        try {
+            Map<?, ?> body = context.bodyAsClass(Map.class);
+            Object montoObj = body != null ? body.get("monto") : null;
+            if (montoObj == null) {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "El campo 'monto' es obligatorio para ajustar la aportación."));
+                return;
+            }
+            java.math.BigDecimal nuevoMonto = new java.math.BigDecimal(montoObj.toString().trim());
+            AportacionResponse updated = aportacionService.ajustarMonto(id, nuevoMonto);
+            context.json(updated);
+        } catch (NumberFormatException e) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "El monto ingresado no es un número válido."));
+        } catch (IllegalArgumentException e) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
+        }
+    }
+
     public void anular(Context context) {
         if (!canManage(context)) {
             context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Se requiere rol de Administrador o Tesorero para anular aportaciones."));
@@ -142,6 +173,49 @@ public class AportacionController {
         } catch (Exception e) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
         }
+    }
+
+    public void getConfiguracion(Context context) {
+        if (!canView(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para consultar la configuración."));
+            return;
+        }
+        java.math.BigDecimal cuota = aportacionService.getCuotaMantenimiento();
+        context.json(new sv.asociacion.domain.dto.ConfiguracionCuotaDto(
+            cuota, "Cuota mensual de mantenimiento y vigilancia de la colonia"
+        ));
+    }
+
+    public void updateConfiguracion(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Se requiere rol de Administrador o Tesorero para modificar la cuota de mantenimiento."));
+            return;
+        }
+        try {
+            sv.asociacion.domain.dto.ConfiguracionCuotaDto req = context.bodyAsClass(sv.asociacion.domain.dto.ConfiguracionCuotaDto.class);
+            if (req.cuotaMantenimiento() == null || req.cuotaMantenimiento().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "La cuota debe ser un valor positivo mayor a cero."));
+                return;
+            }
+            aportacionService.setCuotaMantenimiento(req.cuotaMantenimiento(), req.descripcion());
+            context.json(Map.of(
+                "message", "Cuota de mantenimiento actualizada correctamente.",
+                "cuotaMantenimiento", req.cuotaMantenimiento()
+            ));
+        } catch (Exception e) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
+        }
+    }
+
+    public void getMantenimientoPeriodo(Context context) {
+        if (!canView(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para consultar el mantenimiento."));
+            return;
+        }
+        String periodo = context.queryParam("periodo");
+        String busqueda = context.queryParam("busqueda");
+        var res = aportacionService.getMantenimientoPeriodo(periodo, busqueda);
+        context.json(res);
     }
 
     public static boolean canManage(Context context) {

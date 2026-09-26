@@ -46,10 +46,10 @@ class HomeViewModel extends ChangeNotifier {
       _upcomingMeetings.isNotEmpty ? _upcomingMeetings.first : null;
 
   int get activeProjectsCount =>
-      _activeProjects.where((p) => p.estado == 'EN_PROCESO' || p.estado == 'ACTIVO' || p.estado == 'EN_EJECUCION').length;
+      _activeProjects.where((p) => p.isActive).length;
 
   int get completedProjectsCount =>
-      _activeProjects.where((p) => p.estado == 'COMPLETADO' || p.estado == 'FINALIZADO').length;
+      _activeProjects.where((p) => p.isFinalizado).length;
 
   ProjectModel? get featuredProject =>
       _activeProjects.isNotEmpty ? _activeProjects.first : null;
@@ -90,7 +90,8 @@ class HomeViewModel extends ChangeNotifier {
       _recentPayments = results[0] as List<PaymentModel>;
       final allMeetings = results[1] as List<MeetingModel>;
       _upcomingMeetings = allMeetings.where((m) => m.isUpcoming).toList();
-      _activeProjects = results[2] as List<ProjectModel>;
+      final allProjects = results[2] as List<ProjectModel>;
+      _activeProjects = allProjects.where((p) => p.isActive).toList();
       _directiva = results[3] as List<DirectivaMemberModel>;
 
       _totalContributed = _paymentsRepository.calculateTotalPaid(_recentPayments);

@@ -218,10 +218,15 @@
 
 /* ---------- Vista Detalle de Miembro (Profile Card) ---------- */
 .member-detail-dialog {
-    -fx-pref-width: 660px;
+    -fx-pref-width: 760px;
+    -fx-max-width: 800px;
 }
 .member-detail {
     -fx-background-color: #ffffff;
+}
+.detail-cred-grid {
+    -fx-vgap: 6px;
+    -fx-hgap: 16px;
 }
 .member-detail-hero {
     -fx-background-color: #f8fafc;

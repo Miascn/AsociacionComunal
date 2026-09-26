@@ -23,7 +23,7 @@ public class AuthController {
         }
         LoginResponse response = authService.login(request.nombreUsuario().trim(), request.clave());
         if (response == null) {
-            context.status(HttpStatus.UNAUTHORIZED).json(Map.of("error", "Credenciales inválidas."));
+            context.status(HttpStatus.UNAUTHORIZED).json(Map.of("error", "Credenciales inválidas o cuenta sin acceso al sistema administrativo de escritorio."));
             return;
         }
         context.json(response);

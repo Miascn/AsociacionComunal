@@ -42,6 +42,23 @@
                 </HBox>
             </HBox>
 
+            <!-- Banner de Alerta: Credenciales Provisionales Pendientes de cambio en celular -->
+            <HBox fx:id="bannerClavesProvisionales" alignment="CENTER_LEFT" spacing="14"
+                  style="-fx-background-color: #fffbeb; -fx-border-color: #fde68a; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 12px 18px;"
+                  visible="false" managed="false">
+                <StackPane fx:id="iconoBannerContainer" alignment="CENTER"/>
+                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                    <Label text="Aviso de Seguridad: Contraseñas provisionales pendientes de cambio"
+                           style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #92400e;"/>
+                    <Label fx:id="lblBannerTexto"
+                           text="Existen miembros que aún no han cambiado su contraseña temporal en el celular. Puede revisar y entregar sus credenciales hasta que lo hagan."
+                           style="-fx-font-size: 12px; -fx-text-fill: #b45309;"/>
+                </VBox>
+                <Button fx:id="btnFiltrarProvisionales" text="Ver miembros pendientes"
+                        style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: 700; -fx-background-radius: 8px; -fx-padding: 6px 14px; -fx-cursor: hand;"
+                        onAction="#filtrarProvisionales"/>
+            </HBox>
+
             <!-- Tarjeta de tabla limpia -->
             <VBox fx:id="tarjetaTabla" spacing="0" styleClass="clean-table-card">
                 <TableView fx:id="tablaMiembros" styleClass="members-table">

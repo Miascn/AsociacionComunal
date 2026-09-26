@@ -71,6 +71,12 @@ public class MiembroController {
     @FXML private Button btnNuevoMiembro;
     @FXML private Button btnToggleInactivos;
 
+    @FXML private HBox bannerClavesProvisionales;
+    @FXML private StackPane iconoBannerContainer;
+    @FXML private Label lblBannerTexto;
+    @FXML private Button btnFiltrarProvisionales;
+    private boolean filtrandoSoloProvisionales = false;
+
     // Botones opcionales para compatibilidad
     @FXML private Button btnVerDetalle;
     @FXML private Button btnEditar;
@@ -87,9 +93,12 @@ public class MiembroController {
         if (iconoBusquedaContainer != null) {
             iconoBusquedaContainer.getChildren().setAll(HeroIcon.create(HeroIcon.SEARCH, "#94a3b8", 16));
         }
+        if (iconoBannerContainer != null) {
+            iconoBannerContainer.getChildren().setAll(HeroIcon.create(HeroIcon.SHIELD, "#d97706", 24));
+        }
 
         tablaMiembros.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        tablaMiembros.setFixedCellSize(50.0);
+        tablaMiembros.setFixedCellSize(52.0);
 
         // Esquinas redondeadas superiores perfectas (radio 20px) para la tabla
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
@@ -111,29 +120,44 @@ public class MiembroController {
         // 2. Columna NOMBRE (nombre completo)
         columnaNombres.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombreCompleto()));
 
-        // 3. Columna TELÃ‰FONO (telÃ©fono o "00")
+        // 3. Columna TELÉFONO (teléfono o "00")
         columnaTelefono.setCellValueFactory(cell -> {
             String tel = cell.getValue().getTelefono();
             return new SimpleStringProperty(tel != null && !tel.isBlank() ? tel : "00");
         });
 
-        // 4. Columna EMAIL (correo o "â€”")
+        // 4. Columna EMAIL (correo o "—")
         columnaCorreo.setCellValueFactory(cell -> {
             String email = cell.getValue().getCorreo();
-            return new SimpleStringProperty(email != null && !email.isBlank() ? email : "â€”");
+            return new SimpleStringProperty(email != null && !email.isBlank() ? email : "—");
         });
 
-        // 5. Columna ESTADO con pastilla (BadgePill)
+        // 5. Columna ESTADO con pastilla (BadgePill) y alerta si tiene clave provisional
         columnaEstado.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getEstado()));
         columnaEstado.setCellFactory(column -> new TableCell<>() {
             private final Label badge = new Label();
+            private final Label badgeClave = new Label("⚠️ Clave inicial");
+            private final VBox container = new VBox(3);
+            {
+                badgeClave.setStyle("-fx-background-color: #fef3c7; -fx-text-fill: #b45309; -fx-border-color: #fde68a; -fx-border-radius: 9999px; -fx-background-radius: 9999px; -fx-font-weight: 700; -fx-padding: 2px 7px; -fx-font-size: 10px; -fx-cursor: hand;");
+                badgeClave.setTooltip(new Tooltip("Contraseña provisional no cambiada aún en el celular. Clic para revisar credenciales."));
+                badgeClave.setOnMouseClicked(e -> {
+                    if (getIndex() >= 0 && getIndex() < getTableView().getItems().size()) {
+                        MiembroModel m = getTableView().getItems().get(getIndex());
+                        if (m != null) revisarCredenciales(m);
+                    }
+                });
+                container.setAlignment(Pos.CENTER_LEFT);
+            }
+
             @Override
             protected void updateItem(String estado, boolean empty) {
                 super.updateItem(estado, empty);
-                if (empty || estado == null) {
+                if (empty || estado == null || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
                     setGraphic(null);
                     setText(null);
                 } else {
+                    MiembroModel m = getTableView().getItems().get(getIndex());
                     String estLower = estado.toLowerCase(Locale.ROOT);
                     badge.setText(estLower);
                     badge.getStyleClass().setAll("badge-pill");
@@ -142,7 +166,12 @@ public class MiembroController {
                     } else {
                         badge.getStyleClass().add("badge-pill-inactive");
                     }
-                    setGraphic(badge);
+                    container.getChildren().clear();
+                    container.getChildren().add(badge);
+                    if (m != null && m.tieneClaveProvisional()) {
+                        container.getChildren().add(badgeClave);
+                    }
+                    setGraphic(container);
                     setText(null);
                     setAlignment(Pos.CENTER_LEFT);
                 }
@@ -152,14 +181,25 @@ public class MiembroController {
         // 6. Columna ACCIONES: Iconos SVG de Heroicons (outline)
         if (columnaAcciones != null) {
             columnaAcciones.setCellFactory(column -> new TableCell<>() {
+                private final Button btnKey = new Button();
                 private final Button btnVer = new Button();
                 private final Button btnEd = new Button();
                 private final Button btnDel = new Button();
-                private final HBox actionsBox = new HBox(8, btnVer, btnEd, btnDel);
+                private final HBox actionsBox = new HBox(6);
 
                 {
                     actionsBox.getStyleClass().add("row-actions-box");
                     actionsBox.setAlignment(Pos.CENTER_RIGHT);
+
+                    // 0. Revisar credenciales provisionales
+                    btnKey.getStyleClass().addAll("btn-row-action", "btn-action-edit");
+                    btnKey.setStyle("-fx-background-color: #fef3c7; -fx-border-color: #fde68a;");
+                    btnKey.setGraphic(HeroIcon.create(HeroIcon.SHIELD, "#d97706", 16));
+                    btnKey.setTooltip(new Tooltip("Revisar credenciales provisionales (Pendiente de cambio en celular)"));
+                    btnKey.setOnAction(e -> {
+                        MiembroModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) revisarCredenciales(item);
+                    });
 
                     // 1. Ver (.btn-action-view): Icono Ojo (eye) en Azul (text-blue-600)
                     btnVer.getStyleClass().addAll("btn-row-action", "btn-action-view");
@@ -170,7 +210,7 @@ public class MiembroController {
                         if (item != null) mostrarDetalle(item);
                     });
 
-                    // 2. Editar (.btn-action-edit): Icono LÃ¡piz (pencil) en Ã mbar (text-amber-600)
+                    // 2. Editar (.btn-action-edit): Icono Lápiz (pencil) en Ámbar (text-amber-600)
                     btnEd.getStyleClass().addAll("btn-row-action", "btn-action-edit");
                     btnEd.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
                     btnEd.setTooltip(new Tooltip("Editar cliente"));
@@ -211,6 +251,11 @@ public class MiembroController {
                         btnEd.setDisable(!puede);
                         btnDel.setDisable(!puede);
 
+                        actionsBox.getChildren().clear();
+                        if (m.tieneClaveProvisional()) {
+                            actionsBox.getChildren().add(btnKey);
+                        }
+                        actionsBox.getChildren().addAll(btnVer, btnEd, btnDel);
                         setGraphic(actionsBox);
                     }
                 }
@@ -525,7 +570,7 @@ public class MiembroController {
             dialog.getDialogPane().getStyleClass().addAll("member-dialog", "member-detail-dialog");
             java.net.URL css = MiembroController.class.getResource("/styles/member-dialog.css");
             if (css != null) dialog.getDialogPane().getStylesheets().add(css.toExternalForm());
-            ResponsiveWindowService.fitDialog(dialog, tablaMiembros.getScene().getWindow(), 660);
+            ResponsiveWindowService.fitDialog(dialog, tablaMiembros.getScene().getWindow(), 760);
             dialog.showAndWait();
         } catch (IOException exception) {
             mostrarError("No fue posible abrir el detalle.");
@@ -546,12 +591,17 @@ public class MiembroController {
             }
         };
         task.setOnSucceeded(event -> {
-            miembros.add(task.getValue().member());
+            CreateMemberResult res = task.getValue();
+            MiembroModel created = res.member();
+            created.setNombreUsuario(res.username());
+            created.setClaveTemporal(res.temporaryPassword());
+            created.setRequiereCambioClave(true);
+            miembros.add(created);
             if (lblEstadoModulo != null) lblEstadoModulo.setText("Cliente registrado");
             actualizarTotal();
             dialog.close();
             filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
-            mostrarCredenciales(task.getValue());
+            mostrarCredenciales(res);
         });
         task.setOnFailed(event -> {
             guardar.setDisable(false);
@@ -576,12 +626,110 @@ public class MiembroController {
         MaterialAlertService.error(owner, "Ocurrió un problema", message);
     }
 
+    @FXML
+    private void filtrarProvisionales() {
+        filtrandoSoloProvisionales = !filtrandoSoloProvisionales;
+        if (btnFiltrarProvisionales != null) {
+            btnFiltrarProvisionales.setText(filtrandoSoloProvisionales ? "Ver todos los miembros" : "Ver miembros pendientes");
+        }
+        filtrar(campoBusqueda != null ? campoBusqueda.getText() : "");
+    }
+
+    public void revisarCredenciales(MiembroModel m) {
+        if (m == null) return;
+        Window owner = tablaMiembros != null && tablaMiembros.getScene() != null ? tablaMiembros.getScene().getWindow() : null;
+        if (m.getClaveTemporal() != null && !m.getClaveTemporal().isBlank()) {
+            MaterialAlertService.revisarCredencialesProvisionales(
+                owner,
+                m.getNombreCompleto(),
+                m.getNombreUsuario() != null ? m.getNombreUsuario() : m.getDocumento(),
+                m.getClaveTemporal()
+            );
+        } else {
+            Task<MiembroApiClient.CredencialesMiembro> task = new Task<>() {
+                @Override
+                protected MiembroApiClient.CredencialesMiembro call() throws Exception {
+                    return new MiembroApiClient().getCredenciales(m.getId());
+                }
+            };
+            task.setOnSucceeded(e -> {
+                var cred = task.getValue();
+                if (cred != null) {
+                    m.setClaveTemporal(cred.claveTemporal());
+                    m.setNombreUsuario(cred.nombreUsuario());
+                    m.setRequiereCambioClave(cred.requiereCambioClave());
+                    MaterialAlertService.revisarCredencialesProvisionales(
+                        owner,
+                        m.getNombreCompleto(),
+                        cred.nombreUsuario(),
+                        cred.claveTemporal()
+                    );
+                }
+            });
+            task.setOnFailed(e -> {
+                MaterialAlertService.confirmacion(
+                    owner,
+                    "Miembro sin Usuario Móvil",
+                    "El miembro " + m.getNombreCompleto() + " no tiene un usuario vinculado actualmente.\n\n¿Desea generar su acceso a la aplicación móvil y contraseña provisional ahora?",
+                    "Generar Acceso",
+                    false,
+                    () -> {
+                        Task<MiembroApiClient.CredencialesMiembro> genTask = new Task<>() {
+                            @Override
+                            protected MiembroApiClient.CredencialesMiembro call() throws Exception {
+                                 return new MiembroApiClient().generarCredenciales(m.getId(), m.getDui());
+                            }
+                        };
+                        genTask.setOnSucceeded(ev -> {
+                            var nueva = genTask.getValue();
+                            if (nueva != null) {
+                                m.setClaveTemporal(nueva.claveTemporal());
+                                m.setNombreUsuario(nueva.nombreUsuario());
+                                m.setRequiereCambioClave(nueva.requiereCambioClave());
+                                MaterialAlertService.credenciales(owner, nueva.nombreUsuario(), nueva.claveTemporal());
+                                cargarMiembros();
+                            }
+                        });
+                        genTask.setOnFailed(ev -> {
+                            Throwable ex = genTask.getException();
+                            String msg = ex != null && ex.getMessage() != null ? ex.getMessage() : "No fue posible generar el acceso.";
+                            MaterialAlertService.error(owner, "Error", msg);
+                        });
+                        Thread t = new Thread(genTask, "gen-cred-table");
+                        t.setDaemon(true);
+                        t.start();
+                    }
+                );
+            });
+            Thread thread = new Thread(task, "fetch-credenciales");
+            thread.setDaemon(true);
+            thread.start();
+        }
+    }
+
     private void cargarMiembros() {
         if (lblEstadoModulo != null) lblEstadoModulo.setText("Conectando...");
         Task<List<MiembroModel>> task = new Task<>() {
             @Override
             protected List<MiembroModel> call() throws Exception {
-                return new MiembroApiClient().findAll();
+                List<MiembroModel> list = new MiembroApiClient().findAll();
+                try {
+                    List<models.UsuarioModel> users = new service.UsuarioApiClient().findAll();
+                    java.util.Map<Integer, models.UsuarioModel> userMap = new java.util.HashMap<>();
+                    for (models.UsuarioModel u : users) {
+                        if (u.getIdMiembro() != null) userMap.put(u.getIdMiembro(), u);
+                    }
+                    for (MiembroModel m : list) {
+                        if (m.getId() != null && userMap.containsKey(m.getId())) {
+                            models.UsuarioModel u = userMap.get(m.getId());
+                            m.setIdUsuario(u.getIdUsuario());
+                            m.setNombreUsuario(u.getNombreUsuario());
+                            m.setRequiereCambioClave(u.getRequiereCambioClave());
+                            m.setClaveTemporal(u.getClaveTemporal());
+                        }
+                    }
+                } catch (Exception ignored) {}
+                return list;
             }
         };
         task.setOnSucceeded(event -> {
@@ -609,6 +757,7 @@ public class MiembroController {
         int visibles = miembrosFiltrados == null ? miembros.size() : miembrosFiltrados.size();
         long totalActivos = miembros.stream().filter(m -> "ACTIVO".equalsIgnoreCase(m.getEstado())).count();
         long totalInactivos = miembros.size() - totalActivos;
+        long provisionales = miembros.stream().filter(MiembroModel::tieneClaveProvisional).count();
 
         if (lblTotalMiembros != null) {
             lblTotalMiembros.setText(miembros.size() + " miembros en total (" + totalActivos + " activos)");
@@ -616,7 +765,15 @@ public class MiembroController {
 
         if (lblResumenPie != null) {
             String tipo = mostrarInactivos ? "inactivos" : "activos";
-            lblResumenPie.setText(visibles + " miembros " + tipo + " mostrados Â· " + miembros.size() + " en total");
+            lblResumenPie.setText(visibles + " miembros " + tipo + " mostrados · " + miembros.size() + " en total");
+        }
+
+        if (bannerClavesProvisionales != null) {
+            bannerClavesProvisionales.setVisible(provisionales > 0);
+            bannerClavesProvisionales.setManaged(provisionales > 0);
+            if (lblBannerTexto != null) {
+                lblBannerTexto.setText("Hay " + provisionales + " miembro(s) con contraseña temporal pendiente de cambio en el celular. Puede revisar sus credenciales hasta que las actualicen.");
+            }
         }
     }
 
@@ -624,6 +781,10 @@ public class MiembroController {
         String criterio = normalizar(texto);
         if (miembrosFiltrados != null) {
             miembrosFiltrados.setPredicate(miembro -> {
+                if (filtrandoSoloProvisionales && !miembro.tieneClaveProvisional()) {
+                    return false;
+                }
+
                 boolean coincideEstado = mostrarInactivos
                     ? !"ACTIVO".equalsIgnoreCase(miembro.getEstado())
                     : "ACTIVO".equalsIgnoreCase(miembro.getEstado());

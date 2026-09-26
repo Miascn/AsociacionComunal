@@ -320,13 +320,18 @@ class _PaymentsViewState extends State<PaymentsView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            pending > 0 ? 'Vence el 30 de Noviembre' : 'Al día con tus pagos',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.85),
+                          Flexible(
+                            child: Text(
+                              pending > 0 ? 'Vence el 30 de Noviembre' : 'Al día con tus pagos',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           if (pending > 0)
                             BouncyTap(
                               onTap: _showPayVigilanciaSheet,

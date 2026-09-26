@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -9,7 +11,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.DetalleMiembroController" styleClass="member-detail" prefWidth="640">
+      fx:controller="controller.DetalleMiembroController" styleClass="member-detail" prefWidth="750">
     
     <!-- Hero Header del Perfil -->
     <HBox alignment="CENTER_LEFT" spacing="18" styleClass="member-detail-hero">
@@ -58,9 +60,71 @@
                 <Label text="Dirección residencial" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0">
                     <GridPane.margin><Insets top="8"/></GridPane.margin>
                 </Label>
-                <Label fx:id="lblDireccion" text="—" wrapText="true" maxWidth="540" styleClass="detail-value"
+                <Label fx:id="lblDireccion" text="—" wrapText="true" maxWidth="640" styleClass="detail-value"
                        GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
             </GridPane>
+        </VBox>
+
+        <!-- Tarjeta 3: Aportaciones y finanzas -->
+        <VBox spacing="12" styleClass="detail-section-card">
+            <Label text="HISTORIAL DE APORTACIONES" styleClass="detail-section-title"/>
+            <GridPane hgap="24" vgap="8" styleClass="detail-grid">
+                <Label text="Dinero total aportado" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label text="Aportaciones registradas" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label fx:id="lblTotalAportado" text="Cargando..." styleClass="detail-value"
+                       style="-fx-font-weight: bold; -fx-text-fill: -color-success-fg;" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <Label fx:id="lblTotalCuotas" text="—" styleClass="detail-value" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="Último pago registrado" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0">
+                    <GridPane.margin><Insets top="8"/></GridPane.margin>
+                </Label>
+                <Label text="Estado de solvencia" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                    <GridPane.margin><Insets top="8"/></GridPane.margin>
+                </Label>
+                <Label fx:id="lblUltimoPago" text="—" styleClass="detail-value" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <Label fx:id="lblSolvencia" text="—" styleClass="detail-value" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+            </GridPane>
+        </VBox>
+
+        <!-- Tarjeta 4: Acceso a la App Móvil y Código QR -->
+        <VBox spacing="12" styleClass="detail-section-card">
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <FontIcon iconLiteral="fth-smartphone" styleClass="detail-section-icon" style="-fx-icon-color: #2563eb; -fx-icon-size: 16px;"/>
+                <Label text="ACCESO A LA APLICACIÓN MÓVIL" styleClass="detail-section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblEstadoCredencialBadge" text="Cargando..." style="-fx-padding: 3 10; -fx-background-radius: 999; -fx-font-size: 11px; -fx-font-weight: 700;"/>
+            </HBox>
+
+            <HBox spacing="18" alignment="CENTER_LEFT">
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <GridPane hgap="24" vgap="6" styleClass="detail-cred-grid">
+                        <Label text="Usuario móvil / DUI" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <Label text="Contraseña de acceso" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                        <Label fx:id="lblUsuarioMovil" text="—" styleClass="detail-value" style="-fx-font-family: 'Consolas', monospace; -fx-font-weight: 800;" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <HBox spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                            <Label fx:id="lblClaveMovil" text="—" styleClass="detail-value" style="-fx-font-family: 'Consolas', monospace; -fx-font-weight: 800;"/>
+                            <Button fx:id="btnCopiarClave" text="Copiar" styleClass="mfx-dialog-btn" style="-fx-padding: 2 8; -fx-font-size: 11px;"/>
+                        </HBox>
+                    </GridPane>
+
+                    <Label fx:id="lblExplicacionClave" text="—" wrapText="true" maxWidth="560" style="-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;"/>
+
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Button fx:id="btnGenerarAcceso" text="⚡ Generar acceso móvil" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 700; -fx-font-size: 11.5px; -fx-padding: 5 12; -fx-background-radius: 6px; -fx-cursor: hand;" visible="false" managed="false"/>
+                        <Button fx:id="btnCopiarEnlaceQr" text="Copiar enlace QR" styleClass="mfx-dialog-btn" style="-fx-padding: 4 10; -fx-font-size: 11px;"/>
+                        <Button fx:id="btnAbrirModalQr" text="Ver QR en grande" styleClass="mfx-dialog-btn" style="-fx-padding: 4 10; -fx-font-size: 11px;"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Contenedor QR estilizado y más estrecho -->
+                <VBox fx:id="contenedorQr" alignment="CENTER" spacing="3" minWidth="105" prefWidth="112" maxWidth="116"
+                      style="-fx-background-color: #ffffff; -fx-border-color: #e2e8f0; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 6px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 6, 0, 0, 2);">
+                    <ImageView fx:id="imgCodigoQr" fitWidth="88" fitHeight="88" preserveRatio="true"/>
+                    <Label text="📱 Escanear QR" style="-fx-font-size: 9.5px; -fx-font-weight: 800; -fx-text-fill: #1e293b;"/>
+                    <Label text="Acceso móvil" style="-fx-font-size: 8.5px; -fx-text-fill: #64748b;"/>
+                </VBox>
+            </HBox>
         </VBox>
     </VBox>
 </VBox>

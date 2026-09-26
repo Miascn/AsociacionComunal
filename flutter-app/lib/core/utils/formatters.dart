@@ -26,7 +26,13 @@ class Formatters {
       final parsed = DateTime.parse(rawDate.toString());
       return _dateFormat.format(parsed);
     } catch (_) {
-      return rawDate.toString();
+      try {
+        final dt = rawDate is DateTime ? rawDate : DateTime.parse(rawDate.toString());
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return '${dt.day.toString().padLeft(2, '0')} ${months[dt.month - 1]} ${dt.year}';
+      } catch (_) {
+        return rawDate.toString();
+      }
     }
   }
 
@@ -38,7 +44,15 @@ class Formatters {
       final parsed = DateTime.parse(rawDate.toString());
       return _timeFormat.format(parsed);
     } catch (_) {
-      return '';
+      try {
+        final dt = rawDate is DateTime ? rawDate : DateTime.parse(rawDate.toString());
+        final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+        final minute = dt.minute.toString().padLeft(2, '0');
+        final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+        return '$hour:$minute $ampm';
+      } catch (_) {
+        return '';
+      }
     }
   }
 

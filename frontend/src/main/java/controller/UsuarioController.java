@@ -22,6 +22,7 @@ import models.RolModel;
 import models.UsuarioModel;
 import security.SessionManager;
 import service.HeroIcon;
+import service.MaterialAlertService;
 import service.ResponsiveWindowService;
 import service.TablePaginator;
 import service.MiembroApiClient;
@@ -30,8 +31,18 @@ import service.UsuarioApiClient;
 import service.UsuarioApiClient.UsuarioRequest;
 
 public class UsuarioController {
+    public enum SegmentoUsuario {
+        SISTEMA_JAVA,
+        APP_MOVIL,
+        TODOS
+    }
+
+    private static final String STYLE_TAB_ACTIVO = "-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 700; -fx-background-radius: 9999px; -fx-padding: 8px 18px; -fx-cursor: hand; -fx-font-size: 13px;";
+    private static final String STYLE_TAB_INACTIVO = "-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: 700; -fx-background-radius: 9999px; -fx-padding: 8px 18px; -fx-cursor: hand; -fx-font-size: 13px;";
+
     @FXML private TableView<UsuarioModel> tablaUsuarios;
     @FXML private TableColumn<UsuarioModel, String> columnaUsuario;
+    @FXML private TableColumn<UsuarioModel, String> columnaTipo;
     @FXML private TableColumn<UsuarioModel, String> columnaRol;
     @FXML private TableColumn<UsuarioModel, String> columnaMiembro;
     @FXML private TableColumn<UsuarioModel, String> columnaEstado;
@@ -41,6 +52,14 @@ public class UsuarioController {
     @FXML private Label lblTotalUsuarios;
     @FXML private Label lblEstadoModulo;
     @FXML private HBox barraPie;
+
+    @FXML private Button btnTabSistema;
+    @FXML private Button btnTabMovil;
+    @FXML private Button btnTabTodos;
+    @FXML private HBox bannerContexto;
+    @FXML private Label lblIconoContexto;
+    @FXML private Label lblDescripcionSegmento;
+
     @FXML private Button btnEditar;         // opcional, puede no estar en FXML
     @FXML private Button btnCambiarEstado;  // opcional
     @FXML private Button btnBloquear;       // opcional
@@ -49,11 +68,39 @@ public class UsuarioController {
     private final ObservableList<UsuarioModel> users = FXCollections.observableArrayList();
     private final Map<Integer, RolModel> roles = new HashMap<>();
     private final Map<Integer, MiembroModel> members = new HashMap<>();
-    private FilteredList<UsuarioModel> filtered;
+    private final FilteredList<UsuarioModel> filtered = new FilteredList<>(users, user -> true);
     private TablePaginator<UsuarioModel> paginator;
+
+    private SegmentoUsuario segmentoActivo = SegmentoUsuario.SISTEMA_JAVA;
 
     @FXML private void initialize() {
         columnaUsuario.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNombreUsuario()));
+
+        if (columnaTipo != null) {
+            columnaTipo.setCellValueFactory(cell -> new SimpleStringProperty(esMovil(cell.getValue()) ? "App Móvil" : "Sistema Java"));
+            columnaTipo.setCellFactory(col -> new TableCell<>() {
+                @Override
+                protected void updateItem(String tipo, boolean empty) {
+                    super.updateItem(tipo, empty);
+                    if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        UsuarioModel u = getTableView().getItems().get(getIndex());
+                        boolean movil = esMovil(u);
+                        Label badge = new Label(movil ? "📱 App Móvil" : "💻 Sistema Java");
+                        if (movil) {
+                            badge.setStyle("-fx-background-color: #ecfdf5; -fx-text-fill: #047857; -fx-font-weight: bold; -fx-padding: 2 8 2 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                        } else {
+                            badge.setStyle("-fx-background-color: #eff6ff; -fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-padding: 2 8 2 8; -fx-background-radius: 6; -fx-font-size: 11px;");
+                        }
+                        setGraphic(badge);
+                        setText(null);
+                    }
+                }
+            });
+        }
+
         columnaRol.setCellValueFactory(cell -> new SimpleStringProperty(roleName(cell.getValue().getIdRol())));
         columnaMiembro.setCellValueFactory(cell -> new SimpleStringProperty(memberName(cell.getValue().getIdMiembro())));
         
@@ -83,12 +130,17 @@ public class UsuarioController {
         columnaUltimoAcceso.setCellValueFactory(cell -> new SimpleStringProperty(
             cell.getValue().getUltimoAcceso() == null ? "Nunca" : cell.getValue().getUltimoAcceso()));
         
-        filtered = new FilteredList<>(users, value -> true);
-        paginator = new TablePaginator<>(tablaUsuarios, filtered, "usuarios", 5);
-        if (barraPie != null) {
-            paginator.attachTo(barraPie);
+        if (tablaUsuarios != null) {
+            paginator = new TablePaginator<>(tablaUsuarios, filtered, "usuarios", 10);
+            if (barraPie != null) {
+                paginator.attachTo(barraPie);
+            }
         }
-        campoBusqueda.textProperty().addListener((obs, previous, value) -> filter(value));
+        if (campoBusqueda != null) {
+            campoBusqueda.textProperty().addListener((obs, previous, value) -> aplicarFiltros());
+        }
+        aplicarFiltros();
+        actualizarEstilosPestanas();
 
         // Botones del hero son opcionales (pueden no estar en el FXML si se usan inline)
         if (btnEditar != null) btnEditar.disableProperty().bind(tablaUsuarios.getSelectionModel().selectedItemProperty().isNull());
@@ -107,17 +159,26 @@ public class UsuarioController {
             }
         });
 
-        // Columna ACCIONES inline: Edit (amber pencil), ChangeState (refresh/archive), Block (trash/refresh)
+        // Columna ACCIONES inline: QR (para móviles), Edit (amber pencil), ResetKey, ChangeState, Lock
         if (columnaAcciones != null) {
             columnaAcciones.setCellFactory(col -> new TableCell<>() {
+                private final Button btnQr     = new Button();
                 private final Button btnEdit   = new Button();
                 private final Button btnKey    = new Button();
                 private final Button btnToggle = new Button();
                 private final Button btnLock   = new Button();
-                private final HBox box = new HBox(8, btnEdit, btnKey, btnToggle, btnLock);
+                private final HBox box = new HBox(6, btnQr, btnEdit, btnKey, btnToggle, btnLock);
                 {
                     box.getStyleClass().add("row-actions-box");
                     box.setAlignment(Pos.CENTER_RIGHT);
+
+                    btnQr.getStyleClass().addAll("btn-row-action", "btn-action-view");
+                    btnQr.setGraphic(HeroIcon.create(HeroIcon.EYE, HeroIcon.PURPLE_600, 18));
+                    btnQr.setTooltip(new Tooltip("Ver credenciales y código QR de la App Móvil"));
+                    btnQr.setOnAction(e -> {
+                        UsuarioModel item = getTableView().getItems().get(getIndex());
+                        if (item != null) mostrarQrCredenciales(item);
+                    });
 
                     btnEdit.getStyleClass().addAll("btn-row-action", "btn-action-edit");
                     btnEdit.setGraphic(HeroIcon.create(HeroIcon.PENCIL, HeroIcon.AMBER_600, 18));
@@ -160,6 +221,10 @@ public class UsuarioController {
                         UsuarioModel u = getTableView().getItems().get(getIndex());
                         boolean inactivo = "INACTIVO".equalsIgnoreCase(u.getEstado());
                         boolean bloqueado = "BLOQUEADO".equalsIgnoreCase(u.getEstado());
+                        boolean movil = esMovil(u);
+
+                        btnQr.setVisible(movil);
+                        btnQr.setManaged(movil);
 
                         btnToggle.setGraphic(inactivo
                             ? HeroIcon.create(HeroIcon.REFRESH, HeroIcon.GREEN_600, 18)
@@ -178,6 +243,87 @@ public class UsuarioController {
         }
 
         loadData();
+    }
+
+    @FXML
+    public void seleccionarTabSistema() {
+        setSegmentoActivo(SegmentoUsuario.SISTEMA_JAVA);
+    }
+
+    @FXML
+    public void seleccionarTabMovil() {
+        setSegmentoActivo(SegmentoUsuario.APP_MOVIL);
+    }
+
+    @FXML
+    public void seleccionarTabTodos() {
+        setSegmentoActivo(SegmentoUsuario.TODOS);
+    }
+
+    public void setSegmentoActivo(SegmentoUsuario nuevoSegmento) {
+        this.segmentoActivo = nuevoSegmento;
+        actualizarEstilosPestanas();
+        aplicarFiltros();
+    }
+
+    public SegmentoUsuario getSegmentoActivo() {
+        return segmentoActivo;
+    }
+
+    private void actualizarEstilosPestanas() {
+        if (btnTabSistema != null) {
+            btnTabSistema.setStyle(segmentoActivo == SegmentoUsuario.SISTEMA_JAVA ? STYLE_TAB_ACTIVO : STYLE_TAB_INACTIVO);
+        }
+        if (btnTabMovil != null) {
+            btnTabMovil.setStyle(segmentoActivo == SegmentoUsuario.APP_MOVIL ? STYLE_TAB_ACTIVO : STYLE_TAB_INACTIVO);
+        }
+        if (btnTabTodos != null) {
+            btnTabTodos.setStyle(segmentoActivo == SegmentoUsuario.TODOS ? STYLE_TAB_ACTIVO : STYLE_TAB_INACTIVO);
+        }
+
+        if (bannerContexto != null && lblDescripcionSegmento != null) {
+            switch (segmentoActivo) {
+                case SISTEMA_JAVA -> {
+                    bannerContexto.setStyle("-fx-background-color: #eff6ff; -fx-border-color: #bfdbfe; -fx-border-width: 1px; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 10px 16px;");
+                    if (lblIconoContexto != null) lblIconoContexto.setText("💻");
+                    lblDescripcionSegmento.setText("Mostrando cuentas con acceso a la aplicación de escritorio Java (Administradores y Personal Directivo). Las cuentas de residentes para la app móvil se aíslan en su pestaña correspondiente.");
+                    lblDescripcionSegmento.setStyle("-fx-text-fill: #1e40af; -fx-font-size: 12px; -fx-font-weight: 600;");
+                }
+                case APP_MOVIL -> {
+                    bannerContexto.setStyle("-fx-background-color: #ecfdf5; -fx-border-color: #a7f3d0; -fx-border-width: 1px; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 10px 16px;");
+                    if (lblIconoContexto != null) lblIconoContexto.setText("📱");
+                    lblDescripcionSegmento.setText("Mostrando cuentas creadas para la aplicación móvil (Residentes / Miembros de la Colonia). Creadas automáticamente para inicio de sesión en la app Android.");
+                    lblDescripcionSegmento.setStyle("-fx-text-fill: #065f46; -fx-font-size: 12px; -fx-font-weight: 600;");
+                }
+                case TODOS -> {
+                    bannerContexto.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1px; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 10px 16px;");
+                    if (lblIconoContexto != null) lblIconoContexto.setText("🌐");
+                    lblDescripcionSegmento.setText("Mostrando todas las cuentas registradas en el sistema (Sistema Java y App Móvil).");
+                    lblDescripcionSegmento.setStyle("-fx-text-fill: #334155; -fx-font-size: 12px; -fx-font-weight: 600;");
+                }
+            }
+        }
+    }
+
+    public boolean esMovil(UsuarioModel u) {
+        if (u == null) return false;
+        if (u.esUsuarioMovil()) return true;
+        String r = roleName(u.getIdRol());
+        return "MIEMBRO".equalsIgnoreCase(r);
+    }
+
+    private void mostrarQrCredenciales(UsuarioModel u) {
+        if (u == null) return;
+        try {
+            MaterialAlertService.revisarCredencialesProvisionales(
+                tablaUsuarios.getScene().getWindow(),
+                memberName(u.getIdMiembro()),
+                u.getNombreUsuario(),
+                u.getClaveTemporal()
+            );
+        } catch (Exception ex) {
+            showError("No fue posible abrir las credenciales: " + ex.getMessage());
+        }
     }
 
     @FXML private void create() { openForm(null); }
@@ -374,12 +520,12 @@ public class UsuarioController {
             members.clear();
             task.getValue().members().forEach(member -> members.put(member.getIdMiembro(), member));
             users.setAll(task.getValue().users());
-            paginator.updatePagination();
+            aplicarFiltros();
             lblEstadoModulo.setText("Conectado al servidor");
         });
         task.setOnFailed(event -> {
             users.clear();
-            paginator.updatePagination();
+            aplicarFiltros();
             lblEstadoModulo.setText("Sin conexión al servidor");
             tablaUsuarios.setPlaceholder(new Label("No fue posible obtener los usuarios. " + message(task.getException())));
         });
@@ -389,16 +535,56 @@ public class UsuarioController {
     private void replace(UsuarioModel original, UsuarioModel updated) {
         int index = original == null ? -1 : users.indexOf(original);
         if (index >= 0) users.set(index, updated); else users.add(updated);
-        paginator.updatePagination();
-        tablaUsuarios.getSelectionModel().select(updated);
+        aplicarFiltros();
+        if (tablaUsuarios != null) {
+            tablaUsuarios.getSelectionModel().select(updated);
+        }
     }
 
-    private void filter(String text) {
+    private void aplicarFiltros() {
+        if (filtered == null) return;
+        String text = campoBusqueda != null ? campoBusqueda.getText() : "";
+        filtered.setPredicate(user -> cumpleFiltros(user, text));
+        if (paginator != null) {
+            paginator.updatePagination();
+        }
+        actualizarContador();
+    }
+
+    public boolean cumpleFiltros(UsuarioModel user, String text) {
+        if (user == null) return false;
+        boolean movil = esMovil(user);
+
+        // 1. Filtrado por segmento
+        if (segmentoActivo == SegmentoUsuario.SISTEMA_JAVA && movil) {
+            return false;
+        }
+        if (segmentoActivo == SegmentoUsuario.APP_MOVIL && !movil) {
+            return false;
+        }
+
+        // 2. Filtrado por texto de búsqueda
         String query = normalize(text);
-        filtered.setPredicate(user -> query.isBlank() || normalize(user.getNombreUsuario()).contains(query)
-            || normalize(roleName(user.getIdRol())).contains(query) || normalize(memberName(user.getIdMiembro())).contains(query)
-            || normalize(user.getEstado()).contains(query));
-        paginator.updatePagination();
+        if (query.isBlank()) return true;
+
+        String appTipo = movil ? "app movil movil residente celular" : "sistema java escritorio administrativo directiva";
+        return normalize(user.getNombreUsuario()).contains(query)
+            || normalize(roleName(user.getIdRol())).contains(query)
+            || normalize(memberName(user.getIdMiembro())).contains(query)
+            || normalize(user.getEstado()).contains(query)
+            || normalize(appTipo).contains(query);
+    }
+
+    private void actualizarContador() {
+        if (lblTotalUsuarios == null) return;
+        int count = filtered.size();
+        String sufijo;
+        switch (segmentoActivo) {
+            case SISTEMA_JAVA -> sufijo = count == 1 ? "usuario del sistema Java" : "usuarios del sistema Java";
+            case APP_MOVIL -> sufijo = count == 1 ? "cuenta de la app móvil" : "cuentas de la app móvil";
+            default -> sufijo = count == 1 ? "usuario en total" : "usuarios en total";
+        }
+        lblTotalUsuarios.setText(count + " " + sufijo);
     }
 
     private String roleName(Integer id) { return id == null || !roles.containsKey(id) ? "Rol " + id : roles.get(id).nombre(); }
@@ -407,7 +593,6 @@ public class UsuarioController {
         MiembroModel member = members.get(id);
         return member == null ? "Miembro " + id : (member.getNombres() + " " + member.getApellidos()).trim();
     }
-    private void updateTotal() { lblTotalUsuarios.setText(filtered.size() + " usuarios"); }
     private String normalize(String value) {
         if (value == null) return "";
         return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).trim();

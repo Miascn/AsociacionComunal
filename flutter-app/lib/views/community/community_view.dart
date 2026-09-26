@@ -40,6 +40,7 @@ class _CommunityViewState extends State<CommunityView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.viewModel.loadCommunityData();
+      widget.paymentsViewModel?.loadPayments(idMiembro: widget.idMiembro);
     });
   }
 
@@ -201,6 +202,16 @@ class _CommunityViewState extends State<CommunityView> {
     );
   }
 
+  List<PaymentModel> _getUserContributionsForProject(ProjectModel project) {
+    if (widget.paymentsViewModel == null) return const [];
+    return widget.paymentsViewModel!.payments.where((p) {
+      final matchesId = p.idProyecto != null && p.idProyecto == project.id;
+      final matchesName = p.nombreProyecto != null &&
+          p.nombreProyecto!.trim().toLowerCase() == project.nombre.trim().toLowerCase();
+      return (matchesId || matchesName) && p.isPaid;
+    }).toList();
+  }
+
   void _showContributeSheet(ProjectModel project) {
     if (widget.paymentsViewModel == null) return;
     final now = DateTime.now();
@@ -217,8 +228,12 @@ class _CommunityViewState extends State<CommunityView> {
       periodoMes: periodo,
       idProyecto: project.id,
       nombreProyecto: project.nombre,
-      onPaymentSuccess: (p) {
-        widget.viewModel.loadCommunityData();
+      onPaymentSuccess: (p) async {
+        await widget.viewModel.loadCommunityData();
+        if (widget.paymentsViewModel != null) {
+          await widget.paymentsViewModel!.loadPayments(idMiembro: widget.idMiembro);
+        }
+        if (mounted) setState(() {});
       },
     );
   }
@@ -232,7 +247,13 @@ class _CommunityViewState extends State<CommunityView> {
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
-          onRefresh: () => widget.viewModel.loadCommunityData(),
+          onRefresh: () async {
+            await Future.wait([
+              widget.viewModel.loadCommunityData(),
+              if (widget.paymentsViewModel != null)
+                widget.paymentsViewModel!.loadPayments(idMiembro: widget.idMiembro),
+            ]);
+          },
           color: AppColors.stitchSapphire,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -373,21 +394,28 @@ class _CommunityViewState extends State<CommunityView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.account_balance_rounded, size: 18, color: AppColors.stitchSapphire),
-                  SizedBox(width: 6),
-                  Text(
-                    'TRANSPARENCIA CIUDADANA',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: AppColors.stitchSapphire,
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.account_balance_rounded, size: 18, color: AppColors.stitchSapphire),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'TRANSPARENCIA CIUDADANA',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                          color: AppColors.stitchSapphire,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -558,7 +586,18 @@ class _CommunityViewState extends State<CommunityView> {
 
   /// 4. Selector de Píldoras de Filtro
   Widget _buildFilterPills(bool isDark) {
-    final filters = ['Todos', 'En Recaudación (2)', 'En Ejecución (1)', 'Completados'];
+    final all = widget.viewModel.projects;
+    final activeCount = all.where((p) => p.isActive).length;
+    final recaudacionCount = all.where((p) => p.isEnRecaudacion && p.isActive).length;
+    final ejecucionCount = all.where((p) => p.isEnEjecucion && p.isActive).length;
+    final finalizadosCount = all.where((p) => p.isFinalizado).length;
+
+    final filters = [
+      'Obras Activas ($activeCount)',
+      'En Recaudación ($recaudacionCount)',
+      'En Ejecución ($ejecucionCount)',
+      if (finalizadosCount > 0) 'Concluidos ($finalizadosCount)',
+    ];
 
     return SizedBox(
       height: 36,
@@ -610,15 +649,39 @@ class _CommunityViewState extends State<CommunityView> {
   /// 5. Lista de Proyectos de Obras y Mejoras
   Widget _buildProjectsList(bool isDark) {
     return ListenableBuilder(
-      listenable: widget.viewModel,
+      listenable: Listenable.merge([
+        widget.viewModel,
+        if (widget.paymentsViewModel != null) widget.paymentsViewModel!,
+      ]),
       builder: (context, _) {
-        final projects = widget.viewModel.projects;
+        final all = widget.viewModel.projects;
+        final List<ProjectModel> projects;
+
+        switch (_selectedProjectFilter) {
+          case 1:
+            projects = all.where((p) => p.isEnRecaudacion && p.isActive).toList();
+            break;
+          case 2:
+            projects = all.where((p) => p.isEnEjecucion && p.isActive).toList();
+            break;
+          case 3:
+            projects = all.where((p) => p.isFinalizado).toList();
+            break;
+          case 0:
+          default:
+            // Por defecto solo muestra los proyectos activos; los finalizados desaparecen de la vista principal
+            projects = all.where((p) => p.isActive).toList();
+            break;
+        }
 
         if (projects.isEmpty) {
-          return const EmptyStateWidget(
+          final emptyMsg = _selectedProjectFilter == 3
+              ? 'No hay proyectos finalizados registrados.'
+              : 'No hay proyectos activos en esta categoría en este momento.';
+          return EmptyStateWidget(
             icon: Icons.architecture_rounded,
-            title: 'Sin proyectos registrados',
-            message: 'No hay proyectos comunitarios activos en este momento.',
+            title: 'Sin proyectos',
+            message: emptyMsg,
           );
         }
 
@@ -641,9 +704,17 @@ class _CommunityViewState extends State<CommunityView> {
     final meta = project.presupuesto;
     final faltante = project.montoPendiente;
 
-    // Colores e imágenes según estado
-    final isRecaudacion = index == 0 || project.estado.toUpperCase().contains('RECAUD');
-    final isEjecucion = index == 1 || project.estado.toUpperCase().contains('EJEC');
+    // Colores e imágenes según estado real del proyecto
+    final isFinalizado = project.isFinalizado;
+    final isEjecucion = project.isEnEjecucion;
+    final isRecaudacion = project.isEnRecaudacion;
+
+    final String statusLabel = isFinalizado
+        ? 'Finalizado'
+        : (isEjecucion ? 'En Ejecución' : 'En Recaudación');
+    final Color statusColor = isFinalizado
+        ? AppColors.stitchEmerald
+        : (isEjecucion ? AppColors.stitchTeal : AppColors.stitchSapphire);
 
     return Container(
       decoration: BoxDecoration(
@@ -674,12 +745,12 @@ class _CommunityViewState extends State<CommunityView> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    isRecaudacion
-                        ? const Color(0xFF0F172A)
-                        : (isEjecucion ? const Color(0xFF0D9488) : const Color(0xFF1E3A8A)),
-                    isRecaudacion
-                        ? const Color(0xFF1E293B)
-                        : (isEjecucion ? const Color(0xFF115E59) : const Color(0xFF1D4ED8)),
+                    isFinalizado
+                        ? const Color(0xFF064E3B)
+                        : (isEjecucion ? const Color(0xFF0D9488) : const Color(0xFF0F172A)),
+                    isFinalizado
+                        ? const Color(0xFF047857)
+                        : (isEjecucion ? const Color(0xFF115E59) : const Color(0xFF1E293B)),
                   ],
                 ),
               ),
@@ -701,14 +772,12 @@ class _CommunityViewState extends State<CommunityView> {
                             height: 6,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isRecaudacion
-                                  ? AppColors.stitchSapphire
-                                  : (isEjecucion ? AppColors.stitchTeal : AppColors.stitchEmerald),
+                              color: statusColor,
                             ),
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            isRecaudacion ? 'En Recaudación' : (isEjecucion ? 'En Ejecución' : 'Completado'),
+                            statusLabel,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.stitchTextPrimary),
                           ),
                         ],
@@ -788,19 +857,28 @@ class _CommunityViewState extends State<CommunityView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${progreso.toStringAsFixed(0)}% financiado',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppColors.stitchSapphire,
+                    Flexible(
+                      child: Text(
+                        '${progreso.toStringAsFixed(0)}% financiado',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : AppColors.stitchSapphire,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
-                    Text(
-                      'Meta: ${Formatters.currency(meta)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? AppColors.stitchTextMuted : AppColors.stitchTextSecondary,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Meta: ${Formatters.currency(meta)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppColors.stitchTextMuted : AppColors.stitchTextSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                   ],
@@ -819,88 +897,192 @@ class _CommunityViewState extends State<CommunityView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${Formatters.currency(recaudado)} recaudados',
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.stitchEmerald),
+                    Flexible(
+                      child: Text(
+                        '${Formatters.currency(recaudado)} recaudados',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.stitchEmerald),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                    Text(
-                      'Faltan ${Formatters.currency(faltante)}',
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Faltan ${Formatters.currency(faltante)}',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                // Caja Tu Aporte Voluntario
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFECACA)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.volunteer_activism_rounded, color: Color(0xFFDC2626), size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Tu Aporte Voluntario',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
-                                ),
-                                Text(
-                                  'Pendiente',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Aporte sugerido: ${Formatters.currency(project.aportePorMiembro)} por vivienda para cubrir presupuesto en fecha.',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF7F1D1D), height: 1.3),
-                            ),
-                          ],
-                        ),
+                // Caja Tu Aporte Voluntario (dinámica según si ya aportó o no)
+                () {
+                  final userProjectPayments = _getUserContributionsForProject(project);
+                  final totalUserContributed =
+                      userProjectPayments.fold(0.0, (sum, p) => sum + p.monto);
+                  final hasUserContributed = userProjectPayments.isNotEmpty;
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: hasUserContributed
+                          ? (isDark
+                              ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                              : const Color(0xFFECFDF5))
+                          : const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: hasUserContributed
+                            ? (isDark
+                                ? const Color(0xFF059669).withValues(alpha: 0.4)
+                                : const Color(0xFFA7F3D0))
+                            : const Color(0xFFFECACA),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.volunteer_activism_rounded,
+                          color: hasUserContributed
+                              ? const Color(0xFF059669)
+                              : const Color(0xFFDC2626),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Tu Aporte Voluntario',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: hasUserContributed
+                                          ? (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF065F46))
+                                          : const Color(0xFF991B1B),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: hasUserContributed
+                                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                          : const Color(0xFFDC2626).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      hasUserContributed
+                                          ? 'Aportado: ${Formatters.currency(totalUserContributed)}'
+                                          : 'Pendiente',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: hasUserContributed
+                                            ? const Color(0xFF059669)
+                                            : const Color(0xFFDC2626),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                project.isFinalizado
+                                    ? (hasUserContributed
+                                        ? 'Registraste ${userProjectPayments.length} aporte${userProjectPayments.length > 1 ? "s" : ""} por un total de ${Formatters.currency(totalUserContributed)}. ¡Muchas gracias por tu contribución comunal!'
+                                        : 'Esta obra comunal ya fue concluida con éxito y cumplió su objetivo presupuestario.')
+                                    : (hasUserContributed
+                                        ? 'Registras ${userProjectPayments.length} aporte${userProjectPayments.length > 1 ? "s" : ""} acumulado${userProjectPayments.length > 1 ? "s" : ""}. ¡Puedes continuar aportando voluntariamente cuantas veces desees!'
+                                        : 'Aporte sugerido: ${Formatters.currency(project.aportePorMiembro)} por vivienda para cubrir presupuesto en fecha.'),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: hasUserContributed
+                                      ? (isDark ? AppColors.stitchTextMuted : const Color(0xFF047857))
+                                      : const Color(0xFF7F1D1D),
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }(),
                 const SizedBox(height: 16),
                 // Botón CTA Aportar
-                BouncyTap(
-                  onTap: () => _showContributeSheet(project),
-                  child: Container(
-                    height: 50,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      color: AppColors.stitchSapphire,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.stitchSapphire.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                () {
+                  if (project.isFinalizado) {
+                    return Container(
+                      height: 48,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        color: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.3) : const Color(0xFFECFDF5),
+                        border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Proyecto Concluido con Éxito',
+                            style: TextStyle(color: Color(0xFF059669), fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final userProjectPayments = _getUserContributionsForProject(project);
+                  final hasUserContributed = userProjectPayments.isNotEmpty;
+
+                  return BouncyTap(
+                    onTap: () => _showContributeSheet(project),
+                    child: Container(
+                      height: 50,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        color: AppColors.stitchSapphire,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.stitchSapphire.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            hasUserContributed
+                                ? Icons.volunteer_activism_rounded
+                                : Icons.volunteer_activism_outlined,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            hasUserContributed
+                                ? 'Aportar de nuevo al proyecto'
+                                : 'Ver detalles y aportar',
+                            style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.volunteer_activism_outlined, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Ver detalles y aportar',
-                          style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                  );
+                }(),
                 const SizedBox(height: 6),
                 Center(
                   child: Text(

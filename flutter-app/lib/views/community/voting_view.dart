@@ -337,29 +337,37 @@ class _VotingViewState extends State<VotingView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isOpen ? AppColors.stitchEmerald : AppColors.stitchTextSecondary,
+          Flexible(
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isOpen ? AppColors.stitchEmerald : AppColors.stitchTextSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isOpen ? 'VOTACIÓN ACTIVA' : 'CONSULTA FINALIZADA',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
-                  color: isOpen ? AppColors.stitchEmerald : AppColors.stitchTextSecondary,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    isOpen ? 'VOTACIÓN ACTIVA' : 'CONSULTA FINALIZADA',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: isOpen ? AppColors.stitchEmerald : AppColors.stitchTextSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.schedule_rounded, size: 14, color: AppColors.stitchSapphire),
               const SizedBox(width: 5),
@@ -562,20 +570,27 @@ class _VotingViewState extends State<VotingView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.analytics_rounded, size: 18, color: AppColors.stitchSapphire),
-                  SizedBox(width: 8),
-                  Text(
-                    'Datos Clave de Transparencia',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.stitchTextPrimary,
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics_rounded, size: 18, color: AppColors.stitchSapphire),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Datos Clave de Transparencia',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.stitchTextPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -652,10 +667,14 @@ class _VotingViewState extends State<VotingView> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Participación Actual del Censo',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.stitchSapphire),
+                    Expanded(
+                      child: Text(
+                        'Participación Actual del Censo',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.stitchSapphire),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    SizedBox(width: 8),
                     Text(
                       '48 de 75 (64%)',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.stitchEmerald),
@@ -676,10 +695,15 @@ class _VotingViewState extends State<VotingView> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Faltan 12 votos para alcanzar quórum vinculante',
-                      style: TextStyle(fontSize: 10.5, color: AppColors.stitchTextSecondary),
+                    Expanded(
+                      child: Text(
+                        'Faltan 12 votos para alcanzar quórum vinculante',
+                        style: TextStyle(fontSize: 10.5, color: AppColors.stitchTextSecondary),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
+                    SizedBox(width: 8),
                     Text(
                       'Meta: 60',
                       style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.stitchSapphire),
@@ -984,10 +1008,15 @@ class _VotingViewState extends State<VotingView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Garantía de Voto Verificado',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.stitchSapphire),
+                          Expanded(
+                            child: Text(
+                              'Garantía de Voto Verificado',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.stitchSapphire),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ),
+                          SizedBox(width: 8),
                           Text(
                             'Casa #42-B',
                             style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.stitchSapphire),

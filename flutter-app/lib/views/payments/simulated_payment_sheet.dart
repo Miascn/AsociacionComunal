@@ -93,10 +93,20 @@ class _SimulatedPaymentSheetState extends State<SimulatedPaymentSheet>
     _amountController = TextEditingController(
       text: widget.defaultAmount.toStringAsFixed(2),
     );
+    _amountController.addListener(_onFieldChanged);
+    widget.viewModel.addListener(_onFieldChanged);
+    // Cargar pagos de inmediato para detectar aportaciones previas del residente
+    widget.viewModel.loadPayments(idMiembro: widget.idMiembro);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    widget.viewModel.removeListener(_onFieldChanged);
+    _amountController.removeListener(_onFieldChanged);
     _amountController.dispose();
     _cardNumberController.dispose();
     _expiryController.dispose();
@@ -107,6 +117,32 @@ class _SimulatedPaymentSheetState extends State<SimulatedPaymentSheet>
 
   double get _currentAmount {
     return double.tryParse(_amountController.text.trim()) ?? widget.defaultAmount;
+  }
+
+  bool get _isProject => widget.idProyecto != null;
+
+  List<PaymentModel> get _previousProjectContributions {
+    if (!_isProject) return const [];
+    return widget.viewModel.payments.where((p) {
+      final matchesId = widget.idProyecto != null && p.idProyecto == widget.idProyecto;
+      final matchesName = widget.nombreProyecto != null &&
+          p.nombreProyecto != null &&
+          p.nombreProyecto!.trim().toLowerCase() == widget.nombreProyecto!.trim().toLowerCase();
+      return (matchesId || matchesName) && p.isPaid;
+    }).toList();
+  }
+
+  double get _totalPreviousContributed {
+    return _previousProjectContributions.fold(0.0, (sum, p) => sum + p.monto);
+  }
+
+  bool get _hasPreviousProjectDonation => _previousProjectContributions.isNotEmpty;
+
+  bool get _isMonthlyFeeAlreadyPaid {
+    if (_isProject) return false;
+    return widget.viewModel.payments.any(
+      (p) => p.isMonthlyFee && p.periodoMes == widget.periodoMes && p.isPaid,
+    );
   }
 
   String get _paymentMethodName {
@@ -120,6 +156,11 @@ class _SimulatedPaymentSheetState extends State<SimulatedPaymentSheet>
   }
 
   Future<void> _processPayment() async {
+    if (_isMonthlyFeeAlreadyPaid) {
+      setState(() => _errorMessage = 'La cuota de mantenimiento de este período ya fue liquidada.');
+      return;
+    }
+
     final amount = _currentAmount;
     if (amount <= 0) {
       setState(() => _errorMessage = 'El monto debe ser mayor a cero.');
@@ -259,7 +300,114 @@ class _SimulatedPaymentSheetState extends State<SimulatedPaymentSheet>
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // Alerta informativa NO bloqueante para aportaciones adicionales a proyectos
+              if (_isProject && _hasPreviousProjectDonation) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF059669) : const Color(0xFF34D399),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.volunteer_activism_rounded, color: Color(0xFF059669), size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '¡Aviso: Ya has aportado a este proyecto!',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF065F46),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Detectamos ${_previousProjectContributions.length == 1 ? "1 aporte previo registrado" : "${_previousProjectContributions.length} aportes previos registrados"} por un total acumulado de ${Formatters.currency(_totalPreviousContributed)}. Puedes realizar nuevas aportaciones cuantas veces desees para apoyar esta obra comunal.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? const Color(0xFFA7F3D0) : const Color(0xFF047857),
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Alerta bloqueante para cuota mensual ya liquidada
+              if (_isMonthlyFeeAlreadyPaid) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFFD97706).withValues(alpha: 0.5) : const Color(0xFFFCD34D),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_circle_rounded, color: Color(0xFFD97706), size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cuota mensual ya saldada',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Tu aportación principal del período ${widget.periodoMes} ya se encuentra liquidada. Podrás realizar el siguiente pago cuando inicie el próximo período mensual.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: isDark ? AppColors.stitchTextMuted : const Color(0xFF78350F),
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Tarjeta visual interactiva
               _buildDigitalCardPreview(isDark),
@@ -316,22 +464,31 @@ class _SimulatedPaymentSheetState extends State<SimulatedPaymentSheet>
 
               // Botón de acción principal con animación
               BouncyTap(
-                onTap: _isProcessing ? null : _processPayment,
+                onTap: (_isProcessing || _isMonthlyFeeAlreadyPaid) ? null : _processPayment,
                 child: Container(
                   width: double.infinity,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.brandBlue, AppColors.electricIndigo],
-                    ),
+                    gradient: _isMonthlyFeeAlreadyPaid
+                        ? LinearGradient(
+                            colors: [
+                              Colors.grey.shade400,
+                              Colors.grey.shade500,
+                            ],
+                          )
+                        : const LinearGradient(
+                            colors: [AppColors.brandBlue, AppColors.electricIndigo],
+                          ),
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.brandBlue.withValues(alpha: 0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    boxShadow: _isMonthlyFeeAlreadyPaid
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: AppColors.brandBlue.withValues(alpha: 0.35),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                   ),
                   child: Center(
                     child: _isProcessing
@@ -357,21 +514,45 @@ class _SimulatedPaymentSheetState extends State<SimulatedPaymentSheet>
                               ),
                             ],
                           )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(FluentIcons.lock_shield_20_filled, color: Colors.white, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Pagar ${Formatters.currency(_currentAmount)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                        : _isMonthlyFeeAlreadyPaid
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Cuota del período ya liquidada',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _isProject && _hasPreviousProjectDonation
+                                        ? Icons.volunteer_activism_rounded
+                                        : FluentIcons.lock_shield_20_filled,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _isProject && _hasPreviousProjectDonation
+                                        ? 'Confirmar aporte adicional (${Formatters.currency(_currentAmount)})'
+                                        : 'Pagar ${Formatters.currency(_currentAmount)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15.5,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                   ),
                 ),
               ),

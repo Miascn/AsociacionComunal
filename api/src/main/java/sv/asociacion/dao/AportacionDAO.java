@@ -274,6 +274,9 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
         );
         List<Object> params = new ArrayList<>();
         appendFilters(sql, params, idMiembro, idProyecto, periodo, desde, hasta, metodo, estado, busqueda);
+        if (estado == null || estado.isBlank() || "TODOS".equalsIgnoreCase(estado)) {
+            sql.append("AND a.estado = 'REGISTRADA' ");
+        }
 
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {

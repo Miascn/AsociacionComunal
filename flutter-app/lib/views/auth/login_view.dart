@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../core/widgets/glass_container.dart';
+import '../../data/services/deep_link_service.dart';
 import '../../data/services/session_storage_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
@@ -25,9 +27,59 @@ class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  StreamSubscription<DeepLinkCredentials>? _deepLinkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _deepLinkSub = DeepLinkService.credentialsStream.listen((creds) {
+      _applyCredentials(creds);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cached = DeepLinkService.latestCredentials;
+      if (cached != null && _usernameController.text.isEmpty) {
+        _applyCredentials(cached);
+      }
+    });
+  }
+
+  void _applyCredentials(DeepLinkCredentials creds) {
+    if (!mounted) return;
+    setState(() {
+      _usernameController.text = creds.username;
+      _passwordController.text = creds.password;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Credenciales cargadas desde QR: ${creds.username}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.brandBlue,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Iniciar sesión automáticamente solo si viene la contraseña en el QR
+    if (creds.password.isNotEmpty) {
+      _handleLogin();
+    }
+  }
 
   @override
   void dispose() {
+    _deepLinkSub?.cancel();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -211,6 +263,27 @@ class _LoginViewState extends State<LoginView> {
                                 icon: Icons.arrow_forward,
                               );
                             },
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Indicador de acceso con QR
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.qr_code_scanner_rounded,
+                                size: 15,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Escanea tu código QR para autocompletar',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

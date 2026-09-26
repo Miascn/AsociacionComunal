@@ -28,23 +28,30 @@ class PaymentModel {
     required this.estado,
   });
 
-  bool get isPaid => estado.toUpperCase() == 'PAGADA' || estado.toUpperCase() == 'REGISTRADA';
+  bool get isPaid {
+    final s = estado.trim().toUpperCase();
+    return s == 'PAGADA' ||
+        s == 'REGISTRADA' ||
+        s == 'APROBADA' ||
+        s == 'COMPLETADA' ||
+        (s.isNotEmpty && s != 'ANULADA' && s != 'CANCELADA' && s != 'RECHAZADA');
+  }
   bool get isProjectContribution => idProyecto != null;
   bool get isMonthlyFee => idProyecto == null;
   String get tipoEtiqueta => isProjectContribution ? 'Aporte a Proyecto' : 'Cuota Mensual';
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(
-      id: json['idAportacion'] as int? ?? json['id'] as int? ?? 0,
-      idMiembro: json['idMiembro'] as int? ?? 0,
-      nombreMiembro: json['nombreMiembro'] as String? ?? '',
-      duiMiembro: json['duiMiembro'] as String? ?? '-',
-      idProyecto: json['idProyecto'] as int?,
-      nombreProyecto: json['nombreProyecto'] as String?,
-      periodoMes: json['periodoMes'] as String? ?? '',
+      id: (json['idAportacion'] as num?)?.toInt() ?? (json['id'] as num?)?.toInt() ?? 0,
+      idMiembro: (json['idMiembro'] as num?)?.toInt() ?? (json['id_miembro'] as num?)?.toInt() ?? 0,
+      nombreMiembro: json['nombreMiembro'] as String? ?? json['nombre_miembro'] as String? ?? '',
+      duiMiembro: json['duiMiembro'] as String? ?? json['dui_miembro'] as String? ?? '-',
+      idProyecto: (json['idProyecto'] as num?)?.toInt() ?? (json['id_proyecto'] as num?)?.toInt(),
+      nombreProyecto: json['nombreProyecto'] as String? ?? json['nombre_proyecto'] as String?,
+      periodoMes: json['periodoMes'] as String? ?? json['periodo_mes'] as String? ?? '',
       monto: (json['monto'] as num?)?.toDouble() ?? 0.0,
-      fechaPago: json['fechaPago'] as String?,
-      metodoPago: json['metodoPago'] as String? ?? 'EFECTIVO',
+      fechaPago: json['fechaPago'] as String? ?? json['fecha_pago'] as String?,
+      metodoPago: json['metodoPago'] as String? ?? json['metodo_pago'] as String? ?? 'EFECTIVO',
       referencia: json['referencia'] as String?,
       estado: json['estado'] as String? ?? 'REGISTRADA',
     );

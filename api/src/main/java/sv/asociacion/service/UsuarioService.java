@@ -26,19 +26,35 @@ public class UsuarioService {
     }
 
     public List<UsuarioResponse> findAll() {
-        return findAll(null, null);
+        return findAll(null, null, null);
     }
 
     public List<UsuarioResponse> findAll(String roleFilter, String stateFilter) {
+        return findAll(roleFilter, stateFilter, null);
+    }
+
+    public List<UsuarioResponse> findAll(String roleFilter, String stateFilter, String tipoFilter) {
         return usuarioDAO.findAll().stream()
-            .filter(u -> matchesFilter(u, roleFilter, stateFilter))
+            .filter(u -> matchesFilter(u, roleFilter, stateFilter, tipoFilter))
             .map(this::toResponse)
             .toList();
     }
 
-    private boolean matchesFilter(Usuario u, String roleFilter, String stateFilter) {
+    private boolean matchesFilter(Usuario u, String roleFilter, String stateFilter, String tipoFilter) {
         if (stateFilter != null && !stateFilter.isBlank()) {
             if (u.getEstado() == null || !u.getEstado().name().equalsIgnoreCase(stateFilter.trim())) {
+                return false;
+            }
+        }
+        if (tipoFilter != null && !tipoFilter.isBlank()) {
+            String tipoNorm = tipoFilter.trim().toUpperCase();
+            String tipoReal = determinarTipoAcceso(u);
+            if (("SISTEMA".equals(tipoNorm) || "JAVA".equals(tipoNorm) || "SISTEMA_JAVA".equals(tipoNorm))
+                && !"SISTEMA_JAVA".equals(tipoReal)) {
+                return false;
+            }
+            if (("MOVIL".equals(tipoNorm) || "APP_MOVIL".equals(tipoNorm) || "MIEMBRO".equals(tipoNorm))
+                && !"APP_MOVIL".equals(tipoReal)) {
                 return false;
             }
         }
@@ -127,7 +143,9 @@ public class UsuarioService {
         String temporary = generateTemporaryPassword();
         String hashed = PasswordHasher.hash(temporary);
         usuario.setClaveHash(hashed);
-        usuarioDAO.resetPassword(id, hashed, true);
+        usuario.setRequiereCambioClave(true);
+        usuario.setClaveTemporal(temporary);
+        usuarioDAO.resetPassword(id, hashed, true, temporary);
         return new ResetPasswordResponse(usuario.getIdUsuario(), usuario.getNombreUsuario(), temporary);
     }
 
@@ -177,6 +195,18 @@ public class UsuarioService {
         }
     }
 
+    public String determinarTipoAcceso(Usuario u) {
+        if (u.getIdRol() != null) {
+            var rolOpt = rolDAO.findById(u.getIdRol());
+            if (rolOpt.isPresent() && "MIEMBRO".equalsIgnoreCase(rolOpt.get().getNombre())) {
+                return "APP_MOVIL";
+            }
+        }
+        return (u.getIdMiembro() != null && Boolean.TRUE.equals(u.getRequiereCambioClave()))
+            ? "APP_MOVIL"
+            : "SISTEMA_JAVA";
+    }
+
     private UsuarioResponse toResponse(Usuario u) {
         return new UsuarioResponse(
             u.getIdUsuario(),
@@ -184,7 +214,10 @@ public class UsuarioService {
             u.getIdRol(),
             u.getIdMiembro(),
             u.getEstado() == null ? null : u.getEstado().name(),
-            DateUtils.formatDateTime(u.getUltimoAcceso())
+            DateUtils.formatDateTime(u.getUltimoAcceso()),
+            u.getRequiereCambioClave(),
+            u.getClaveTemporal(),
+            determinarTipoAcceso(u)
         );
     }
 }

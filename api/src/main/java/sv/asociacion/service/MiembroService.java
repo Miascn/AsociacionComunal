@@ -11,10 +11,16 @@ import sv.asociacion.domain.entity.Miembro;
 public class MiembroService {
     private final MiembroDAO miembroDAO;
     private final MemberProvisioningService provisioning;
+    private final sv.asociacion.dao.UsuarioDAO usuarioDAO;
 
     public MiembroService(MiembroDAO miembroDAO, MemberProvisioningService provisioning) {
+        this(miembroDAO, provisioning, new sv.asociacion.dao.UsuarioDAO());
+    }
+
+    public MiembroService(MiembroDAO miembroDAO, MemberProvisioningService provisioning, sv.asociacion.dao.UsuarioDAO usuarioDAO) {
         this.miembroDAO = miembroDAO;
         this.provisioning = provisioning;
+        this.usuarioDAO = usuarioDAO != null ? usuarioDAO : new sv.asociacion.dao.UsuarioDAO();
     }
 
     public List<MiembroResponse> findAll() {
@@ -69,6 +75,103 @@ public class MiembroService {
         }
         if (!miembroDAO.changeEstado(id, estado)) return null;
         return miembroDAO.findById(id).map(MiembroResponse::from).orElse(null);
+    }
+
+    public sv.asociacion.domain.dto.CredencialesMiembroResponse getCredenciales(int idMiembro) {
+        if (usuarioDAO == null) return null;
+        var opt = usuarioDAO.findByIdMiembro(idMiembro);
+        if (opt.isEmpty()) return null;
+        sv.asociacion.domain.entity.Usuario u = opt.get();
+        boolean req = Boolean.TRUE.equals(u.getRequiereCambioClave());
+        String claveTemp = u.getClaveTemporal();
+        if (req && (claveTemp == null || claveTemp.isBlank())) {
+            String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+            java.security.SecureRandom random = new java.security.SecureRandom();
+            StringBuilder sb = new StringBuilder("Tmp#");
+            for (int i = 0; i < 12; i++) sb.append(chars.charAt(random.nextInt(chars.length())));
+            claveTemp = sb.toString();
+            String hashed = sv.asociacion.util.PasswordHasher.hash(claveTemp);
+            usuarioDAO.resetPassword(u.getIdUsuario(), hashed, true, claveTemp);
+        }
+        return new sv.asociacion.domain.dto.CredencialesMiembroResponse(
+            idMiembro,
+            u.getNombreUsuario(),
+            req ? claveTemp : null,
+            req,
+            req ? "Contraseña provisional pendiente de cambio en celular" : "Contraseña ya cambiada por el miembro en el celular"
+        );
+    }
+
+    public sv.asociacion.domain.dto.CredencialesMiembroResponse generarCredenciales(int idMiembro) {
+        var miembroOpt = miembroDAO.findById(idMiembro);
+        if (miembroOpt.isEmpty()) return null;
+        var miembro = miembroOpt.get();
+
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder("Tmp!");
+        for (int i = 0; i < 12; i++) sb.append(chars.charAt(random.nextInt(chars.length())));
+        String temporary = sb.toString();
+        String hashed = sv.asociacion.util.PasswordHasher.hash(temporary);
+
+        String username = (miembro.getDui() != null && !miembro.getDui().isBlank())
+            ? miembro.getDui().trim()
+            : ("miembro" + idMiembro);
+
+        var usuarioOpt = usuarioDAO.findByIdMiembro(idMiembro);
+        if (usuarioOpt.isPresent()) {
+            var u = usuarioOpt.get();
+            usuarioDAO.resetPassword(u.getIdUsuario(), hashed, true, temporary);
+            return new sv.asociacion.domain.dto.CredencialesMiembroResponse(
+                idMiembro,
+                u.getNombreUsuario(),
+                temporary,
+                true,
+                "Nueva contraseña provisional generada exitosamente"
+            );
+        } else {
+            try (java.sql.Connection conn = sv.asociacion.config.DBConnection.getInstance().getConnection()) {
+                String sql = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) " +
+                             "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol WHERE nombre = 'MIEMBRO'";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, idMiembro);
+                    ps.setString(2, username);
+                    ps.setString(3, hashed);
+                    ps.setString(4, temporary);
+                    int affected = ps.executeUpdate();
+                    if (affected == 0) {
+                        String fallback = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) " +
+                                          "SELECT MIN(id_rol), ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol";
+                        try (java.sql.PreparedStatement psFb = conn.prepareStatement(fallback)) {
+                            psFb.setInt(1, idMiembro);
+                            psFb.setString(2, username);
+                            psFb.setString(3, hashed);
+                            psFb.setString(4, temporary);
+                            psFb.executeUpdate();
+                        }
+                    }
+                } catch (java.sql.SQLException sqle) {
+                    String fallbackSinCol = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave) " +
+                                            "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE FROM rol WHERE nombre = 'MIEMBRO'";
+                    try (java.sql.PreparedStatement psFb = conn.prepareStatement(fallbackSinCol)) {
+                        psFb.setInt(1, idMiembro);
+                        psFb.setString(2, username);
+                        psFb.setString(3, hashed);
+                        psFb.executeUpdate();
+                    }
+                }
+            } catch (Exception ex) {
+                throw new IllegalStateException("Error al aprovisionar el usuario del miembro: " + ex.getMessage(), ex);
+            }
+
+            return new sv.asociacion.domain.dto.CredencialesMiembroResponse(
+                idMiembro,
+                username,
+                temporary,
+                true,
+                "Acceso generado exitosamente con contraseña provisional"
+            );
+        }
     }
 
     private static String clean(String value) {
