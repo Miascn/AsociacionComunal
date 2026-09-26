@@ -33,7 +33,7 @@ class LoginIntegrationTest {
 
         adminPassword = System.getenv("TEST_ADMIN_PASSWORD");
         org.junit.jupiter.api.Assumptions.assumeTrue(
-            dbAvailable() && adminPassword != null && !adminPassword.isBlank(),
+            adminPassword != null && !adminPassword.isBlank() && dbAvailable(),
             "La prueba de integración requiere MySQL y TEST_ADMIN_PASSWORD."
         );
         AppConfig.load();

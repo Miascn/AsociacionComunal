@@ -12,9 +12,6 @@ import java.util.Properties;
 
 public final class DBConnection {
     private static final Properties LOCAL_PROPERTIES = loadLocalProperties();
-    private static final String DB_URL = buildUrl();
-    private static final String DB_USER = requiredSetting("DB_USER", "db.user");
-    private static final String DB_PASSWORD = requiredSetting("DB_PASSWORD", "db.password");
     private static DBConnection instance;
 
     static {
@@ -36,7 +33,15 @@ public final class DBConnection {
     }
 
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        String user = setting("DB_USER", "db.user");
+        String password = setting("DB_PASSWORD", "db.password");
+        if (user == null || user.isBlank()) {
+            throw new SQLException("Falta configurar DB_USER o la propiedad db.user en database-local.properties.");
+        }
+        if (password == null) {
+            password = "";
+        }
+        return DriverManager.getConnection(buildUrl(), user, password);
     }
 
     private static String buildUrl() {
