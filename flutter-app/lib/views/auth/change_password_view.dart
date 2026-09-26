@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../core/widgets/glass_container.dart';
+import '../../data/services/deep_link_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
 /// Pantalla para cambio obligatorio de contraseña temporal.
@@ -20,17 +22,93 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
   late final TextEditingController _currentPasswordController;
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  StreamSubscription<DeepLinkCredentials>? _deepLinkSub;
+  bool _isAutoFilled = false;
 
   @override
   void initState() {
     super.initState();
-    _currentPasswordController = TextEditingController(
-      text: widget.viewModel.temporaryPassword ?? '',
-    );
+    final initialPass = widget.viewModel.temporaryPassword?.isNotEmpty == true
+        ? widget.viewModel.temporaryPassword!
+        : (DeepLinkService.latestCredentials?.password ?? '');
+
+    _currentPasswordController = TextEditingController(text: initialPass);
+    _isAutoFilled = initialPass.isNotEmpty;
+
+    widget.viewModel.addListener(_onViewModelChanged);
+
+    _deepLinkSub = DeepLinkService.credentialsStream.listen((creds) {
+      if (!mounted) return;
+      if (creds.password.isNotEmpty) {
+        setState(() {
+          _currentPasswordController.text = creds.password;
+          _isAutoFilled = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Contraseña temporal cargada automáticamente desde el QR',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.brandBlue,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndFillPassword();
+    });
+  }
+
+  void _checkAndFillPassword() {
+    if (_currentPasswordController.text.isEmpty) {
+      final temp = widget.viewModel.temporaryPassword?.isNotEmpty == true
+          ? widget.viewModel.temporaryPassword!
+          : (DeepLinkService.latestCredentials?.password ?? '');
+      if (temp.isNotEmpty && mounted) {
+        setState(() {
+          _currentPasswordController.text = temp;
+          _isAutoFilled = true;
+        });
+      }
+    } else if (!_isAutoFilled &&
+        widget.viewModel.temporaryPassword?.isNotEmpty == true &&
+        _currentPasswordController.text == widget.viewModel.temporaryPassword) {
+      if (mounted) {
+        setState(() => _isAutoFilled = true);
+      }
+    }
+  }
+
+  void _onViewModelChanged() {
+    _checkAndFillPassword();
+  }
+
+  @override
+  void didUpdateWidget(ChangePasswordView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewModel != widget.viewModel) {
+      oldWidget.viewModel.removeListener(_onViewModelChanged);
+      widget.viewModel.addListener(_onViewModelChanged);
+    }
+    _checkAndFillPassword();
   }
 
   @override
   void dispose() {
+    widget.viewModel.removeListener(_onViewModelChanged);
+    _deepLinkSub?.cancel();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -133,6 +211,13 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                             hint: '••••••••',
                             isPassword: true,
                             prefixIcon: Icons.key_outlined,
+                            onChanged: (val) {
+                              if (_isAutoFilled && val != widget.viewModel.temporaryPassword) {
+                                setState(() => _isAutoFilled = false);
+                              } else {
+                                setState(() {});
+                              }
+                            },
                             validator: (val) {
                               if (val == null || val.isEmpty) {
                                 return 'Ingresa tu contraseña temporal';
@@ -140,6 +225,41 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                               return null;
                             },
                           ),
+                          if ((isForced || _isAutoFilled || widget.viewModel.temporaryPassword != null) &&
+                              _currentPasswordController.text.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: (isDark ? AppColors.brandBlue : AppColors.brandSky).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: (isDark ? AppColors.brandSky : AppColors.brandBlue).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.verified_user_rounded,
+                                    size: 14,
+                                    color: isDark ? AppColors.brandSky : AppColors.brandBlue,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      'Contraseña temporal colocada automáticamente',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AppColors.brandSky : AppColors.brandBlue,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           CustomTextField(
                             controller: _newPasswordController,

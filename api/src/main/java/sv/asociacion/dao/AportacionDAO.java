@@ -159,9 +159,18 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
     }
 
     public boolean existsByMiembroAndPeriodo(Integer idMiembro, String periodoMes, Long excludeId) {
+        return existsByMiembroAndPeriodo(idMiembro, null, periodoMes, excludeId);
+    }
+
+    public boolean existsByMiembroAndPeriodo(Integer idMiembro, Integer idProyecto, String periodoMes, Long excludeId) {
         StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) FROM aportacion WHERE id_miembro = ? AND periodo_mes = ? AND estado = 'REGISTRADA' "
         );
+        if (idProyecto != null) {
+            sql.append("AND id_proyecto = ? ");
+        } else {
+            sql.append("AND id_proyecto IS NULL ");
+        }
         if (excludeId != null) {
             sql.append("AND id_aportacion != ? ");
         }
@@ -169,8 +178,12 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             ps.setInt(1, idMiembro);
             ps.setString(2, periodoMes);
+            int idx = 3;
+            if (idProyecto != null) {
+                ps.setInt(idx++, idProyecto);
+            }
             if (excludeId != null) {
-                ps.setLong(3, excludeId);
+                ps.setLong(idx, excludeId);
             }
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1) > 0;
@@ -261,6 +274,9 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
         );
         List<Object> params = new ArrayList<>();
         appendFilters(sql, params, idMiembro, idProyecto, periodo, desde, hasta, metodo, estado, busqueda);
+        if (estado == null || estado.isBlank() || "TODOS".equalsIgnoreCase(estado)) {
+            sql.append("AND a.estado = 'REGISTRADA' ");
+        }
 
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {

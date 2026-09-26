@@ -83,6 +83,8 @@ CREATE TABLE usuario (
     nombre_usuario VARCHAR(50) NOT NULL UNIQUE,
     clave_hash VARCHAR(255) NOT NULL,
     estado ENUM('ACTIVO', 'BLOQUEADO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO',
+    requiere_cambio_clave BOOLEAN NOT NULL DEFAULT FALSE,
+    clave_temporal VARCHAR(255) NULL,
     ultimo_acceso DATETIME,
     CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol) REFERENCES rol(id_rol),
     CONSTRAINT fk_usuario_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro)
@@ -148,7 +150,7 @@ CREATE TABLE aportacion (
     referencia VARCHAR(80),
     estado ENUM('REGISTRADA', 'ANULADA') NOT NULL DEFAULT 'REGISTRADA',
     CONSTRAINT fk_aportacion_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro),
-    CONSTRAINT uk_aportacion_miembro_periodo UNIQUE (id_miembro, periodo_mes)
+    CONSTRAINT uk_aportacion_miembro_periodo_proy UNIQUE (id_miembro, periodo_mes, id_proyecto)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -217,11 +219,14 @@ CREATE TABLE voto (
 -- =====================================================
 CREATE TABLE reunion (
     id_reunion INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto INT NULL,
     titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT NULL,
     fecha_hora DATETIME NOT NULL,
     lugar VARCHAR(150),
     tipo ENUM('ORDINARIA', 'EXTRAORDINARIA') NOT NULL DEFAULT 'ORDINARIA',
-    estado ENUM('PROGRAMADA', 'REALIZADA', 'CANCELADA') NOT NULL DEFAULT 'PROGRAMADA'
+    estado ENUM('PROGRAMADA', 'REALIZADA', 'CANCELADA') NOT NULL DEFAULT 'PROGRAMADA',
+    CONSTRAINT fk_reunion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -281,6 +286,20 @@ INSERT INTO cargo (nombre, descripcion) VALUES
 
 INSERT INTO periodo_directiva (nombre, fecha_inicio, fecha_fin, estado) VALUES
 ('Directiva 2024-2026', '2024-01-01', '2026-12-31', 'ACTIVO');
+
+-- =====================================================
+-- TABLA: configuracion
+-- Parametros globales y cuotas del sistema comunal
+-- =====================================================
+CREATE TABLE IF NOT EXISTS configuracion (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+('cuota_mantenimiento_mensual', '10.00', 'Monto de la cuota mensual de mantenimiento y vigilancia de la colonia');
 
 -- Cree la primera cuenta administrativa con una contraseña aleatoria mediante
 -- una herramienta operativa segura. El repositorio no contiene credenciales predeterminadas.

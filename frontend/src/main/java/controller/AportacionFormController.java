@@ -58,6 +58,51 @@ public class AportacionFormController {
 
         cargarMiembros();
         cargarProyectos();
+        prellenarCuotaMantenimiento();
+    }
+
+    private void prellenarCuotaMantenimiento() {
+        Task<BigDecimal> task = new Task<>() {
+            @Override
+            protected BigDecimal call() throws Exception {
+                return new AportacionApiClient().getCuotaMantenimiento();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            BigDecimal cuota = task.getValue();
+            if (cuota != null && (campoMonto.getText() == null || campoMonto.getText().isBlank())) {
+                campoMonto.setText(cuota.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+            }
+        });
+        Thread t = new Thread(task, "cuota-default");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    public void initMantenimiento(Integer idMiembro, String periodo, BigDecimal cuota, Runnable onSuccess) {
+        this.onSuccessCallback = onSuccess;
+        lblTitulo.setText("Registrar Cuota de Mantenimiento");
+        lblSubtitulo.setText("Aportación mensual ordinaria de la colonia (mantenimiento y vigilancia)");
+        btnGuardar.setText("Registrar Cuota");
+        if (periodo != null && !periodo.isBlank()) {
+            campoPeriodo.setText(periodo.trim());
+        }
+        if (cuota != null) {
+            campoMonto.setText(cuota.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        }
+        Platform.runLater(() -> {
+            if (idMiembro != null) {
+                for (MiembroItem item : comboMiembro.getItems()) {
+                    if (item.id().equals(idMiembro)) {
+                        comboMiembro.setValue(item);
+                        break;
+                    }
+                }
+            }
+            if (!comboProyecto.getItems().isEmpty()) {
+                comboProyecto.setValue(comboProyecto.getItems().get(0));
+            }
+        });
     }
 
     public void initData(AportacionModel aportacion, Runnable onSuccess) {
@@ -65,12 +110,13 @@ public class AportacionFormController {
         this.onSuccessCallback = onSuccess;
 
         if (aportacion != null) {
-            lblTitulo.setText("Editar aportación #" + aportacion.getIdAportacion());
-            lblSubtitulo.setText("Modifica los detalles del pago de la cuota seleccionada");
+            lblTitulo.setText("Ajustar pago / Editar aportación #" + aportacion.getIdAportacion());
+            lblSubtitulo.setText("Modifica la cantidad del pago ($) o actualiza los detalles de la aportación");
             btnGuardar.setText("Guardar cambios");
 
             campoPeriodo.setText(aportacion.getPeriodoMes());
             campoMonto.setText(aportacion.getMonto() != null ? aportacion.getMonto().toString() : "");
+            Platform.runLater(() -> campoMonto.requestFocus());
             if (aportacion.getFechaPago() != null) {
                 try {
                     pickerFechaPago.setValue(LocalDate.parse(aportacion.getFechaPago()));
@@ -134,7 +180,15 @@ public class AportacionFormController {
 
     private void cargarProyectos() {
         comboProyecto.getItems().clear();
-        comboProyecto.getItems().add(new ProyectoItem(null, "Ninguno (Cuota ordinaria)"));
+        comboProyecto.getItems().add(new ProyectoItem(null, "Mantenimiento Mensual de la Colonia (Principal)"));
+        try {
+            List<models.ProyectoModel> lista = new service.ProyectoApiClient().findAll();
+            for (models.ProyectoModel p : lista) {
+                if (p.getIdProyecto() != null) {
+                    comboProyecto.getItems().add(new ProyectoItem(p.getIdProyecto(), p.getNombre()));
+                }
+            }
+        } catch (Exception ignored) {}
         comboProyecto.setValue(comboProyecto.getItems().get(0));
     }
 

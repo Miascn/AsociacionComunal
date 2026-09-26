@@ -7,17 +7,26 @@ public class UsuarioModel {
     private String nombreUsuario;
     private String estado;
     private String ultimoAcceso;
+    private Boolean requiereCambioClave;
+    private String claveTemporal;
+    private String tipoAcceso; // "SISTEMA_JAVA" o "APP_MOVIL"
 
     public UsuarioModel() {}
 
     public UsuarioModel(Integer idUsuario, Integer idRol, Integer idMiembro,
                         String nombreUsuario, String estado, String ultimoAcceso) {
+        this(idUsuario, idRol, idMiembro, nombreUsuario, estado, ultimoAcceso, "SISTEMA_JAVA");
+    }
+
+    public UsuarioModel(Integer idUsuario, Integer idRol, Integer idMiembro,
+                        String nombreUsuario, String estado, String ultimoAcceso, String tipoAcceso) {
         this.idUsuario = idUsuario;
         this.idRol = idRol;
         this.idMiembro = idMiembro;
         this.nombreUsuario = nombreUsuario;
         this.estado = estado;
         this.ultimoAcceso = ultimoAcceso;
+        this.tipoAcceso = tipoAcceso;
     }
 
     public Integer getIdUsuario() { return idUsuario; }
@@ -37,4 +46,21 @@ public class UsuarioModel {
 
     public String getUltimoAcceso() { return ultimoAcceso; }
     public void setUltimoAcceso(String ultimoAcceso) { this.ultimoAcceso = ultimoAcceso; }
+
+    public Boolean getRequiereCambioClave() { return requiereCambioClave; }
+    public void setRequiereCambioClave(Boolean requiereCambioClave) { this.requiereCambioClave = requiereCambioClave; }
+
+    public String getClaveTemporal() { return claveTemporal; }
+    public void setClaveTemporal(String claveTemporal) { this.claveTemporal = claveTemporal; }
+
+    public String getTipoAcceso() { return tipoAcceso; }
+    public void setTipoAcceso(String tipoAcceso) { this.tipoAcceso = tipoAcceso; }
+
+    public boolean tieneClaveProvisional() {
+        return Boolean.TRUE.equals(requiereCambioClave);
+    }
+
+    public boolean esUsuarioMovil() {
+        return "APP_MOVIL".equalsIgnoreCase(tipoAcceso);
+    }
 }

@@ -44,6 +44,12 @@ public class AuthService {
             if (rol != null) role = rol.getNombre();
         }
 
+        // Separación estricta: las cuentas de miembros residentes están destinadas
+        // exclusivamente a la aplicación móvil y no pueden acceder al sistema de escritorio.
+        if ("MIEMBRO".equalsIgnoreCase(role)) {
+            return null;
+        }
+
         String displayName = usuario.getNombreUsuario();
         if (usuario.getIdMiembro() != null) {
             Miembro miembro = miembroDAO.findById(usuario.getIdMiembro()).orElse(null);

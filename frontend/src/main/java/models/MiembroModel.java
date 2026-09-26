@@ -61,4 +61,25 @@ public class MiembroModel {
     public String getDocumento() {
         return dui != null ? dui : "-";
     }
+
+    private Integer idUsuario;
+    private String nombreUsuario;
+    private Boolean requiereCambioClave;
+    private String claveTemporal;
+
+    public Integer getIdUsuario() { return idUsuario; }
+    public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
+
+    public String getNombreUsuario() { return nombreUsuario; }
+    public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; }
+
+    public Boolean getRequiereCambioClave() { return requiereCambioClave; }
+    public void setRequiereCambioClave(Boolean requiereCambioClave) { this.requiereCambioClave = requiereCambioClave; }
+
+    public String getClaveTemporal() { return claveTemporal; }
+    public void setClaveTemporal(String claveTemporal) { this.claveTemporal = claveTemporal; }
+
+    public boolean tieneClaveProvisional() {
+        return Boolean.TRUE.equals(requiereCambioClave);
+    }
 }

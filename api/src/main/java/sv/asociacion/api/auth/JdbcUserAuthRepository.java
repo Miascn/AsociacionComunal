@@ -45,10 +45,17 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
     }
 
     @Override public void updatePassword(int id, String passwordHash, boolean changeRequired) {
-        try (Connection connection = DBConnection.getInstance().getConnection();
-             PreparedStatement statement = connection.prepareStatement("UPDATE usuario SET clave_hash=?, requiere_cambio_clave=? WHERE id_usuario=?")) {
-            statement.setString(1, passwordHash); statement.setBoolean(2, changeRequired); statement.setInt(3, id);
-            if (statement.executeUpdate() != 1) throw new SQLException("Usuario no encontrado.");
+        try (Connection connection = DBConnection.getInstance().getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE usuario SET clave_hash=?, requiere_cambio_clave=?, clave_temporal=NULL WHERE id_usuario=?")) {
+                statement.setString(1, passwordHash); statement.setBoolean(2, changeRequired); statement.setInt(3, id);
+                if (statement.executeUpdate() != 1) throw new SQLException("Usuario no encontrado.");
+            } catch (SQLException colEx) {
+                // Fallback si clave_temporal no existe
+                try (PreparedStatement statement = connection.prepareStatement("UPDATE usuario SET clave_hash=?, requiere_cambio_clave=? WHERE id_usuario=?")) {
+                    statement.setString(1, passwordHash); statement.setBoolean(2, changeRequired); statement.setInt(3, id);
+                    if (statement.executeUpdate() != 1) throw new SQLException("Usuario no encontrado.");
+                }
+            }
         } catch (SQLException exception) { throw new IllegalStateException("No fue posible cambiar la contraseña.", exception); }
     }
 

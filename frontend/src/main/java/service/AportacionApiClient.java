@@ -73,15 +73,15 @@ public final class AportacionApiClient {
     }
 
     public AportacionModel create(AportacionModel model) throws IOException, InterruptedException {
-        String body = json.writeValueAsString(Map.of(
-            "idMiembro", model.getIdMiembro(),
-            "idProyecto", model.getIdProyecto() != null ? model.getIdProyecto() : "",
-            "periodoMes", model.getPeriodoMes(),
-            "monto", model.getMonto(),
-            "fechaPago", model.getFechaPago(),
-            "metodoPago", model.getMetodoPago(),
-            "referencia", model.getReferencia() != null ? model.getReferencia() : ""
-        ));
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("idMiembro", model.getIdMiembro());
+        payload.put("idProyecto", model.getIdProyecto());
+        payload.put("periodoMes", model.getPeriodoMes());
+        payload.put("monto", model.getMonto());
+        payload.put("fechaPago", model.getFechaPago());
+        payload.put("metodoPago", model.getMetodoPago());
+        payload.put("referencia", model.getReferencia());
+        String body = json.writeValueAsString(payload);
 
         HttpRequest request = requestBuilder("/api/aportaciones")
             .header("Content-Type", "application/json")
@@ -96,19 +96,33 @@ public final class AportacionApiClient {
     }
 
     public AportacionModel update(Long id, AportacionModel model) throws IOException, InterruptedException {
-        String body = json.writeValueAsString(Map.of(
-            "idMiembro", model.getIdMiembro(),
-            "idProyecto", model.getIdProyecto() != null ? model.getIdProyecto() : "",
-            "periodoMes", model.getPeriodoMes(),
-            "monto", model.getMonto(),
-            "fechaPago", model.getFechaPago(),
-            "metodoPago", model.getMetodoPago(),
-            "referencia", model.getReferencia() != null ? model.getReferencia() : ""
-        ));
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("idMiembro", model.getIdMiembro());
+        payload.put("idProyecto", model.getIdProyecto());
+        payload.put("periodoMes", model.getPeriodoMes());
+        payload.put("monto", model.getMonto());
+        payload.put("fechaPago", model.getFechaPago());
+        payload.put("metodoPago", model.getMetodoPago());
+        payload.put("referencia", model.getReferencia());
+        String body = json.writeValueAsString(payload);
 
         HttpRequest request = requestBuilder("/api/aportaciones/" + id)
             .header("Content-Type", "application/json")
             .PUT(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+        return json.readValue(response.body(), AportacionModel.class);
+    }
+
+    public AportacionModel ajustarMonto(Long id, java.math.BigDecimal nuevoMonto) throws IOException, InterruptedException {
+        String body = json.writeValueAsString(Map.of("monto", nuevoMonto));
+        HttpRequest request = requestBuilder("/api/aportaciones/" + id + "/monto")
+            .header("Content-Type", "application/json")
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
             .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -127,6 +141,75 @@ public final class AportacionApiClient {
         if (response.statusCode() != 200) {
             throw new IOException(error(response));
         }
+    }
+
+    public record ConfiguracionCuota(String clave, java.math.BigDecimal valor, String descripcion) { }
+
+    public record MantenimientoPeriodoResult(
+        String periodoMes,
+        java.math.BigDecimal cuotaEsperada,
+        int totalMiembros,
+        int pagados,
+        int pendientes,
+        java.math.BigDecimal totalRecaudado,
+        java.math.BigDecimal totalEsperado,
+        java.util.List<Item> items
+    ) {
+        public record Item(
+            Integer idMiembro,
+            String nombreCompleto,
+            String dui,
+            String telefono,
+            String direccion,
+            boolean pagado,
+            Long idAportacion,
+            java.math.BigDecimal montoPagado,
+            String fechaPago,
+            String metodoPago,
+            String referencia,
+            String estadoAportacion
+        ) { }
+    }
+
+    public java.math.BigDecimal getCuotaMantenimiento() throws IOException, InterruptedException {
+        HttpRequest request = requestBuilder("/api/aportaciones/configuracion").GET().build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+        ConfiguracionCuota cfg = json.readValue(response.body(), ConfiguracionCuota.class);
+        return cfg.valor();
+    }
+
+    public java.math.BigDecimal updateCuotaMantenimiento(java.math.BigDecimal nuevaCuota) throws IOException, InterruptedException {
+        String body = json.writeValueAsString(Map.of("cuota", nuevaCuota));
+        HttpRequest request = requestBuilder("/api/aportaciones/configuracion")
+            .header("Content-Type", "application/json")
+            .PUT(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+        ConfiguracionCuota cfg = json.readValue(response.body(), ConfiguracionCuota.class);
+        return cfg.valor();
+    }
+
+    public MantenimientoPeriodoResult getMantenimientoPeriodo(String periodoMes, String busqueda)
+        throws IOException, InterruptedException {
+        StringBuilder query = new StringBuilder("/api/aportaciones/mantenimiento?");
+        if (periodoMes != null && !periodoMes.isBlank()) {
+            query.append("periodo=").append(encode(periodoMes.trim()));
+        }
+        if (busqueda != null && !busqueda.isBlank()) {
+            query.append("&busqueda=").append(encode(busqueda.trim()));
+        }
+        HttpRequest request = requestBuilder(query.toString()).GET().build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException(error(response));
+        }
+        return json.readValue(response.body(), MantenimientoPeriodoResult.class);
     }
 
     private HttpRequest.Builder requestBuilder(String path) {

@@ -17,7 +17,7 @@ public class BitacoraService {
     public Bitacora registrar(Integer idUsuario, String accion, String entidad, String idRegistro, String detalle) {
         try {
             Bitacora b = new Bitacora();
-            b.setIdUsuario(idUsuario != null ? idUsuario : 1);
+            b.setIdUsuario(idUsuario != null ? idUsuario : 10);
             b.setAccion(accion != null ? accion.trim().toUpperCase() : "GENERAL");
             b.setEntidad(entidad != null ? entidad.trim().toUpperCase() : "SISTEMA");
             b.setIdRegistro(idRegistro != null ? idRegistro.trim() : null);

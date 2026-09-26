@@ -1,6 +1,7 @@
 package sv.asociacion.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,6 +27,7 @@ class AportacionServiceTest {
     private MemoryAportacionDAO aportacionDAO;
     private MemoryMiembroDAO miembroDAO;
     private MemoryProyectoDAO proyectoDAO;
+    private MemoryConfiguracionDAO configuracionDAO;
     private AportacionService service;
 
     @BeforeEach
@@ -33,7 +35,8 @@ class AportacionServiceTest {
         aportacionDAO = new MemoryAportacionDAO();
         miembroDAO = new MemoryMiembroDAO();
         proyectoDAO = new MemoryProyectoDAO();
-        service = new AportacionService(aportacionDAO, miembroDAO, proyectoDAO);
+        configuracionDAO = new MemoryConfiguracionDAO();
+        service = new AportacionService(aportacionDAO, miembroDAO, proyectoDAO, configuracionDAO);
 
         Miembro m = new Miembro();
         m.setIdMiembro(1);
@@ -46,6 +49,11 @@ class AportacionServiceTest {
         p.setIdProyecto(10);
         p.setNombre("Pavimentación calle principal");
         proyectoDAO.save(p);
+
+        Proyecto p2 = new Proyecto();
+        p2.setIdProyecto(20);
+        p2.setNombre("Alumbrado LED comunitario");
+        proyectoDAO.save(p2);
     }
 
     @Test
@@ -118,6 +126,60 @@ class AportacionServiceTest {
     }
 
     @Test
+    void allowsMonthlyFeeAndProjectContributionInSamePeriod() {
+        AportacionRequest cuotaMensual = new AportacionRequest(
+            1, null, "2026-03", new BigDecimal("10.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, "REC-CUOTA"
+        );
+        AportacionResponse resCuota = service.create(cuotaMensual);
+        assertNotNull(resCuota.idAportacion());
+
+        AportacionRequest aporteProyecto = new AportacionRequest(
+            1, 10, "2026-03", new BigDecimal("25.00"),
+            LocalDate.now(), Aportacion.MetodoPago.TRANSFERENCIA, "REC-PROY"
+        );
+        AportacionResponse resProy = service.create(aporteProyecto);
+        assertNotNull(resProy.idAportacion());
+        assertEquals(10, resProy.idProyecto());
+    }
+
+    @Test
+    void allowsMultipleContributionsToSameProjectInSamePeriod() {
+        AportacionRequest aporte1 = new AportacionRequest(
+            1, 10, "2026-03", new BigDecimal("20.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, "REC-PROY-1"
+        );
+        AportacionResponse res1 = service.create(aporte1);
+        assertNotNull(res1.idAportacion());
+
+        AportacionRequest aporte2 = new AportacionRequest(
+            1, 10, "2026-03", new BigDecimal("30.00"),
+            LocalDate.now(), Aportacion.MetodoPago.TRANSFERENCIA, "REC-PROY-2"
+        );
+        AportacionResponse res2 = service.create(aporte2);
+        assertNotNull(res2.idAportacion());
+        assertNotEquals(res1.idAportacion(), res2.idAportacion());
+    }
+
+    @Test
+    void allowsContributionsToDifferentProjectsInSamePeriod() {
+        AportacionRequest aporteProyA = new AportacionRequest(
+            1, 10, "2026-03", new BigDecimal("15.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, "REC-PROY-A"
+        );
+        AportacionResponse resA = service.create(aporteProyA);
+        assertNotNull(resA.idAportacion());
+
+        AportacionRequest aporteProyB = new AportacionRequest(
+            1, 20, "2026-03", new BigDecimal("45.00"),
+            LocalDate.now(), Aportacion.MetodoPago.TRANSFERENCIA, "REC-PROY-B"
+        );
+        AportacionResponse resB = service.create(aporteProyB);
+        assertNotNull(resB.idAportacion());
+        assertEquals(20, resB.idProyecto());
+    }
+
+    @Test
     void rejectsNonExistentMember() {
         AportacionRequest req = new AportacionRequest(
             999, null, "2026-03", new BigDecimal("10.00"),
@@ -143,6 +205,46 @@ class AportacionServiceTest {
         assertEquals(new BigDecimal("20.00"), updated.monto());
         assertEquals("TRANSFERENCIA", updated.metodoPago());
         assertEquals("REC-01-CORREGIDO", updated.referencia());
+    }
+
+    @Test
+    void adjustsPaymentAmountSuccessfully() {
+        AportacionRequest req = new AportacionRequest(
+            1, null, "2026-03", new BigDecimal("10.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, "REC-ORIG"
+        );
+        AportacionResponse created = service.create(req);
+        assertEquals(new BigDecimal("10.00"), created.monto());
+
+        AportacionResponse adjusted = service.ajustarMonto(created.idAportacion(), new BigDecimal("35.00"));
+        assertNotNull(adjusted);
+        assertEquals(new BigDecimal("35.00"), adjusted.monto());
+        assertEquals("REC-ORIG", adjusted.referencia());
+        assertEquals("EFECTIVO", adjusted.metodoPago());
+    }
+
+    @Test
+    void rejectsZeroOrNegativeAdjustedAmount() {
+        AportacionRequest req = new AportacionRequest(
+            1, null, "2026-03", new BigDecimal("10.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, null
+        );
+        AportacionResponse created = service.create(req);
+
+        assertThrows(IllegalArgumentException.class, () -> service.ajustarMonto(created.idAportacion(), BigDecimal.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> service.ajustarMonto(created.idAportacion(), new BigDecimal("-5.00")));
+    }
+
+    @Test
+    void rejectsAdjustingAnnulledAportacion() {
+        AportacionRequest req = new AportacionRequest(
+            1, null, "2026-03", new BigDecimal("10.00"),
+            LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, null
+        );
+        AportacionResponse created = service.create(req);
+        service.anular(created.idAportacion());
+
+        assertThrows(IllegalStateException.class, () -> service.ajustarMonto(created.idAportacion(), new BigDecimal("20.00")));
     }
 
     @Test
@@ -172,6 +274,56 @@ class AportacionServiceTest {
         assertEquals(3, page.total());
         // Solo las REGISTRADAS deben sumar en la recaudación (10.00 + 15.50 = 25.50)
         assertEquals(new BigDecimal("25.50"), page.totalRecaudado());
+    }
+
+    @Test
+    void managesCuotaMantenimientoSuccessfully() {
+        assertEquals(new BigDecimal("10.00"), service.getCuotaMantenimiento());
+
+        service.setCuotaMantenimiento(new BigDecimal("15.00"));
+        assertEquals(new BigDecimal("15.00"), service.getCuotaMantenimiento());
+
+        assertThrows(IllegalArgumentException.class, () -> service.setCuotaMantenimiento(BigDecimal.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> service.setCuotaMantenimiento(new BigDecimal("-2.00")));
+    }
+
+    @Test
+    void getsMantenimientoPeriodoWithPagadosAndPendientes() {
+        // Miembro 1 paga la cuota de mantenimiento de 2026-03
+        service.create(new AportacionRequest(
+            1, null, "2026-03", new BigDecimal("10.00"), LocalDate.now(), Aportacion.MetodoPago.EFECTIVO, "REC-MANT-01"
+        ));
+
+        // Agregar un segundo miembro que no ha pagado
+        Miembro m2 = new Miembro();
+        m2.setIdMiembro(2);
+        m2.setNombres("Ana");
+        m2.setApellidos("Gómez");
+        m2.setDui("87654321-0");
+        m2.setEstado(Miembro.Estado.ACTIVO);
+        miembroDAO.save(m2);
+
+        var periodo = service.getMantenimientoPeriodo("2026-03", null);
+        assertNotNull(periodo);
+        assertEquals("2026-03", periodo.periodo());
+        assertEquals(new BigDecimal("10.00"), periodo.cuotaMonto());
+        assertEquals(2, periodo.totalMiembros());
+        assertEquals(1, periodo.totalPagados());
+        assertEquals(1, periodo.totalPendientes());
+        assertEquals(new BigDecimal("10.00"), periodo.totalRecaudado());
+        assertEquals(new BigDecimal("20.00"), periodo.totalEsperado());
+        assertEquals(2, periodo.items().size());
+
+        // Verificar item del miembro que pagó
+        var itemPagado = periodo.items().stream().filter(it -> it.idMiembro().equals(1)).findFirst().orElseThrow();
+        assertTrue(itemPagado.pagado());
+        assertEquals(new BigDecimal("10.00"), itemPagado.monto());
+        assertEquals("Carlos Martínez", itemPagado.nombreCompleto());
+
+        // Verificar item del miembro pendiente
+        var itemPendiente = periodo.items().stream().filter(it -> it.idMiembro().equals(2)).findFirst().orElseThrow();
+        org.junit.jupiter.api.Assertions.assertFalse(itemPendiente.pagado());
+        assertEquals("Ana Gómez", itemPendiente.nombreCompleto());
     }
 
     private static final class MemoryAportacionDAO extends AportacionDAO {
@@ -219,8 +371,14 @@ class AportacionServiceTest {
 
         @Override
         public boolean existsByMiembroAndPeriodo(Integer idMiembro, String periodoMes, Long excludeId) {
+            return existsByMiembroAndPeriodo(idMiembro, null, periodoMes, excludeId);
+        }
+
+        @Override
+        public boolean existsByMiembroAndPeriodo(Integer idMiembro, Integer idProyecto, String periodoMes, Long excludeId) {
             return store.stream().anyMatch(a ->
                 a.getIdMiembro().equals(idMiembro)
+                && java.util.Objects.equals(a.getIdProyecto(), idProyecto)
                 && a.getPeriodoMes().equals(periodoMes)
                 && a.getEstado() == Aportacion.Estado.REGISTRADA
                 && (excludeId == null || !a.getIdAportacion().equals(excludeId))
@@ -282,6 +440,11 @@ class AportacionServiceTest {
         public Optional<Miembro> findById(Integer id) {
             return store.stream().filter(m -> m.getIdMiembro().equals(id)).findFirst();
         }
+
+        @Override
+        public List<Miembro> findAll() {
+            return new ArrayList<>(store);
+        }
     }
 
     private static final class MemoryProyectoDAO extends ProyectoDAO {
@@ -296,6 +459,35 @@ class AportacionServiceTest {
         @Override
         public Optional<Proyecto> findById(Integer id) {
             return store.stream().filter(p -> p.getIdProyecto().equals(id)).findFirst();
+        }
+    }
+
+    private static final class MemoryConfiguracionDAO extends sv.asociacion.dao.ConfiguracionDAO {
+        private final java.util.Map<String, String> config = new java.util.HashMap<>();
+
+        public MemoryConfiguracionDAO() {
+            config.put("cuota_mantenimiento_mensual", "10.00");
+        }
+
+        @Override
+        public Optional<String> getValor(String clave) {
+            return Optional.ofNullable(config.get(clave));
+        }
+
+        @Override
+        public void setValor(String clave, String valor, String descripcion) {
+            config.put(clave, valor);
+        }
+
+        @Override
+        public BigDecimal getDecimal(String clave, BigDecimal defaultValue) {
+            String val = config.get(clave);
+            if (val == null) return defaultValue;
+            try {
+                return new BigDecimal(val.trim());
+            } catch (Exception e) {
+                return defaultValue;
+            }
         }
     }
 }

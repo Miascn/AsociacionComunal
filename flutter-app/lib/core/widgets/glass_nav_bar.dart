@@ -21,7 +21,7 @@ class GlassNavBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+      padding: const EdgeInsets.only(left: 14, right: 14, bottom: 20),
       child: Container(
         height: 72,
         decoration: BoxDecoration(
@@ -57,57 +57,62 @@ class GlassNavBar extends StatelessWidget {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: List.generate(items.length, (index) {
                   final item = items[index];
                   final isSelected = currentIndex == index;
 
-                  return BouncyTap(
-                    scaleDown: 0.88,
-                    onTap: () => onTap(index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutBack,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        color: isSelected
-                            ? (isDark
-                                ? AppColors.neoEmerald.withValues(alpha: 0.16)
-                                : AppColors.brandBlue.withValues(alpha: 0.10))
-                            : Colors.transparent,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedScale(
-                            scale: isSelected ? 1.14 : 1.0,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutBack,
-                            child: Icon(
-                              isSelected ? item.activeIcon : item.icon,
-                              size: 24,
-                              color: isSelected
-                                  ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
-                                  : (isDark
-                                      ? AppColors.textMutedDark
-                                      : AppColors.textSecondaryLight),
+                  return Expanded(
+                    child: BouncyTap(
+                      scaleDown: 0.88,
+                      onTap: () => onTap(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutBack,
+                        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: isSelected
+                              ? (isDark
+                                  ? AppColors.neoEmerald.withValues(alpha: 0.16)
+                                  : AppColors.brandBlue.withValues(alpha: 0.10))
+                              : Colors.transparent,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedScale(
+                              scale: isSelected ? 1.12 : 1.0,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOutBack,
+                              child: Icon(
+                                isSelected ? item.activeIcon : item.icon,
+                                size: 22,
+                                color: isSelected
+                                    ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
+                                    : (isDark
+                                        ? AppColors.textMutedDark
+                                        : AppColors.textSecondaryLight),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.label,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected
-                                  ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
-                                  : (isDark
-                                      ? AppColors.textMutedDark
-                                      : AppColors.textSecondaryLight),
+                            const SizedBox(height: 3),
+                            Text(
+                              item.label,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: isSelected
+                                    ? (isDark ? AppColors.neoEmerald : AppColors.brandBlue)
+                                    : (isDark
+                                        ? AppColors.textMutedDark
+                                        : AppColors.textSecondaryLight),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );

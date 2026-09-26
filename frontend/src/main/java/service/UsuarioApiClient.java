@@ -19,7 +19,12 @@ public final class UsuarioApiClient {
     private final ObjectMapper json = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public List<UsuarioModel> findAll() throws IOException, InterruptedException {
-        HttpResponse<String> response = send(request("/api/usuarios").GET().build());
+        return findAll(null);
+    }
+
+    public List<UsuarioModel> findAll(String tipo) throws IOException, InterruptedException {
+        String path = "/api/usuarios" + (tipo != null && !tipo.isBlank() ? "?tipo=" + tipo.trim() : "");
+        HttpResponse<String> response = send(request(path).GET().build());
         ensure(response, 200);
         return Arrays.asList(json.readValue(response.body(), UsuarioModel[].class));
     }
@@ -51,6 +56,11 @@ public final class UsuarioApiClient {
         HttpResponse<String> response = send(request("/api/usuarios/" + id + "/restablecer-clave")
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.noBody()).build());
+        if (response.statusCode() == 404) {
+            response = send(request("/api/usuarios/" + id + "/reset-password")
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.noBody()).build());
+        }
         ensure(response, 200);
         return json.readValue(response.body(), ResetPasswordResult.class);
     }

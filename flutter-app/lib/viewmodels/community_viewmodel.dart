@@ -18,6 +18,8 @@ class CommunityViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   List<MeetingModel> get meetings => _meetings;
   List<ProjectModel> get projects => _projects;
+  List<ProjectModel> get activeProjects => _projects.where((p) => p.isActive).toList();
+  List<ProjectModel> get finalizedProjects => _projects.where((p) => p.isFinalizado).toList();
   int get selectedTab => _selectedTab;
 
   void setSelectedTab(int tab) {

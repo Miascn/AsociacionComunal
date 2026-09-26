@@ -64,6 +64,12 @@ class UsuarioServiceTest {
         assertEquals(1, service.findAll(null, "BLOQUEADO").size());
         assertEquals("member.user", service.findAll(null, "BLOQUEADO").get(0).nombreUsuario());
         assertEquals(0, service.findAll("ADMINISTRADOR", "BLOQUEADO").size());
+        assertEquals(1, service.findAll(null, null, "SISTEMA").size());
+        assertEquals("admin.user", service.findAll(null, null, "SISTEMA").get(0).nombreUsuario());
+        assertEquals("SISTEMA_JAVA", service.findAll(null, null, "SISTEMA").get(0).tipoAcceso());
+        assertEquals(1, service.findAll(null, null, "MOVIL").size());
+        assertEquals("member.user", service.findAll(null, null, "MOVIL").get(0).nombreUsuario());
+        assertEquals("APP_MOVIL", service.findAll(null, null, "MOVIL").get(0).tipoAcceso());
     }
 
     @Test

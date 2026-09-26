@@ -20,7 +20,9 @@ public class UsuarioController {
         if (!requireAdministrator(context)) return;
         String rol = context.queryParam("rol");
         String estado = context.queryParam("estado");
-        context.json(usuarioService.findAll(rol, estado));
+        String tipo = context.queryParam("tipo");
+        if (tipo == null) tipo = context.queryParam("app");
+        context.json(usuarioService.findAll(rol, estado, tipo));
     }
 
     public void getById(Context context) {

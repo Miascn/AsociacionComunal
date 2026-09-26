@@ -25,6 +25,12 @@ class AuthRepository {
     }
   }
 
+  /// Contraseña temporal activa guardada para cambio obligatorio.
+  String? get temporaryPassword => _storage.temporaryPassword;
+
+  Future<void> saveTemporaryPassword(String? tempPassword) =>
+      _storage.saveTemporaryPassword(tempPassword);
+
   /// Inicia sesión con usuario y contraseña, guarda los tokens y obtiene el perfil de miembro.
   Future<MeResponse> login(String username, String password) async {
     final response = await _api.post(
@@ -43,7 +49,13 @@ class AuthRepository {
       refreshToken: loginData.refreshToken,
     );
 
-    return getProfile();
+    final profile = await getProfile();
+    if (profile.user.passwordChangeRequired) {
+      await _storage.saveTemporaryPassword(password);
+    } else {
+      await _storage.saveTemporaryPassword(null);
+    }
+    return profile;
   }
 
   /// Restaura la sesión guardada localmente y renueva el token rotativo si es necesario.
@@ -120,6 +132,7 @@ class AuthRepository {
       accessToken: loginData.accessToken,
       refreshToken: loginData.refreshToken,
     );
+    await _storage.saveTemporaryPassword(null);
 
     return getProfile();
   }

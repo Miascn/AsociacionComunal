@@ -81,6 +81,11 @@ public final class ApiServer {
 
     public static void main(String[] args) {
         AppConfig config = AppConfig.load();
+        try {
+            new sv.asociacion.config.DatabaseInitializer().initializeSchema();
+        } catch (Exception e) {
+            System.err.println("DatabaseInitializer notice: " + e.getMessage());
+        }
 
         MiembroDAO miembroDAO = new MiembroDAO();
         ProyectoDAO proyectoDAO = new ProyectoDAO();
@@ -166,6 +171,8 @@ public final class ApiServer {
             cfg.routes.post("/api/admin/auth/login", adminAuth::login);
             cfg.routes.get("/api/miembros", miembros::getAll);
             cfg.routes.get("/api/miembros/{id}", miembros::getById);
+            cfg.routes.get("/api/miembros/{id}/credenciales", miembros::getCredenciales);
+            cfg.routes.post("/api/miembros/{id}/credenciales", miembros::generarCredenciales);
             cfg.routes.post("/api/miembros", miembros::create);
             cfg.routes.put("/api/miembros/{id}", miembros::update);
             cfg.routes.patch("/api/miembros/{id}/estado", miembros::changeState);
@@ -200,9 +207,13 @@ public final class ApiServer {
             cfg.routes.get("/api/bitacoras/{id}", bitacoras::getById);
 
             cfg.routes.get("/api/aportaciones", aportaciones::getAll);
+            cfg.routes.get("/api/aportaciones/configuracion", aportaciones::getConfiguracion);
+            cfg.routes.put("/api/aportaciones/configuracion", aportaciones::updateConfiguracion);
+            cfg.routes.get("/api/aportaciones/mantenimiento", aportaciones::getMantenimientoPeriodo);
             cfg.routes.get("/api/aportaciones/{id}", aportaciones::getById);
             cfg.routes.post("/api/aportaciones", aportaciones::create);
             cfg.routes.put("/api/aportaciones/{id}", aportaciones::update);
+            cfg.routes.patch("/api/aportaciones/{id}/monto", aportaciones::ajustarMonto);
             cfg.routes.patch("/api/aportaciones/{id}/anular", aportaciones::anular);
 
             cfg.routes.get("/api/cargos", cargos::getAll);

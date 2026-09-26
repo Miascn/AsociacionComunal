@@ -73,6 +73,24 @@ class FxmlNavigationTest {
     }
 
     @Test
+    void cargaDetalleMiembro() throws Exception {
+        ejecutarEnJavaFx(() -> {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/views/detalle-miembro.fxml"));
+            Parent root = loader.load();
+            DetalleMiembroController controller = loader.getController();
+            assertNotNull(controller);
+            models.MiembroModel m = new models.MiembroModel();
+            m.setId(1);
+            m.setNombres("Carlos");
+            m.setApellidos("Martínez");
+            m.setDui("01234567-8");
+            controller.setMiembro(m);
+            return null;
+        });
+    }
+
+    @Test
     void cargaDashboardNavegaYCierraSesion() throws Exception {
         ejecutarEnJavaFx(() -> {
             SessionManager session = SessionManager.getInstance();

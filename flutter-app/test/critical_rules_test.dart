@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -8,11 +9,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:asociacion_comunal_app/core/constants/api_constants.dart';
 import 'package:asociacion_comunal_app/data/models/directiva_model.dart';
 import 'package:asociacion_comunal_app/data/models/voting_model.dart';
+import 'package:asociacion_comunal_app/data/repositories/auth_repository.dart';
 import 'package:asociacion_comunal_app/data/repositories/community_repository.dart';
 import 'package:asociacion_comunal_app/data/repositories/housing_repository.dart';
 import 'package:asociacion_comunal_app/data/services/api_client.dart';
 import 'package:asociacion_comunal_app/data/services/session_storage_service.dart';
+import 'package:asociacion_comunal_app/viewmodels/auth_viewmodel.dart';
 import 'package:asociacion_comunal_app/viewmodels/home_viewmodel.dart';
+import 'package:asociacion_comunal_app/views/auth/change_password_view.dart';
 
 class FakeSecureStorage extends FlutterSecureStorage {
   final Map<String, String> _storage = {};
@@ -385,5 +389,48 @@ void main() {
       expect(tabs[4], 'Perfil');
     });
   });
+
+  group('Regla Crítica: Autocompletado de Contraseña Temporal', () {
+    test('SessionStorageService almacena y limpia la contraseña temporal', () async {
+      expect(storage.temporaryPassword, isNull);
+      await storage.saveTemporaryPassword('TempPass123!');
+      expect(storage.temporaryPassword, 'TempPass123!');
+      await storage.saveTemporaryPassword(null);
+      expect(storage.temporaryPassword, isNull);
+    });
+
+    testWidgets('ChangePasswordView autocompleta la contraseña temporal en el formulario', (tester) async {
+      await storage.saveTemporaryPassword('ClaveTemporal999');
+
+      final mockClient = MockClient((request) async {
+        return http.Response('{}', 200);
+      });
+      final client = ApiClient(storage: storage, client: mockClient);
+      final authRepo = AuthRepository(api: client, storage: storage);
+      final authVm = AuthViewModel(authRepository: authRepo);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangePasswordView(viewModel: authVm),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Debe encontrarse el texto del indicador de autocompletado
+      expect(find.text('Contraseña temporal colocada automáticamente'), findsOneWidget);
+
+      // Verificamos que el campo tenga el texto precargado
+      final formField = tester.widget<TextFormField>(
+        find.descendant(
+          of: find.byType(ChangePasswordView),
+          matching: find.byType(TextFormField),
+        ).first,
+      );
+      expect(formField.controller?.text, 'ClaveTemporal999');
+    });
+  });
 }
+
 

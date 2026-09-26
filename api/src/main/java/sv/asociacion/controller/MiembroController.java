@@ -63,4 +63,28 @@ public class MiembroController {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
         }
     }
+
+    public void getCredenciales(Context context) {
+        int id = context.pathParamAsClass("id", Integer.class).get();
+        var cred = miembroService.getCredenciales(id);
+        if (cred == null) {
+            context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No se encontraron credenciales o usuario asociado para este miembro."));
+        } else {
+            context.json(cred);
+        }
+    }
+
+    public void generarCredenciales(Context context) {
+        int id = context.pathParamAsClass("id", Integer.class).get();
+        try {
+            var cred = miembroService.generarCredenciales(id);
+            if (cred == null) {
+                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "Miembro no encontrado."));
+            } else {
+                context.status(HttpStatus.CREATED).json(cred);
+            }
+        } catch (Exception e) {
+            context.status(HttpStatus.INTERNAL_SERVER_ERROR).json(Map.of("error", e.getMessage()));
+        }
+    }
 }

@@ -6,6 +6,8 @@ class NotificationModel {
   final DateTime timestamp;
   final String type; // 'MEETING', 'PAYMENT', 'PROJECT', 'VOTE', 'ANNOUNCEMENT'
   final bool isRead;
+  final int targetTabIndex;
+  final String? actionPayload;
 
   const NotificationModel({
     required this.id,
@@ -14,6 +16,8 @@ class NotificationModel {
     required this.timestamp,
     required this.type,
     this.isRead = false,
+    this.targetTabIndex = 0,
+    this.actionPayload,
   });
 
   NotificationModel copyWith({bool? isRead}) {
@@ -24,6 +28,8 @@ class NotificationModel {
       timestamp: timestamp,
       type: type,
       isRead: isRead ?? this.isRead,
+      targetTabIndex: targetTabIndex,
+      actionPayload: actionPayload,
     );
   }
 }

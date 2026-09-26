@@ -12,59 +12,243 @@
         <VBox spacing="18" styleClass="module-page, members-page">
             <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
-            <!-- Hero -->
+            <!-- Hero General -->
             <HBox alignment="CENTER_LEFT" spacing="16" styleClass="members-hero">
                 <VBox spacing="4">
                     <Label text="FINANZAS / TESORERÍA" styleClass="page-eyebrow"/>
-                    <Label text="Aportaciones" styleClass="page-title, members-title"/>
-                    <Label text="Control y conciliación de aportaciones y pagos de vigilancia desde la app móvil." styleClass="page-subtitle"/>
+                    <Label text="Aportaciones Comunitarias" styleClass="page-title, members-title"/>
+                    <Label text="Control de la aportación mensual de mantenimiento de la colonia y conciliación de proyectos." styleClass="page-subtitle"/>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
+            </HBox>
+
+            <!-- Pestañas de Navegación Segmentada -->
+            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 0 6px 0;">
+                <Button fx:id="btnTabMantenimiento" text="🏠 Mantenimiento Mensual (Colonia)"
+                        onAction="#seleccionarTabMantenimiento"
+                        style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 700; -fx-background-radius: 9999px; -fx-padding: 8px 18px; -fx-cursor: hand; -fx-font-size: 13px;"/>
+                <Button fx:id="btnTabHistorial" text="📑 Historial General y Proyectos"
+                        onAction="#seleccionarTabHistorial"
+                        style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: 700; -fx-background-radius: 9999px; -fx-padding: 8px 18px; -fx-cursor: hand; -fx-font-size: 13px;"/>
+            </HBox>
+
+            <!-- ============================================================== -->
+            <!-- VISTA 1: MANTENIMIENTO MENSUAL DE LA COLONIA (PRINCIPAL)       -->
+            <!-- ============================================================== -->
+            <VBox fx:id="contenedorMantenimiento" spacing="18">
+                <!-- Barra de Navegación de Período y Acciones de Mantenimiento -->
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="stat-card" style="-fx-padding: 12px 18px;">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Button fx:id="btnMantMesAnterior" text="←" onAction="#mantenimientoMesAnterior"
+                                styleClass="btn-pagination" prefHeight="36" prefWidth="36"/>
+                        <Label fx:id="lblMantPeriodoTexto" text="2026-03"
+                               style="-fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 0 8px;"/>
+                        <Button fx:id="btnMantMesSiguiente" text="→" onAction="#mantenimientoMesSiguiente"
+                                styleClass="btn-pagination" prefHeight="36" prefWidth="36"/>
+                        <Button fx:id="btnMantMesActual" text="Mes actual" onAction="#mantenimientoMesActual"
+                                styleClass="btn-toggle-inactivos" prefHeight="36"/>
+                    </HBox>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
+                          prefWidth="220" minWidth="150" prefHeight="38" minHeight="38" maxHeight="38">
+                        <TextField fx:id="campoBusquedaMant" promptText="Buscar por nombre o DUI..." HBox.hgrow="ALWAYS"
+                                   styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
+                    </HBox>
+
+                    <ComboBox fx:id="comboFiltroMantEstado" prefWidth="140" prefHeight="38" promptText="Estado de pago"/>
+
+                    <Button fx:id="btnModificarCuota" text="⚙️ Modificar cuota" onAction="#modificarCuotaBase"
+                            styleClass="btn-toggle-inactivos" prefHeight="38"/>
+
+                    <Button fx:id="btnRegistrarPagoMant" text="+ Registrar cuota" onAction="#abrirFormularioCrear"
+                            styleClass="btn-primary-blue, members-primary-action" prefHeight="38"/>
+                </HBox>
+
+                <!-- Tarjetas KPI de Mantenimiento -->
+                <HBox spacing="14">
+                    <!-- Cuota Oficial -->
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-settings" styleClass="stat-icon"/>
+                        <VBox spacing="3">
+                            <Label text="CUOTA MENSUAL BASE" styleClass="stat-label"/>
+                            <Label fx:id="lblMantCuotaBase" text="10.00 USD" styleClass="stat-value"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label text="Monto mensual fijado para la colonia" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Total Recaudado en el Mes -->
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-dollar-sign" styleClass="stat-icon stat-icon-success"/>
+                        <VBox spacing="3">
+                            <Label text="RECAUDADO EN EL MES" styleClass="stat-label"/>
+                            <Label fx:id="lblMantRecaudado" text="--" styleClass="stat-value"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label fx:id="lblMantRecaudadoSub" text="Recaudado del total previsto" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Miembros que ya Pagaron -->
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-check-circle" styleClass="stat-icon stat-icon-success"/>
+                        <VBox spacing="3">
+                            <Label text="MIEMBROS AL DÍA" styleClass="stat-label"/>
+                            <Label fx:id="lblMantPagados" text="0" styleClass="stat-value" style="-fx-text-fill: #16a34a;"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label text="Ya cancelaron el mantenimiento" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Miembros Pendientes -->
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-alert-circle" styleClass="stat-icon stat-icon-warning"/>
+                        <VBox spacing="3">
+                            <Label text="PENDIENTES DE PAGO" styleClass="stat-label"/>
+                            <Label fx:id="lblMantPendientes" text="0" styleClass="stat-value" style="-fx-text-fill: #d97706;"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label text="Faltan por registrar pago del mes" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+                </HBox>
+
+                <!-- Tabla de Mantenimiento por Miembro -->
+                <VBox spacing="0" styleClass="clean-table-card">
+                    <TableView fx:id="tablaMantenimiento" styleClass="members-table">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                        <columns>
+                            <TableColumn fx:id="colMantMiembro" text="MIEMBRO" minWidth="150" prefWidth="180"/>
+                            <TableColumn fx:id="colMantDui" text="DUI / DOC" minWidth="90" maxWidth="120" prefWidth="105"/>
+                            <TableColumn fx:id="colMantTelefono" text="TELÉFONO" minWidth="90" maxWidth="125" prefWidth="105"/>
+                            <TableColumn fx:id="colMantCuota" text="CUOTA BASE" minWidth="90" maxWidth="115" prefWidth="95"/>
+                            <TableColumn fx:id="colMantEstado" text="ESTADO PAGO" minWidth="105" maxWidth="135" prefWidth="115"/>
+                            <TableColumn fx:id="colMantFechaPago" text="FECHA PAGO" minWidth="95" maxWidth="120" prefWidth="105"/>
+                            <TableColumn fx:id="colMantMonto" text="MONTO PAGADO" minWidth="95" maxWidth="125" prefWidth="105"/>
+                            <TableColumn fx:id="colMantMetodo" text="MÉTODO" minWidth="85" maxWidth="115" prefWidth="95"/>
+                            <TableColumn fx:id="colMantReferencia" text="COMPROBANTE" minWidth="95" maxWidth="130" prefWidth="110"/>
+                            <TableColumn fx:id="colMantAcciones" text="ACCIONES" minWidth="140" maxWidth="180" prefWidth="150" sortable="false" styleClass="col-acciones-header"/>
+                        </columns>
+                        <placeholder><Label text="Cargando estado de mantenimiento mensual..." styleClass="page-subtitle"/></placeholder>
+                    </TableView>
+                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                        <Label fx:id="lblMantResumenPie" text="0 miembros listados" styleClass="footer-summary-text"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblMantSolvenciaPie" text="Solvencia del período: 0%" styleClass="footer-summary-text"
+                               style="-fx-font-weight: bold; -fx-text-fill: -color-success-fg;"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- ============================================================== -->
+            <!-- VISTA 2: HISTORIAL GENERAL Y AUDITORÍA DE APORTACIONES         -->
+            <!-- ============================================================== -->
+            <VBox fx:id="contenedorHistorial" spacing="18" visible="false" managed="false">
+                <!-- Filtros del Historial General -->
                 <HBox spacing="10" alignment="CENTER_RIGHT">
                     <HBox alignment="CENTER_LEFT" spacing="8" styleClass="pill-search-box"
-                          prefWidth="200" minWidth="150" prefHeight="38" minHeight="38" maxHeight="38">
+                          prefWidth="190" minWidth="140" prefHeight="38" minHeight="38" maxHeight="38">
                         <TextField fx:id="campoBusqueda" promptText="Buscar miembro, DUI o ref..." HBox.hgrow="ALWAYS"
                                    styleClass="pill-search-field" prefHeight="36" minHeight="36" maxHeight="36"/>
                     </HBox>
-                    <TextField fx:id="campoFiltroPeriodo" promptText="YYYY-MM" prefWidth="100" styleClass="pill-search-field"
+                    <TextField fx:id="campoFiltroPeriodo" promptText="YYYY-MM" prefWidth="95" styleClass="pill-search-field"
                                prefHeight="38" minHeight="38" maxHeight="38"/>
-                    <ComboBox fx:id="comboMetodo" prefWidth="115" promptText="Método"/>
+                    <ComboBox fx:id="comboMetodo" prefWidth="110" promptText="Método"/>
                     <ComboBox fx:id="comboEstado" prefWidth="110" promptText="Estado"/>
+                    <Button fx:id="btnEditar" text="Ajustar pago" onAction="#abrirFormularioEditar" styleClass="btn-toggle-inactivos">
+                        <graphic><FontIcon iconLiteral="fth-edit-2"/></graphic>
+                    </Button>
+                    <Button fx:id="btnNuevaAportacion" text="+ Registrar pago" onAction="#abrirFormularioCrear"
+                            styleClass="btn-primary-blue, members-primary-action"/>
                 </HBox>
-            </HBox>
 
-            <!-- Tabla limpia -->
-            <VBox spacing="0" styleClass="clean-table-card">
-                <TableView fx:id="tablaAportaciones" styleClass="members-table">
-                    <columnResizePolicy>
-                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                    </columnResizePolicy>
-                    <columns>
-                        <TableColumn fx:id="columnaFecha"      text="FECHA PAGO"    minWidth="95" maxWidth="120" prefWidth="105"/>
-                        <TableColumn fx:id="columnaMiembro"    text="MIEMBRO"       minWidth="150" prefWidth="180"/>
-                        <TableColumn fx:id="columnaDui"        text="DUI"           minWidth="95" maxWidth="120" prefWidth="105"/>
-                        <TableColumn fx:id="columnaPeriodo"    text="PERÍODO"       minWidth="80" maxWidth="100" prefWidth="85"/>
-                        <TableColumn fx:id="columnaMonto"      text="MONTO"         minWidth="85" maxWidth="110" prefWidth="95"/>
-                        <TableColumn fx:id="columnaMetodo"     text="MÉTODO"        minWidth="90" maxWidth="120" prefWidth="100"/>
-                        <TableColumn fx:id="columnaProyecto"   text="PROYECTO"      minWidth="130" prefWidth="160"/>
-                        <TableColumn fx:id="columnaReferencia" text="COMPROBANTE"   minWidth="110" maxWidth="140" prefWidth="120"/>
-                        <TableColumn fx:id="columnaEstado"     text="ESTADO"        minWidth="95" maxWidth="120" prefWidth="105"/>
-                        <TableColumn fx:id="columnaAcciones"   text="ACCIONES"      minWidth="95" maxWidth="115" prefWidth="105" sortable="false" styleClass="col-acciones-header"/>
-                    </columns>
-                    <placeholder><Label text="No se encontraron aportaciones registradas" styleClass="page-subtitle"/></placeholder>
-                </TableView>
-                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
-                    <Label fx:id="lblTotalRegistros" text="0 aportaciones" styleClass="footer-summary-text"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label text="Filas:" styleClass="footer-summary-text, pagination-label"/>
-                    <ComboBox fx:id="comboPageSize" prefWidth="80" styleClass="combo-pagination"/>
-                    <Label fx:id="lblTotalRecaudado" text="USD 0.00 recaudado" styleClass="footer-summary-text"/>
-                    <Label fx:id="lblPaginacion" text="Página 1 de 1" styleClass="footer-summary-text, pagination-info"/>
-                    <Button fx:id="btnAnterior" text="←" onAction="#paginaAnterior" styleClass="btn-pagination"/>
-                    <Button fx:id="btnSiguiente" text="→" onAction="#paginaSiguiente" styleClass="btn-pagination"/>
-                    <Label fx:id="lblPeriodoActual" text="" styleClass="footer-summary-text"
-                           style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
+                <!-- Tarjetas KPI de Recaudación / Dinero Aportado -->
+                <HBox spacing="14">
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-dollar-sign" styleClass="stat-icon stat-icon-success"/>
+                        <VBox spacing="3">
+                            <Label text="DINERO TOTAL APORTADO" styleClass="stat-label"/>
+                            <Label fx:id="lblStatTotalRecaudado" text="--" styleClass="stat-value"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label fx:id="lblStatSubtextoRecaudado" text="Recaudación efectiva de cuotas activas" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-check-circle" styleClass="stat-icon"/>
+                        <VBox spacing="3">
+                            <Label text="APORTACIONES REGISTRADAS" styleClass="stat-label"/>
+                            <Label fx:id="lblStatTotalRegistros" text="0" styleClass="stat-value"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label text="Pagos contabilizados" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-trending-up" styleClass="stat-icon stat-icon-warning"/>
+                        <VBox spacing="3">
+                            <Label text="PROMEDIO POR APORTE" styleClass="stat-label"/>
+                            <Label fx:id="lblStatPromedio" text="--" styleClass="stat-value"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label text="Promedio por pago registrado" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <FontIcon iconLiteral="fth-calendar" styleClass="stat-icon"/>
+                        <VBox spacing="3">
+                            <Label text="PERÍODO / FILTRO ACTIVO" styleClass="stat-label"/>
+                            <Label fx:id="lblStatPeriodo" text="Todos" styleClass="stat-value" style="-fx-font-size: 20px;"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Label fx:id="lblStatFiltroInfo" text="Todos los períodos" styleClass="stat-trend"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
                 </HBox>
+
+                <!-- Tabla limpia de Historial -->
+                <VBox spacing="0" styleClass="clean-table-card">
+                    <TableView fx:id="tablaAportaciones" styleClass="members-table">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                        <columns>
+                            <TableColumn fx:id="columnaFecha"      text="FECHA PAGO"    minWidth="95" maxWidth="120" prefWidth="105"/>
+                            <TableColumn fx:id="columnaMiembro"    text="MIEMBRO"       minWidth="140" prefWidth="175"/>
+                            <TableColumn fx:id="columnaDui"        text="DUI"           minWidth="90" maxWidth="115" prefWidth="100"/>
+                            <TableColumn fx:id="columnaPeriodo"    text="PERÍODO"       minWidth="80" maxWidth="100" prefWidth="85"/>
+                            <TableColumn fx:id="columnaMonto"      text="MONTO"         minWidth="85" maxWidth="110" prefWidth="95"/>
+                            <TableColumn fx:id="columnaMetodo"     text="MÉTODO"        minWidth="85" maxWidth="115" prefWidth="95"/>
+                            <TableColumn fx:id="columnaProyecto"   text="PROYECTO"      minWidth="120" prefWidth="150"/>
+                            <TableColumn fx:id="columnaReferencia" text="COMPROBANTE"   minWidth="105" maxWidth="135" prefWidth="115"/>
+                            <TableColumn fx:id="columnaEstado"     text="ESTADO"        minWidth="95" maxWidth="115" prefWidth="100"/>
+                            <TableColumn fx:id="columnaAcciones"   text="ACCIONES"      minWidth="125" maxWidth="155" prefWidth="135" sortable="false" styleClass="col-acciones-header"/>
+                        </columns>
+                        <placeholder><Label text="No se encontraron aportaciones registradas" styleClass="page-subtitle"/></placeholder>
+                    </TableView>
+                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-footer-bar">
+                        <Label fx:id="lblTotalRegistros" text="0 aportaciones" styleClass="footer-summary-text"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label text="Filas:" styleClass="footer-summary-text, pagination-label"/>
+                        <ComboBox fx:id="comboPageSize" prefWidth="80" styleClass="combo-pagination"/>
+                        <Label fx:id="lblTotalRecaudado" text="Total aportado: --" styleClass="footer-summary-text"
+                               style="-fx-font-weight: bold; -fx-text-fill: -color-success-fg;"/>
+                        <Label fx:id="lblPaginacion" text="Página 1 de 1" styleClass="footer-summary-text, pagination-info"/>
+                        <Button fx:id="btnAnterior" text="←" onAction="#paginaAnterior" styleClass="btn-pagination"/>
+                        <Button fx:id="btnSiguiente" text="→" onAction="#paginaSiguiente" styleClass="btn-pagination"/>
+                        <Label fx:id="lblPeriodoActual" text="" styleClass="footer-summary-text"
+                               style="-fx-font-size: 11px; -fx-text-fill: -color-accent-fg;"/>
+                    </HBox>
+                </VBox>
             </VBox>
         </VBox>
     </content>

@@ -16,12 +16,20 @@ import 'viewmodels/home_viewmodel.dart';
 import 'viewmodels/housing_viewmodel.dart';
 import 'viewmodels/payments_viewmodel.dart';
 import 'viewmodels/voting_viewmodel.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'data/services/deep_link_service.dart';
 import 'views/auth/change_password_view.dart';
 import 'views/auth/login_view.dart';
 import 'views/main_navigation_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar servicio de enlace profundo y código QR
+  DeepLinkService.initialize();
+
+  // Inicializar localización para formateo de fechas en español
+  await initializeDateFormatting('es', null);
 
   // Bloquear orientación a vertical para diseño móvil óptimo
   await SystemChrome.setPreferredOrientations([

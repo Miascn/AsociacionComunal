@@ -8,20 +8,24 @@ class SessionStorageService {
   static const String _keyAccessToken = 'asociacion_access_token';
   static const String _keyRefreshToken = 'asociacion_refresh_token';
   static const String _keyThemeMode = 'asociacion_theme_mode';
+  static const String _keyTemporaryPassword = 'asociacion_temp_password';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
 
   String? _cachedAccessToken;
   String? _cachedRefreshToken;
+  String? _cachedTemporaryPassword;
 
   SessionStorageService._(
     this._prefs,
     this._secureStorage, {
     String? accessToken,
     String? refreshToken,
+    String? temporaryPassword,
   })  : _cachedAccessToken = accessToken,
-        _cachedRefreshToken = refreshToken;
+        _cachedRefreshToken = refreshToken,
+        _cachedTemporaryPassword = temporaryPassword;
 
   /// Inicializa el servicio cargando los tokens seguros en memoria.
   static Future<SessionStorageService> init({
@@ -38,12 +42,14 @@ class SessionStorageService {
 
     final accessToken = await secStorage.read(key: _keyAccessToken);
     final refreshToken = await secStorage.read(key: _keyRefreshToken);
+    final temporaryPassword = await secStorage.read(key: _keyTemporaryPassword);
 
     return SessionStorageService._(
       sharedPrefs,
       secStorage,
       accessToken: accessToken,
       refreshToken: refreshToken,
+      temporaryPassword: temporaryPassword,
     );
   }
 
@@ -74,12 +80,27 @@ class SessionStorageService {
     await _secureStorage.write(key: _keyRefreshToken, value: refreshToken);
   }
 
+  /// Contraseña temporal activa para cambio obligatorio (almacenada de forma segura).
+  String? get temporaryPassword => _cachedTemporaryPassword;
+
+  /// Guarda o elimina la contraseña temporal en el almacenamiento seguro.
+  Future<void> saveTemporaryPassword(String? tempPassword) async {
+    _cachedTemporaryPassword = tempPassword;
+    if (tempPassword != null && tempPassword.isNotEmpty) {
+      await _secureStorage.write(key: _keyTemporaryPassword, value: tempPassword);
+    } else {
+      await _secureStorage.delete(key: _keyTemporaryPassword);
+    }
+  }
+
   /// Elimina los tokens seguros y limpia la sesión en el dispositivo.
   Future<void> clearSession() async {
     _cachedAccessToken = null;
     _cachedRefreshToken = null;
+    _cachedTemporaryPassword = null;
     await _secureStorage.delete(key: _keyAccessToken);
     await _secureStorage.delete(key: _keyRefreshToken);
+    await _secureStorage.delete(key: _keyTemporaryPassword);
   }
 
   /// Persiste la preferencia de tema (Claro / Oscuro / Sistema).
