@@ -69,6 +69,24 @@ public class AsistenciaController {
         }
     }
 
+    /**
+     * Convocatoria concurrente con resultado agregado (Avance 3). Los errores de
+     * negocio y de persistencia los traduce el manejador central.
+     */
+    public void convocarConResultado(Context context) {
+        if (!canManage(context)) {
+            context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para convocar miembros."));
+            return;
+        }
+        Integer idReunion = context.pathParamAsClass("idReunion", Integer.class).getOrNull();
+        if (idReunion == null) {
+            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "ID de reunión inválido."));
+            return;
+        }
+        ConvocatoriaMasivaRequest req = context.body().isBlank() ? null : context.bodyAsClass(ConvocatoriaMasivaRequest.class);
+        context.status(HttpStatus.CREATED).json(service.convocarConResultado(idReunion, req));
+    }
+
     public void registrarOActualizar(Context context) {
         if (!canManage(context)) {
             context.status(HttpStatus.FORBIDDEN).json(Map.of("error", "No tienes permisos para registrar asistencia."));
