@@ -10,7 +10,6 @@ import sv.asociacion.domain.dto.UsuarioResponse;
 import sv.asociacion.domain.entity.Usuario;
 import sv.asociacion.util.DateUtils;
 import sv.asociacion.util.PasswordHasher;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -150,13 +149,7 @@ public class UsuarioService {
     }
 
     private String generateTemporaryPassword() {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder("Tmp#");
-        for (int i = 0; i < 12; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
+        return sv.asociacion.util.GeneradorClaveTemporal.generar();
     }
 
     private void validateRelations(Integer roleId, Integer memberId) {

@@ -170,6 +170,8 @@ public class AportacionController {
             } else {
                 context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "Aportación no encontrada."));
             }
+        } catch (sv.asociacion.exception.PersistenciaException | sv.asociacion.exception.NegocioException e) {
+            throw e; // los traduce el manejador central de ApiServer
         } catch (Exception e) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
         }
@@ -202,6 +204,8 @@ public class AportacionController {
                 "message", "Cuota de mantenimiento actualizada correctamente.",
                 "cuotaMantenimiento", req.cuotaMantenimiento()
             ));
+        } catch (sv.asociacion.exception.PersistenciaException | sv.asociacion.exception.NegocioException e) {
+            throw e; // los traduce el manejador central de ApiServer
         } catch (Exception e) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
         }

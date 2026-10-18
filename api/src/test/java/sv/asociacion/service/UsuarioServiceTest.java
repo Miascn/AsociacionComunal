@@ -87,7 +87,8 @@ class UsuarioServiceTest {
         var u = service.create(new CreateUsuarioRequest("carlos.test", "segura123", 1, null));
         var result = service.resetPassword(u.idUsuario());
         assertEquals("carlos.test", result.nombreUsuario());
-        assertTrue(result.temporaryPassword().startsWith("Tmp#"));
+        // Avance 3: formato unico de GeneradorClaveTemporal (antes este servicio usaba "Tmp#").
+        assertTrue(result.temporaryPassword().startsWith("Tmp!"));
         assertTrue(result.temporaryPassword().length() >= 12);
     }
 

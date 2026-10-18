@@ -39,7 +39,7 @@ class AsistenciaServiceTest {
         asistenciaDAO = new MemoryAsistenciaDAO();
         reunionDAO = new MemoryReunionDAO();
         miembroDAO = new MemoryMiembroDAO();
-        service = new AsistenciaService(asistenciaDAO, reunionDAO, miembroDAO);
+        service = servicioSobre(asistenciaDAO);
 
         reunionProgramada = new Reunion(1, "Asamblea Programada", LocalDateTime.now().plusDays(2), "Cancha", Reunion.Tipo.ORDINARIA, Reunion.Estado.PROGRAMADA);
         reunionDAO.save(reunionProgramada);
@@ -214,12 +214,72 @@ class AsistenciaServiceTest {
                 throw new RuntimeException("Error simulado en transacción");
             }
         };
-        AsistenciaService failingService = new AsistenciaService(failingDao, reunionDAO, miembroDAO);
+        AsistenciaService failingService = servicioSobre(failingDao);
         List<AsistenciaRequest> lote = List.of(
             new AsistenciaRequest(10, true, "Presente")
         );
         assertThrows(RuntimeException.class, () -> failingService.registrarLote(1, lote));
         assertEquals(0, failingDao.countByReunion(1));
+    }
+
+    @Test
+    void repetirLaConvocatoriaNoDuplicaAsistencias() {
+        service.convocarMiembros(1, null);
+        List<AsistenciaResponse> segunda = service.convocarMiembros(1, null);
+        assertEquals(2, segunda.size(), "la segunda convocatoria no agrega filas: es idempotente");
+    }
+
+    @Test
+    void convocarConResultadoInformaConvocadosYOmitidos() {
+        var primera = service.convocarConResultado(1, null);
+        var segunda = service.convocarConResultado(1, null);
+        assertEquals(2, primera.convocados());
+        assertEquals(0, primera.omitidos());
+        assertEquals(0, segunda.convocados());
+        assertEquals(2, segunda.omitidos());
+        assertTrue(segunda.completa());
+    }
+
+    private AsistenciaService servicioSobre(MemoryAsistenciaDAO dao) {
+        ConvocatoriaConcurrenteService convocatoria =
+            new ConvocatoriaConcurrenteService(new RepositorioSobreDAOs(dao, miembroDAO));
+        return new AsistenciaService(dao, reunionDAO, miembroDAO, convocatoria);
+    }
+
+    /**
+     * Repositorio de convocatoria sobre los DAO en memoria. Sincronizado porque el
+     * servicio lo invoca desde varios hilos; reproduce la regla de la base de datos:
+     * un solo registro por (reunion, miembro) y solo miembros activos.
+     */
+    private static final class RepositorioSobreDAOs implements sv.asociacion.dao.ConvocatoriaRepository {
+        private final MemoryAsistenciaDAO asistencias;
+        private final MemoryMiembroDAO miembros;
+
+        RepositorioSobreDAOs(MemoryAsistenciaDAO asistencias, MemoryMiembroDAO miembros) {
+            this.asistencias = asistencias;
+            this.miembros = miembros;
+        }
+
+        @Override
+        public synchronized List<Integer> idsMiembrosActivos() {
+            return miembros.findByEstado(Miembro.Estado.ACTIVO).stream().map(Miembro::getIdMiembro).toList();
+        }
+
+        @Override
+        public synchronized int convocarLote(int idReunion, List<Integer> ids) {
+            int creados = 0;
+            for (Integer id : ids) {
+                boolean activo = miembros.findById(id).map(m -> m.getEstado() == Miembro.Estado.ACTIVO).orElse(false);
+                if (activo && !asistencias.existsByReunionAndMiembro(idReunion, id)) {
+                    Asistencia a = new Asistencia();
+                    a.setIdReunion(idReunion);
+                    a.setIdMiembro(id);
+                    asistencias.save(a);
+                    creados++;
+                }
+            }
+            return creados;
+        }
     }
 
     private static class MemoryAsistenciaDAO extends AsistenciaDAO {

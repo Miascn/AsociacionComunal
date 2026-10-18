@@ -10,6 +10,7 @@ import sv.asociacion.dao.ReunionDAO;
 import sv.asociacion.domain.dto.AsistenciaRequest;
 import sv.asociacion.domain.dto.AsistenciaResponse;
 import sv.asociacion.domain.dto.ConvocatoriaMasivaRequest;
+import sv.asociacion.domain.dto.ResultadoConvocatoria;
 import sv.asociacion.domain.entity.Asistencia;
 import sv.asociacion.domain.entity.Miembro;
 import sv.asociacion.domain.entity.Reunion;
@@ -18,11 +19,15 @@ public class AsistenciaService {
     private final AsistenciaDAO asistenciaDAO;
     private final ReunionDAO reunionDAO;
     private final MiembroDAO miembroDAO;
+    /** Proceso concurrente de convocatoria; depende de la interfaz ConvocatoriaRepository, no de JDBC. */
+    private final ConvocatoriaConcurrenteService convocatoria;
 
-    public AsistenciaService(AsistenciaDAO asistenciaDAO, ReunionDAO reunionDAO, MiembroDAO miembroDAO) {
+    public AsistenciaService(AsistenciaDAO asistenciaDAO, ReunionDAO reunionDAO, MiembroDAO miembroDAO,
+                             ConvocatoriaConcurrenteService convocatoria) {
         this.asistenciaDAO = asistenciaDAO;
         this.reunionDAO = reunionDAO;
         this.miembroDAO = miembroDAO;
+        this.convocatoria = java.util.Objects.requireNonNull(convocatoria);
     }
 
     public List<AsistenciaResponse> getByReunion(Integer idReunion) {
@@ -41,37 +46,26 @@ public class AsistenciaService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Convoca miembros a la reunion (todos los activos, o los indicados) y devuelve la
+     * lista de asistencia resultante. Contrato usado por los clientes de escritorio y movil.
+     */
     public List<AsistenciaResponse> convocarMiembros(Integer idReunion, ConvocatoriaMasivaRequest req) {
+        convocarConResultado(idReunion, req);
+        return getByReunion(idReunion);
+    }
+
+    /**
+     * Igual que {@link #convocarMiembros} pero devuelve el resultado agregado del
+     * proceso concurrente: miembros convocados, omitidos, lotes, hilos y duracion.
+     */
+    public ResultadoConvocatoria convocarConResultado(Integer idReunion, ConvocatoriaMasivaRequest req) {
         Reunion r = validarReunionExiste(idReunion);
         if (r.getEstado() == Reunion.Estado.CANCELADA) {
             throw new IllegalStateException("No se pueden convocar miembros a una reunión en estado CANCELADA.");
         }
-
-        List<Integer> targetIds = new ArrayList<>();
-        if (req != null && req.miembrosIds() != null && !req.miembrosIds().isEmpty()) {
-            targetIds.addAll(req.miembrosIds());
-        } else {
-            List<Miembro> activos = miembroDAO.findByEstado(Miembro.Estado.ACTIVO);
-            for (Miembro m : activos) {
-                targetIds.add(m.getIdMiembro());
-            }
-        }
-
-        for (Integer idMiembro : targetIds) {
-            if (!asistenciaDAO.existsByReunionAndMiembro(idReunion, idMiembro)) {
-                Optional<Miembro> mOpt = miembroDAO.findById(idMiembro);
-                if (mOpt.isPresent() && mOpt.get().getEstado() == Miembro.Estado.ACTIVO) {
-                    Asistencia a = new Asistencia();
-                    a.setIdReunion(idReunion);
-                    a.setIdMiembro(idMiembro);
-                    a.setAsistio(false);
-                    a.setObservacion(null);
-                    asistenciaDAO.save(a);
-                }
-            }
-        }
-
-        return getByReunion(idReunion);
+        List<Integer> solicitados = req == null ? null : req.miembrosIds();
+        return convocatoria.convocar(idReunion, solicitados);
     }
 
     public AsistenciaResponse registrarOActualizar(Integer idReunion, AsistenciaRequest req) {
@@ -153,7 +147,8 @@ public class AsistenciaService {
         try {
             asistenciaDAO.saveLoteTransaccional(idReunion, asistencias);
         } catch (java.sql.SQLException e) {
-            throw new RuntimeException("Error al guardar el lote de asistencias: " + e.getMessage(), e);
+            // El mensaje del servidor de BD no se concatena: queda como causa, no llega al cliente.
+            throw sv.asociacion.exception.TraductorSQLException.traducir("guardar el lote de asistencias", e);
         }
 
         return getByReunion(idReunion);

@@ -209,11 +209,11 @@ class RolServiceTest {
         return resultado;
     }
 
-    /** {@code schema.sql} vive en la raíz del repositorio, por encima del módulo api. */
+    /** {@code database/schema.sql} vive en la raíz del repositorio, por encima del módulo api. */
     private static Path localizarSchemaSql() {
         Path dir = Path.of("").toAbsolutePath();
         for (int i = 0; i < 4 && dir != null; i++, dir = dir.getParent()) {
-            Path candidato = dir.resolve("schema.sql");
+            Path candidato = dir.resolve("database").resolve("schema.sql");
             if (Files.isRegularFile(candidato)) {
                 return candidato;
             }

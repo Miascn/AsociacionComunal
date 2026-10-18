@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.PeriodoDirectiva;
 import sv.asociacion.util.DateUtils;
@@ -22,7 +24,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de periodo directiva (findById)", e);
         }
         return Optional.empty();
     }
@@ -34,7 +36,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return Optional.of(mapResultSet(rs));
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de periodo directiva (findActivo)", e);
         }
         return Optional.empty();
     }
@@ -66,7 +68,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de periodo directiva (findFiltered)", e);
         }
         return list;
     }
@@ -93,7 +95,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de periodo directiva (findOverlapping)", e);
         }
         return list;
     }
@@ -110,7 +112,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
             }
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de periodo directiva (finalizarActivosExcepto)", e);
         }
     }
 
@@ -122,9 +124,8 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
             ps.setInt(2, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de periodo directiva (updateEstado)", e);
         }
-        return false;
     }
 
     @Override
@@ -148,7 +149,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de periodo directiva (save)", e);
         }
         return entity;
     }
@@ -165,7 +166,7 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
             ps.setInt(5, entity.getIdPeriodo());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de periodo directiva (update)", e);
         }
         return entity;
     }
@@ -178,9 +179,8 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de periodo directiva (delete)", e);
         }
-        return false;
     }
 
     private PeriodoDirectiva mapResultSet(ResultSet rs) throws SQLException {

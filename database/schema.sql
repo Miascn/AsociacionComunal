@@ -1,9 +1,25 @@
 -- =====================================================
 -- BASE DE DATOS: asociacion_comunal
--- Sistema de Gestion Comunitaria
+-- Sistema de Gestion Comunitaria - esquema efectivo (Avance 3)
+-- =====================================================
+--
+-- Uso: SOLO para instalaciones nuevas. Nunca elimina una base existente.
+--   mysql -u root -p < database/schema.sql
+--   mysql -u root -p < database/data.sql      (datos de demostracion, opcional)
+--
+-- Este archivo es el esquema consolidado: equivale a la version original mas las
+-- migraciones V002 a V011 de database/migrations ya aplicadas. Una base que ya
+-- existe se actualiza con esas migraciones, no con este archivo.
+--
+-- Cambios respecto del schema.sql anterior (raiz del repositorio):
+--   * Agrega sesion_usuario (V002), que faltaba.
+--   * Identificadores de miembro y usuario como INT UNSIGNED en la tabla y en
+--     todas sus llaves foraneas: MySQL 8 exige el mismo signo en ambos lados.
+--   * aportacion: indice no unico en (id_miembro, periodo_mes, id_proyecto) (V010).
+--   * votacion -> proyecto con ON DELETE RESTRICT (V006).
+--   * Restricciones de documento y pais de origen del miembro (V004).
 -- =====================================================
 
--- Este script es solo para instalaciones nuevas. Nunca elimina una base existente.
 CREATE DATABASE IF NOT EXISTS asociacion_comunal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE asociacion_comunal;
 
@@ -52,7 +68,14 @@ CREATE TABLE miembro (
     creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_miembro_vivienda FOREIGN KEY (id_vivienda) REFERENCES vivienda(id_vivienda),
-    CONSTRAINT chk_miembro_tipo_documento CHECK (tipo_documento IN ('DUI', 'PASAPORTE', 'CARNET_RESIDENTE'))
+    CONSTRAINT chk_miembro_tipo_documento CHECK (tipo_documento IN ('DUI', 'PASAPORTE', 'CARNET_RESIDENTE')),
+    CONSTRAINT chk_miembro_documento CHECK (
+        (tipo_documento = 'DUI' AND dui REGEXP '^[0-9]{9}$')
+        OR (tipo_documento IN ('PASAPORTE', 'CARNET_RESIDENTE') AND dui REGEXP '^[A-Za-z0-9]{5,30}$')
+    ),
+    CONSTRAINT chk_miembro_pais_origen CHECK (
+        tipo_documento = 'DUI' OR (pais_origen IS NOT NULL AND TRIM(pais_origen) <> '')
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -75,11 +98,12 @@ CREATE TABLE residente_vivienda (
 -- =====================================================
 -- TABLA: usuario
 -- Credenciales y permisos de acceso
+-- clave_temporal se guarda cifrada (AES-GCM, prefijo enc:v1:) desde el Avance 3.
 -- =====================================================
 CREATE TABLE usuario (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     id_rol INT NOT NULL,
-    id_miembro INT NULL UNIQUE,
+    id_miembro INT UNSIGNED NULL UNIQUE,
     nombre_usuario VARCHAR(50) NOT NULL UNIQUE,
     clave_hash VARCHAR(255) NOT NULL,
     estado ENUM('ACTIVO', 'BLOQUEADO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO',
@@ -88,6 +112,26 @@ CREATE TABLE usuario (
     ultimo_acceso DATETIME,
     CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol) REFERENCES rol(id_rol),
     CONSTRAINT fk_usuario_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLA: sesion_usuario (V002)
+-- Sesiones reutilizables para clientes Android/Flutter y JavaFX
+-- =====================================================
+CREATE TABLE sesion_usuario (
+    id_sesion BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT UNSIGNED NOT NULL,
+    access_token_hash CHAR(64) NOT NULL,
+    refresh_token_hash CHAR(64) NOT NULL,
+    creada_en DATETIME NOT NULL,
+    access_expira_en DATETIME NOT NULL,
+    refresh_expira_en DATETIME NOT NULL,
+    revocada_en DATETIME NULL,
+    CONSTRAINT uq_sesion_access_token UNIQUE (access_token_hash),
+    CONSTRAINT uq_sesion_refresh_token UNIQUE (refresh_token_hash),
+    CONSTRAINT fk_sesion_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    INDEX idx_sesion_usuario_activa (id_usuario, revocada_en),
+    INDEX idx_sesion_refresh_expira (refresh_expira_en)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -120,7 +164,7 @@ CREATE TABLE periodo_directiva (
 -- =====================================================
 CREATE TABLE miembro_cargo (
     id_miembro_cargo INT AUTO_INCREMENT PRIMARY KEY,
-    id_miembro INT NOT NULL,
+    id_miembro INT UNSIGNED NOT NULL,
     id_cargo INT NOT NULL,
     id_periodo INT NOT NULL,
     fecha_asignacion DATE NOT NULL,
@@ -136,30 +180,12 @@ CREATE TABLE miembro_cargo (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- TABLA: aportacion
--- Pago mensual realizado por un miembro
--- =====================================================
-CREATE TABLE aportacion (
-    id_aportacion BIGINT AUTO_INCREMENT PRIMARY KEY,
-    id_miembro INT NOT NULL,
-    id_proyecto INT NULL,
-    periodo_mes CHAR(7) NOT NULL,
-    monto DECIMAL(10,2) NOT NULL,
-    fecha_pago DATE NOT NULL,
-    metodo_pago ENUM('EFECTIVO', 'TRANSFERENCIA', 'OTRO') NOT NULL,
-    referencia VARCHAR(80),
-    estado ENUM('REGISTRADA', 'ANULADA') NOT NULL DEFAULT 'REGISTRADA',
-    CONSTRAINT fk_aportacion_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro),
-    CONSTRAINT uk_aportacion_miembro_periodo_proy UNIQUE (id_miembro, periodo_mes, id_proyecto)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================
 -- TABLA: proyecto
 -- Propuesta de mejora comunitaria
 -- =====================================================
 CREATE TABLE proyecto (
     id_proyecto INT AUTO_INCREMENT PRIMARY KEY,
-    creado_por INT NOT NULL,
+    creado_por INT UNSIGNED NOT NULL,
     nombre VARCHAR(120) NOT NULL,
     descripcion TEXT NOT NULL,
     presupuesto DECIMAL(12,2),
@@ -168,7 +194,26 @@ CREATE TABLE proyecto (
     CONSTRAINT fk_proyecto_usuario FOREIGN KEY (creado_por) REFERENCES usuario(id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE aportacion ADD CONSTRAINT fk_aportacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL;
+-- =====================================================
+-- TABLA: aportacion
+-- Cuota mensual (id_proyecto NULL) o aporte voluntario a un proyecto.
+-- Sin restriccion unica (V010): varios aportes al mismo proyecto son validos; la
+-- regla "una cuota mensual por miembro y periodo" la aplica AportacionService.
+-- =====================================================
+CREATE TABLE aportacion (
+    id_aportacion BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id_miembro INT UNSIGNED NOT NULL,
+    id_proyecto INT NULL,
+    periodo_mes CHAR(7) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    fecha_pago DATE NOT NULL,
+    metodo_pago ENUM('EFECTIVO', 'TRANSFERENCIA', 'OTRO') NOT NULL,
+    referencia VARCHAR(80),
+    estado ENUM('REGISTRADA', 'ANULADA') NOT NULL DEFAULT 'REGISTRADA',
+    CONSTRAINT fk_aportacion_miembro FOREIGN KEY (id_miembro) REFERENCES miembro(id_miembro),
+    CONSTRAINT fk_aportacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL,
+    INDEX idx_aportacion_miembro_periodo_proyecto (id_miembro, periodo_mes, id_proyecto)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
 -- TABLA: votacion
@@ -182,7 +227,7 @@ CREATE TABLE votacion (
     fecha_inicio DATETIME NOT NULL,
     fecha_fin DATETIME NOT NULL,
     estado ENUM('BORRADOR', 'PROGRAMADA', 'ABIERTA', 'CERRADA', 'CANCELADA') NOT NULL DEFAULT 'BORRADOR',
-    CONSTRAINT fk_votacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL
+    CONSTRAINT fk_votacion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -199,13 +244,14 @@ CREATE TABLE opcion_votacion (
 
 -- =====================================================
 -- TABLA: voto
--- Seleccion emitida por un miembro
+-- Seleccion emitida por un miembro. uk_voto_votacion_miembro garantiza un voto
+-- por miembro aunque dos solicitudes lleguen a la vez.
 -- =====================================================
 CREATE TABLE voto (
     id_voto BIGINT AUTO_INCREMENT PRIMARY KEY,
     id_votacion INT NOT NULL,
     id_opcion INT NOT NULL,
-    id_miembro INT NOT NULL,
+    id_miembro INT UNSIGNED NOT NULL,
     fecha_hora DATETIME NOT NULL,
     CONSTRAINT fk_voto_votacion FOREIGN KEY (id_votacion) REFERENCES votacion(id_votacion),
     CONSTRAINT fk_voto_opcion FOREIGN KEY (id_opcion) REFERENCES opcion_votacion(id_opcion),
@@ -231,12 +277,13 @@ CREATE TABLE reunion (
 
 -- =====================================================
 -- TABLA: asistencia
--- Participacion de miembros en reuniones
+-- Participacion de miembros en reuniones. uk_asistencia_reunion_miembro es la
+-- garantia que usa la convocatoria concurrente (INSERT IGNORE idempotente).
 -- =====================================================
 CREATE TABLE asistencia (
     id_asistencia BIGINT AUTO_INCREMENT PRIMARY KEY,
     id_reunion INT NOT NULL,
-    id_miembro INT NOT NULL,
+    id_miembro INT UNSIGNED NOT NULL,
     asistio BOOLEAN NOT NULL DEFAULT FALSE,
     observacion VARCHAR(200),
     CONSTRAINT fk_asistencia_reunion FOREIGN KEY (id_reunion) REFERENCES reunion(id_reunion),
@@ -250,7 +297,7 @@ CREATE TABLE asistencia (
 -- =====================================================
 CREATE TABLE bitacora (
     id_bitacora BIGINT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT NOT NULL,
+    id_usuario INT UNSIGNED NOT NULL,
     accion VARCHAR(80) NOT NULL,
     entidad VARCHAR(60),
     id_registro VARCHAR(40),
@@ -260,17 +307,32 @@ CREATE TABLE bitacora (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- TABLA: configuracion (V011)
+-- Parametros globales y cuotas del sistema comunal
+-- =====================================================
+CREATE TABLE configuracion (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- INDICES ADICIONALES
 -- =====================================================
 CREATE INDEX idx_miembro_estado ON miembro(estado);
+CREATE INDEX idx_miembro_vivienda ON miembro(id_vivienda);
+CREATE INDEX idx_residente_vivienda ON residente_vivienda(id_vivienda);
 CREATE INDEX idx_usuario_estado ON usuario(estado);
 CREATE INDEX idx_proyecto_estado ON proyecto(estado);
 CREATE INDEX idx_votacion_estado ON votacion(estado);
 CREATE INDEX idx_reunion_fecha ON reunion(fecha_hora);
+CREATE INDEX idx_reunion_proyecto ON reunion(id_proyecto);
 CREATE INDEX idx_bitacora_fecha ON bitacora(fecha_hora);
 
 -- =====================================================
--- DATOS INICIALES
+-- CATALOGOS BASE (necesarios para que el sistema funcione)
+-- Los datos de demostracion estan en database/data.sql.
 -- =====================================================
 INSERT INTO rol (nombre, descripcion) VALUES
 ('ADMIN', 'Administrador del sistema'),
@@ -287,19 +349,8 @@ INSERT INTO cargo (nombre, descripcion) VALUES
 INSERT INTO periodo_directiva (nombre, fecha_inicio, fecha_fin, estado) VALUES
 ('Directiva 2024-2026', '2024-01-01', '2026-12-31', 'ACTIVO');
 
--- =====================================================
--- TABLA: configuracion
--- Parametros globales y cuotas del sistema comunal
--- =====================================================
-CREATE TABLE IF NOT EXISTS configuracion (
-    clave VARCHAR(60) PRIMARY KEY,
-    valor VARCHAR(255) NOT NULL,
-    descripcion VARCHAR(255) NULL,
-    actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
 ('cuota_mantenimiento_mensual', '10.00', 'Monto de la cuota mensual de mantenimiento y vigilancia de la colonia');
 
--- Cree la primera cuenta administrativa con una contraseña aleatoria mediante
--- una herramienta operativa segura. El repositorio no contiene credenciales predeterminadas.
+-- La primera cuenta administrativa real se crea con una contrasena aleatoria
+-- (herramienta PasswordHashTool). Este archivo no contiene credenciales.

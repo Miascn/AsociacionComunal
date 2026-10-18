@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Miembro;
 import sv.asociacion.util.DateUtils;
@@ -20,7 +22,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro (findById)", e);
         }
         return Optional.empty();
     }
@@ -36,7 +38,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 miembros.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro (findAll)", e);
         }
         return miembros;
     }
@@ -64,7 +66,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 }
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible guardar el miembro.", e);
+            throw TraductorSQLException.traducir("guardar el miembro", e);
         }
         return entity;
     }
@@ -78,7 +80,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 return rs.next();
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible validar el DUI.", e);
+            throw TraductorSQLException.traducir("validar el DUI", e);
         }
     }
 
@@ -119,7 +121,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible actualizar el miembro.", e);
+            throw TraductorSQLException.traducir("actualizar el miembro", e);
         }
     }
 
@@ -154,7 +156,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible cambiar el estado del miembro.", e);
+            throw TraductorSQLException.traducir("cambiar el estado del miembro", e);
         }
     }
 
@@ -168,7 +170,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 return rs.next();
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible validar el documento.", e);
+            throw TraductorSQLException.traducir("validar el documento", e);
         }
     }
 
@@ -184,7 +186,7 @@ public class MiembroDAO implements DAO<Miembro, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro (findByEstado)", e);
         }
         return miembros;
     }

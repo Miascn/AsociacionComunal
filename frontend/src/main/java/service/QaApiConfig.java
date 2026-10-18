@@ -35,8 +35,8 @@ public record QaApiConfig(String baseUrl, String token) {
         return validated(properties.getProperty("api.url"), properties.getProperty("api.token"));
     }
 
-    private static QaApiConfig validated(String url, String token) {
-        if (!hasText(url) || !url.trim().startsWith("https://")) {
+    static QaApiConfig validated(String url, String token) {
+        if (!hasText(url) || !(url.trim().startsWith("https://") || esLoopback(url.trim()))) {
             throw new IllegalStateException("La URL de la API QA debe usar HTTPS.");
         }
         if (!hasText(token) || token.trim().length() < 32) {
@@ -64,6 +64,14 @@ public record QaApiConfig(String baseUrl, String token) {
             directory = directory.getParent();
         }
         return candidates;
+    }
+
+    /**
+     * HTTP sin cifrar solo se admite hacia la propia maquina (API local de desarrollo o
+     * evaluacion): el trafico no sale del equipo. Cualquier otro destino exige HTTPS.
+     */
+    static boolean esLoopback(String url) {
+        return url.matches("^http://(localhost|127\\.0\\.0\\.1)(:\\d{1,5})?(/.*)?$");
     }
 
     private static boolean hasText(String value) {

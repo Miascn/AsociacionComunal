@@ -221,7 +221,13 @@ class ControllerPathParamRegressionTest {
     }
 
     private static final class StubAsistenciaService extends AsistenciaService {
-        StubAsistenciaService() { super(null, null, null); }
+        StubAsistenciaService() {
+            super(null, null, null, new sv.asociacion.service.ConvocatoriaConcurrenteService(
+                new sv.asociacion.dao.ConvocatoriaRepository() {
+                    @Override public List<Integer> idsMiembrosActivos() { return List.of(); }
+                    @Override public int convocarLote(int idReunion, List<Integer> ids) { return 0; }
+                }));
+        }
 
         @Override
         public List<AsistenciaResponse> getByReunion(Integer idReunion) { return List.of(); }

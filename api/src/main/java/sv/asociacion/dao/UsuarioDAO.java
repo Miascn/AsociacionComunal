@@ -1,15 +1,31 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Usuario;
+import sv.asociacion.util.CifradorCredenciales;
 import sv.asociacion.util.DateUtils;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class UsuarioDAO implements DAO<Usuario, Integer> {
+
+    /** Cifra clave_temporal al escribir y la descifra al leer; se resuelve al usarse. */
+    private final Supplier<CifradorCredenciales> cifrador;
+
+    public UsuarioDAO() {
+        this(CifradorCredenciales::porDefecto);
+    }
+
+    public UsuarioDAO(Supplier<CifradorCredenciales> cifrador) {
+        this.cifrador = cifrador;
+    }
+
     @Override
     public Optional<Usuario> findById(Integer id) {
         String sql = "SELECT * FROM usuario WHERE id_usuario = ?";
@@ -20,7 +36,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible crear el usuario.", e);
+            throw TraductorSQLException.traducir("crear el usuario", e);
         }
         return Optional.empty();
     }
@@ -36,7 +52,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 usuarios.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de usuario (findAll)", e);
         }
         return usuarios;
     }
@@ -63,7 +79,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de usuario (save)", e);
         }
         return entity;
     }
@@ -86,7 +102,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             ps.setInt(7, entity.getIdUsuario());
             if (ps.executeUpdate() == 0) return null;
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible actualizar el usuario.", e);
+            throw TraductorSQLException.traducir("actualizar el usuario", e);
         }
         return entity;
     }
@@ -99,7 +115,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible desactivar el usuario.", e);
+            throw TraductorSQLException.traducir("desactivar el usuario", e);
         }
     }
 
@@ -113,11 +129,13 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, claveHash);
             ps.setBoolean(2, requiereCambioClave);
-            ps.setString(3, claveTemporal);
+            ps.setString(3, cifrador.get().cifrar(claveTemporal));
             ps.setInt(4, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            // Fallback en caso de que la columna clave_temporal no exista
+            // Solo si la columna clave_temporal no existe (base anterior a V011): 1054 = ER_BAD_FIELD_ERROR.
+            // Cualquier otro error (base caida, permisos) se propaga en lugar de reintentarse.
+            if (e.getErrorCode() != 1054) throw TraductorSQLException.traducir("restablecer la contraseña", e);
             String fallbackSql = "UPDATE usuario SET clave_hash = ?, requiere_cambio_clave = ? WHERE id_usuario = ?";
             try (Connection conn = DBConnection.getInstance().getConnection();
                  PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
@@ -126,7 +144,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 ps.setInt(3, id);
                 return ps.executeUpdate() > 0;
             } catch (SQLException ex) {
-                throw new IllegalStateException("No fue posible restablecer la contraseña.", ex);
+                throw TraductorSQLException.traducir("restablecer la contraseña", ex);
             }
         }
     }
@@ -141,7 +159,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de usuario (findByIdMiembro)", e);
         }
         return Optional.empty();
     }
@@ -155,7 +173,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return mapResultSet(rs);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de usuario (findByNombreUsuario)", e);
         }
         return null;
     }
@@ -170,9 +188,41 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Error al consultar usuarios por rol.", e);
+            throw TraductorSQLException.traducir("consultar usuarios por rol", e);
         }
         return 0;
+    }
+
+    /**
+     * Crea la cuenta de acceso de un miembro que aun no la tiene. Usa el rol MIEMBRO;
+     * si una base antigua no lo tiene sembrado, asigna el rol de menor identificador
+     * (el mismo comportamiento que tenia MiembroService cuando contenia este SQL).
+     *
+     * @return {@code true} si se inserto la cuenta
+     */
+    public boolean crearCuentaMiembro(int idMiembro, String nombreUsuario, String claveHash, String claveTemporal) {
+        String conRolMiembro = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) "
+            + "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol WHERE nombre = 'MIEMBRO'";
+        String conRolMinimo = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) "
+            + "SELECT MIN(id_rol), ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol";
+        String temporalCifrada = cifrador.get().cifrar(claveTemporal);
+        try (Connection conn = DBConnection.getInstance().getConnection()) {
+            return insertarCuenta(conn, conRolMiembro, idMiembro, nombreUsuario, claveHash, temporalCifrada) > 0
+                || insertarCuenta(conn, conRolMinimo, idMiembro, nombreUsuario, claveHash, temporalCifrada) > 0;
+        } catch (SQLException e) {
+            throw TraductorSQLException.traducir("crear la cuenta del miembro", e);
+        }
+    }
+
+    private static int insertarCuenta(Connection conn, String sql, int idMiembro, String nombreUsuario,
+                                      String claveHash, String claveTemporal) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idMiembro);
+            ps.setString(2, nombreUsuario);
+            ps.setString(3, claveHash);
+            ps.setString(4, claveTemporal);
+            return ps.executeUpdate();
+        }
     }
 
     private Usuario mapResultSet(ResultSet rs) throws SQLException {
@@ -183,8 +233,10 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             reqCambio = rs.getBoolean("requiere_cambio_clave");
         } catch (SQLException ignored) {}
         try {
-            claveTemp = rs.getString("clave_temporal");
-        } catch (SQLException ignored) {}
+            claveTemp = cifrador.get().descifrar(rs.getString("clave_temporal"));
+        } catch (SQLException ignored) {
+            // Base anterior a V011 sin la columna clave_temporal: no hay clave provisional que leer.
+        }
 
         return new Usuario(
             rs.getInt("id_usuario"),

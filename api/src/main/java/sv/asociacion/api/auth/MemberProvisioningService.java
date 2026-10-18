@@ -1,14 +1,13 @@
 package sv.asociacion.api.auth;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
-import java.security.SecureRandom;
 import java.sql.*;
 import java.time.LocalDate;
 
 public final class MemberProvisioningService {
-    private static final char[] ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%".toCharArray();
     private final PasswordService passwords = new PasswordService();
-    private final SecureRandom random = new SecureRandom();
 
     public Result create(String document, String documentType, String country, Integer houseId, String names, String lastNames, String phone, String email) {
         String temporary = temporaryPassword();
@@ -27,7 +26,8 @@ public final class MemberProvisioningService {
                 }
                 String userSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave,clave_temporal) SELECT id_rol,?,?,?,'ACTIVO',TRUE,? FROM rol WHERE nombre='MIEMBRO'";
                 try (PreparedStatement statement = connection.prepareStatement(userSql)) {
-                    statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary)); statement.setString(4, temporary);
+                    statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary));
+                    statement.setString(4, sv.asociacion.util.CifradorCredenciales.porDefecto().cifrar(temporary));
                     if (statement.executeUpdate() != 1) throw new SQLException("No existe el rol MIEMBRO.");
                 } catch (SQLException sqle) {
                     String fallbackSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave) SELECT id_rol,?,?,?,'ACTIVO',TRUE FROM rol WHERE nombre='MIEMBRO'";
@@ -39,13 +39,11 @@ public final class MemberProvisioningService {
                 connection.commit(); return new Result(memberId, temporary);
             } catch (Exception exception) { connection.rollback(); throw exception; }
             finally { connection.setAutoCommit(true); }
-        } catch (SQLException exception) { throw new IllegalStateException("No fue posible crear el miembro y su cuenta.", exception); }
+        } catch (SQLException exception) { throw TraductorSQLException.traducir("crear el miembro y su cuenta", exception); }
     }
 
     private String temporaryPassword() {
-        StringBuilder value = new StringBuilder("Tmp!");
-        for (int i = 0; i < 13; i++) value.append(ALPHABET[random.nextInt(ALPHABET.length)]);
-        return value.toString();
+        return sv.asociacion.util.GeneradorClaveTemporal.generar();
     }
     public record Result(int memberId, String temporaryPassword) { }
 }

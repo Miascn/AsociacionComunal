@@ -35,7 +35,12 @@ class AsistenciaControllerTest {
         asistenciaDAO = new MemoryAsistenciaDAO();
         reunionDAO = new MemoryReunionDAO();
         miembroDAO = new MemoryMiembroDAO();
-        AsistenciaService service = new AsistenciaService(asistenciaDAO, reunionDAO, miembroDAO);
+        // Estas pruebas cubren permisos y validaciones de ruta: la convocatoria no llega a ejecutarse.
+        var sinConvocatoria = new sv.asociacion.service.ConvocatoriaConcurrenteService(new sv.asociacion.dao.ConvocatoriaRepository() {
+            @Override public java.util.List<Integer> idsMiembrosActivos() { return java.util.List.of(); }
+            @Override public int convocarLote(int idReunion, java.util.List<Integer> ids) { return 0; }
+        });
+        AsistenciaService service = new AsistenciaService(asistenciaDAO, reunionDAO, miembroDAO, sinConvocatoria);
         AsistenciaController controller = new AsistenciaController(service);
 
         // Populate sample entities

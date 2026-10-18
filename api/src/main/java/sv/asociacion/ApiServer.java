@@ -18,6 +18,11 @@ import sv.asociacion.api.auth.MemberProvisioningService;
 import sv.asociacion.config.AppConfig;
 import sv.asociacion.controller.*;
 import sv.asociacion.dao.*;
+import sv.asociacion.exception.ConexionBDException;
+import sv.asociacion.exception.ConflictoException;
+import sv.asociacion.exception.PersistenciaException;
+import sv.asociacion.exception.RecursoNoEncontradoException;
+import sv.asociacion.exception.ValidacionException;
 import sv.asociacion.middleware.AuthMiddleware;
 import sv.asociacion.middleware.JwtAuthMiddleware;
 import sv.asociacion.service.*;
@@ -72,11 +77,55 @@ public final class ApiServer {
                     : "El valor del campo '" + campo + "' no tiene un formato válido."));
         });
 
+        // --- Errores de negocio: el mensaje esta redactado para el usuario y se devuelve.
+        cfg.routes.exception(ValidacionException.class, (e, ctx) -> error(ctx, HttpStatus.BAD_REQUEST, e.getMessage()));
+        cfg.routes.exception(RecursoNoEncontradoException.class, (e, ctx) -> error(ctx, HttpStatus.NOT_FOUND, e.getMessage()));
+        cfg.routes.exception(ConflictoException.class, (e, ctx) -> error(ctx, HttpStatus.CONFLICT, e.getMessage()));
+
+        // Los servicios anteriores al Avance 3 senalan sus reglas con las excepciones
+        // estandar; se conserva el mismo significado que ya les daban los controladores.
+        cfg.routes.exception(IllegalArgumentException.class, (e, ctx) -> error(ctx, HttpStatus.BAD_REQUEST, e.getMessage()));
+        cfg.routes.exception(IllegalStateException.class, (e, ctx) -> error(ctx, HttpStatus.CONFLICT, e.getMessage()));
+        cfg.routes.exception(java.util.NoSuchElementException.class, (e, ctx) -> error(ctx, HttpStatus.NOT_FOUND, e.getMessage()));
+
+        cfg.routes.exception(sv.asociacion.api.auth.AuthException.class, (e, ctx) ->
+            ctx.status(e.status()).json(Map.of("error", e.getMessage(), "code", e.code())));
+
+        // --- Errores de infraestructura: el detalle (SQL, SQLState) se registra en el
+        // servidor y el cliente solo recibe un texto generico.
+        // Convocatoria parcial: el mensaje solo contiene conteos (sin SQL) y ayuda a decidir si repetir.
+        cfg.routes.exception(sv.asociacion.exception.ConvocatoriaIncompletaException.class, (e, ctx) -> {
+            registrarFalloPersistencia(ctx, e);
+            ctx.status(e.porBaseNoDisponible() ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.INTERNAL_SERVER_ERROR)
+                .json(Map.of("error", e.getMessage(), "resultado", e.resultado()));
+        });
+        cfg.routes.exception(ConexionBDException.class, (e, ctx) -> {
+            registrarFalloPersistencia(ctx, e);
+            error(ctx, HttpStatus.SERVICE_UNAVAILABLE,
+                "La base de datos no está disponible en este momento. Intente de nuevo en unos minutos.");
+        });
+        cfg.routes.exception(PersistenciaException.class, (e, ctx) -> {
+            registrarFalloPersistencia(ctx, e);
+            error(ctx, HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error al acceder a los datos.");
+        });
+
         cfg.routes.exception(Exception.class, (exception, context) -> {
             exception.printStackTrace(System.err);
             context.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .json(Map.of("error", "No fue posible procesar la solicitud."));
         });
+    }
+
+    private static void error(io.javalin.http.Context ctx, HttpStatus status, String mensaje) {
+        ctx.status(status).json(Map.of("error", mensaje == null ? status.getMessage() : mensaje));
+    }
+
+    private static void registrarFalloPersistencia(io.javalin.http.Context ctx, PersistenciaException e) {
+        Throwable causa = e.getCause();
+        String detalle = causa instanceof java.sql.SQLException sql
+            ? " [SQLState=" + sql.getSQLState() + ", codigo=" + sql.getErrorCode() + "] " + sql.getMessage()
+            : (causa == null ? "" : " " + causa);
+        System.err.println("Persistencia " + ctx.method() + " " + ctx.path() + ": " + e.getMessage() + detalle);
     }
 
     public static void main(String[] args) {
@@ -105,7 +154,7 @@ public final class ApiServer {
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
-        MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
+        MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService(), usuarioDAO);
         // Lecturas del padron a traves del contrato generico. Se inyecta la misma
         // implementacion JDBC que usa el resto del sistema: el origen de datos de
         // produccion no cambia.
@@ -123,7 +172,10 @@ public final class ApiServer {
         OpcionVotacionService opcionVotacionService = new OpcionVotacionService(opcionVotacionDAO, votacionDAO, votoDAO);
         VotoService votoService = new VotoService(votoDAO, votacionDAO, opcionVotacionDAO, miembroDAO);
         ReunionService reunionService = new ReunionService(reunionDAO, asistenciaDAO);
-        AsistenciaService asistenciaService = new AsistenciaService(asistenciaDAO, reunionDAO, miembroDAO);
+        // Convocatoria concurrente: ExecutorService + repositorio JDBC sobre el DataSource con pool.
+        ConvocatoriaConcurrenteService convocatoria =
+            new ConvocatoriaConcurrenteService(JdbcConvocatoriaRepository.conPoolDeLaAplicacion());
+        AsistenciaService asistenciaService = new AsistenciaService(asistenciaDAO, reunionDAO, miembroDAO, convocatoria);
 
         AuthController adminAuth = new AuthController(jwtService);
         HealthController health = new HealthController();
@@ -271,6 +323,7 @@ public final class ApiServer {
             cfg.routes.get("/api/reuniones/{idReunion}/asistencias", asistencias::getByReunion);
             cfg.routes.get("/api/miembros/{idMiembro}/asistencias", asistencias::getByMiembro);
             cfg.routes.post("/api/reuniones/{idReunion}/asistencias/convocar", asistencias::convocar);
+            cfg.routes.post("/api/reuniones/{idReunion}/asistencias/convocatoria", asistencias::convocarConResultado);
             cfg.routes.post("/api/reuniones/{idReunion}/asistencias/lote", asistencias::registrarLote);
             cfg.routes.put("/api/asistencias/{id}", asistencias::update);
             cfg.routes.patch("/api/asistencias/{id}", asistencias::toggle);
@@ -306,6 +359,11 @@ public final class ApiServer {
             mobileAuth.register(cfg.routes);
         });
         app.start();
+        // Al apagar la API se detiene Javalin y se cierran las conexiones fisicas del pool.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            app.stop();
+            sv.asociacion.config.DBConnection.getInstance().cerrar();
+        }, "apagado-api"));
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, config.apiPort);
     }
 
@@ -340,7 +398,7 @@ public final class ApiServer {
         if (path != null && path.contains("/cancelar")) return "CANCELAR";
         if (path != null && path.contains("/realizada")) return "REALIZADA";
         if (path != null && path.contains("/reordenar")) return "REORDENAR";
-        if (path != null && path.contains("/convocar")) return "CONVOCAR";
+        if (path != null && (path.contains("/convocar") || path.contains("/convocatoria"))) return "CONVOCAR";
         if (path != null && path.contains("/estado")) return "STATE_CHANGE";
         if (path != null && path.contains("/login")) return "LOGIN";
         return switch (method) {

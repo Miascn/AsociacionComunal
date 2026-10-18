@@ -135,6 +135,8 @@ public class OpcionVotacionController {
             }
         } catch (IllegalStateException e) {
             context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
+        } catch (sv.asociacion.exception.PersistenciaException | sv.asociacion.exception.NegocioException e) {
+            throw e; // los traduce el manejador central de ApiServer
         } catch (Exception e) {
             context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
         }

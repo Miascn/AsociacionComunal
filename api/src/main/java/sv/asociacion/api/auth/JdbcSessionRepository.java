@@ -1,5 +1,7 @@
 package sv.asociacion.api.auth;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import java.sql.*;
 import java.time.Instant;
@@ -19,7 +21,7 @@ public final class JdbcSessionRepository implements SessionRepository {
                 if (!keys.next()) throw new SQLException("La sesión no devolvió identificador.");
                 return new SessionRecord(keys.getLong(1), userId, accessHash, refreshHash, createdAt, accessExpiresAt, refreshExpiresAt, null);
             }
-        } catch (SQLException exception) { throw new IllegalStateException("No fue posible crear la sesión.", exception); }
+        } catch (SQLException exception) { throw TraductorSQLException.traducir("crear la sesión", exception); }
     }
 
     @Override public Optional<SessionRecord> findByAccessHash(String hash) { return find("access_token_hash", hash); }
@@ -31,7 +33,7 @@ public final class JdbcSessionRepository implements SessionRepository {
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, hash);
             try (ResultSet result = statement.executeQuery()) { return result.next() ? Optional.of(map(result)) : Optional.empty(); }
-        } catch (SQLException exception) { throw new IllegalStateException("No fue posible consultar la sesión.", exception); }
+        } catch (SQLException exception) { throw TraductorSQLException.traducir("consultar la sesión", exception); }
     }
 
     @Override
@@ -52,7 +54,7 @@ public final class JdbcSessionRepository implements SessionRepository {
     private int execute(String sql, SqlBinder binder) {
         try (Connection connection = DBConnection.getInstance().getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             binder.bind(statement); return statement.executeUpdate();
-        } catch (SQLException exception) { throw new IllegalStateException("No fue posible actualizar la sesión.", exception); }
+        } catch (SQLException exception) { throw TraductorSQLException.traducir("actualizar la sesión", exception); }
     }
 
     private SessionRecord map(ResultSet result) throws SQLException {

@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -38,7 +40,7 @@ public class ConfiguracionDAO {
             ps.setString(3, descripcion != null ? descripcion.trim() : null);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de configuracion (setValor)", e);
         }
     }
 
