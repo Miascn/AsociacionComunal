@@ -37,7 +37,7 @@ Proyecto de **Programación II** — Universidad Evangélica de El Salvador, Fac
 | Gerson Otoniel Bermúdez Ramírez | Developer |
 | Edgard Antonio Mendoza Vaquero | Base de datos |
 
-Los roles corresponden a la distribución Scrum de los avances 1 y 2. La participación de cada integrante en la entrega final se declara en el documento final (`docs/avance3/`).
+Los roles corresponden a la distribución Scrum de los avances 1 y 2. La participación de cada integrante en la entrega final se declara en el documento final (`docs/documento-final.pdf`).
 
 ## Tecnologías
 
@@ -295,7 +295,8 @@ La lista completa está en `ApiServer.java`.
 
 ## Documentación adicional
 
-- `docs/avance3/` — documento final del Avance 3.
+- `docs/documento-final.pdf` (y `.docx`) — documento final; fuente editable en `docs/avance3/DOCUMENTO_FINAL.md`.
+- `docs/uml.png`, `docs/uml-excepciones.png`, `docs/arquitectura.png` — diagramas (fuentes draw.io en `docs/avance3/`).
 - `docs/avance2/` — documento y evidencias del Avance 2.
 - `docs/FLUJO_GIT.md` — estrategia de ramas.
 - `docs/GUIA_COMPLETA_OPERACION_Y_ACTUALIZACIONES.md` — servidor, paquete QA de Windows y actualizaciones.
