@@ -1,16 +1,23 @@
 version: '3.8'
 
+# MySQL local para desarrollo y evaluacion. Al crearse el volumen por primera vez
+# ejecuta database/schema.sql y database/data.sql (datos de demostracion).
+# Las contrasenas se pueden cambiar con variables de entorno; los valores por
+# defecto son solo para un entorno local.
 services:
   mysql:
     image: mysql:8.0
     container_name: asociacion_mysql
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: asociacion_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-secret}
+      MYSQL_DATABASE: asociacion_comunal
+      MYSQL_USER: ${DB_USER:-asociacion_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-asociacion_local}
     ports:
       - "3306:3306"
     volumes:
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
       - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]

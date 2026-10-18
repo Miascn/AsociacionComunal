@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Los scripts de shell deben conservar LF aun en Windows (bash no acepta CRLF).
+*.sh text eol=lf
+mvnw text eol=lf
