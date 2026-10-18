@@ -4,14 +4,28 @@ import sv.asociacion.exception.TraductorSQLException;
 
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Usuario;
+import sv.asociacion.util.CifradorCredenciales;
 import sv.asociacion.util.DateUtils;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class UsuarioDAO implements DAO<Usuario, Integer> {
+
+    /** Cifra clave_temporal al escribir y la descifra al leer; se resuelve al usarse. */
+    private final Supplier<CifradorCredenciales> cifrador;
+
+    public UsuarioDAO() {
+        this(CifradorCredenciales::porDefecto);
+    }
+
+    public UsuarioDAO(Supplier<CifradorCredenciales> cifrador) {
+        this.cifrador = cifrador;
+    }
+
     @Override
     public Optional<Usuario> findById(Integer id) {
         String sql = "SELECT * FROM usuario WHERE id_usuario = ?";
@@ -115,7 +129,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, claveHash);
             ps.setBoolean(2, requiereCambioClave);
-            ps.setString(3, claveTemporal);
+            ps.setString(3, cifrador.get().cifrar(claveTemporal));
             ps.setInt(4, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -191,9 +205,10 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             + "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol WHERE nombre = 'MIEMBRO'";
         String conRolMinimo = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) "
             + "SELECT MIN(id_rol), ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol";
+        String temporalCifrada = cifrador.get().cifrar(claveTemporal);
         try (Connection conn = DBConnection.getInstance().getConnection()) {
-            return insertarCuenta(conn, conRolMiembro, idMiembro, nombreUsuario, claveHash, claveTemporal) > 0
-                || insertarCuenta(conn, conRolMinimo, idMiembro, nombreUsuario, claveHash, claveTemporal) > 0;
+            return insertarCuenta(conn, conRolMiembro, idMiembro, nombreUsuario, claveHash, temporalCifrada) > 0
+                || insertarCuenta(conn, conRolMinimo, idMiembro, nombreUsuario, claveHash, temporalCifrada) > 0;
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("crear la cuenta del miembro", e);
         }
@@ -218,8 +233,10 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             reqCambio = rs.getBoolean("requiere_cambio_clave");
         } catch (SQLException ignored) {}
         try {
-            claveTemp = rs.getString("clave_temporal");
-        } catch (SQLException ignored) {}
+            claveTemp = cifrador.get().descifrar(rs.getString("clave_temporal"));
+        } catch (SQLException ignored) {
+            // Base anterior a V011 sin la columna clave_temporal: no hay clave provisional que leer.
+        }
 
         return new Usuario(
             rs.getInt("id_usuario"),

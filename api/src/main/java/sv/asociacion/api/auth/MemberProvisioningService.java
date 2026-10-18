@@ -26,7 +26,8 @@ public final class MemberProvisioningService {
                 }
                 String userSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave,clave_temporal) SELECT id_rol,?,?,?,'ACTIVO',TRUE,? FROM rol WHERE nombre='MIEMBRO'";
                 try (PreparedStatement statement = connection.prepareStatement(userSql)) {
-                    statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary)); statement.setString(4, temporary);
+                    statement.setInt(1, memberId); statement.setString(2, document); statement.setString(3, passwords.hash(temporary));
+                    statement.setString(4, sv.asociacion.util.CifradorCredenciales.porDefecto().cifrar(temporary));
                     if (statement.executeUpdate() != 1) throw new SQLException("No existe el rol MIEMBRO.");
                 } catch (SQLException sqle) {
                     String fallbackSql = "INSERT INTO usuario (id_rol,id_miembro,nombre_usuario,clave_hash,estado,requiere_cambio_clave) SELECT id_rol,?,?,?,'ACTIVO',TRUE FROM rol WHERE nombre='MIEMBRO'";
