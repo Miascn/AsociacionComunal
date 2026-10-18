@@ -81,7 +81,6 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("actualizar datos de votacion (updateEstado)", e);
         }
-        return false;
     }
 
     @Override
@@ -144,7 +143,6 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de votacion (delete)", e);
         }
-        return false;
     }
 
     public List<Votacion> findByProyecto(Integer idProyecto) {

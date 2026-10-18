@@ -126,7 +126,6 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("actualizar datos de periodo directiva (updateEstado)", e);
         }
-        return false;
     }
 
     @Override
@@ -182,7 +181,6 @@ public class PeriodoDirectivaDAO implements DAO<PeriodoDirectiva, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de periodo directiva (delete)", e);
         }
-        return false;
     }
 
     private PeriodoDirectiva mapResultSet(ResultSet rs) throws SQLException {

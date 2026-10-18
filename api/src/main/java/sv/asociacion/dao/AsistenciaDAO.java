@@ -90,7 +90,6 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de asistencia (delete)", e);
         }
-        return false;
     }
 
     public List<Asistencia> findByReunion(Integer idReunion) {
@@ -167,7 +166,6 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("consultar datos de asistencia (existsByReunionAndMiembro)", e);
         }
-        return false;
     }
 
     public Optional<Asistencia> findByReunionAndMiembro(Integer idReunion, Integer idMiembro) {
@@ -196,7 +194,6 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("actualizar datos de asistencia (toggleAsistencia)", e);
         }
-        return false;
     }
 
     public int deleteByReunion(Integer idReunion) {
@@ -208,7 +205,6 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de asistencia (deleteByReunion)", e);
         }
-        return 0;
     }
 
     public List<Asistencia> saveLoteTransaccional(Integer idReunion, List<Asistencia> asistencias) throws SQLException {

@@ -88,7 +88,6 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de opcion votacion (delete)", e);
         }
-        return false;
     }
 
     public List<OpcionVotacion> findByVotacion(Integer idVotacion) {

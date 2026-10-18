@@ -105,7 +105,6 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de reunion (delete)", e);
         }
-        return false;
     }
 
     public List<Reunion> findByEstado(Reunion.Estado estado) {
@@ -184,7 +183,6 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("actualizar datos de reunion (updateEstado)", e);
         }
-        return false;
     }
 
     public List<Reunion> findByProyecto(Integer idProyecto) {

@@ -170,7 +170,6 @@ public class CargoDAO implements DAO<Cargo, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("actualizar datos de cargo (toggleActivo)", e);
         }
-        return false;
     }
 
     @Override
@@ -183,7 +182,6 @@ public class CargoDAO implements DAO<Cargo, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de cargo (delete)", e);
         }
-        return false;
     }
 
     private Cargo mapResultSet(ResultSet rs) throws SQLException {

@@ -86,7 +86,6 @@ public class RolDAO implements DAO<Rol, Integer> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de rol (delete)", e);
         }
-        return false;
     }
 
     public Optional<Rol> findByNombre(String nombre) {

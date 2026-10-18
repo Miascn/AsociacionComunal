@@ -147,7 +147,6 @@ public class VotoDAO implements DAO<Voto, Long> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("eliminar datos de voto (delete)", e);
         }
-        return false;
     }
 
     public List<Voto> findByVotacion(Integer idVotacion) {
@@ -196,7 +195,6 @@ public class VotoDAO implements DAO<Voto, Long> {
         } catch (SQLException e) {
             throw TraductorSQLException.traducir("consultar datos de voto (existsByVotacionAndMiembro)", e);
         }
-        return false;
     }
 
     public Optional<Voto> findByVotacionAndMiembro(Integer idVotacion, Integer idMiembro) {
