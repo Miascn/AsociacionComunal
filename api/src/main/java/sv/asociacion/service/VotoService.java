@@ -6,7 +6,7 @@ import sv.asociacion.dao.MiembroDAO;
 import sv.asociacion.dao.OpcionVotacionDAO;
 import sv.asociacion.dao.VotacionDAO;
 import sv.asociacion.dao.VotoDAO;
-import sv.asociacion.dao.VotoDuplicadoException;
+import sv.asociacion.exception.VotoDuplicadoException;
 import sv.asociacion.domain.dto.EmitirVotoRequest;
 import sv.asociacion.domain.dto.EmitirVotoResponse;
 import sv.asociacion.domain.dto.EstadoParticipacionResponse;

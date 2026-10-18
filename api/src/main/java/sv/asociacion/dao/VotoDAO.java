@@ -2,6 +2,9 @@ package sv.asociacion.dao;
 
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Voto;
+import sv.asociacion.exception.PersistenciaException;
+import sv.asociacion.exception.TraductorSQLException;
+import sv.asociacion.exception.VotoDuplicadoException;
 import sv.asociacion.util.DateUtils;
 
 import java.sql.*;
@@ -20,7 +23,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (findById)", e);
         }
         return Optional.empty();
     }
@@ -36,7 +39,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 votos.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (findAll)", e);
         }
         return votos;
     }
@@ -57,7 +60,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de voto (save)", e);
         }
         return entity;
     }
@@ -113,7 +116,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new PersistenciaException("No fue posible abrir la conexión para registrar el voto.", e);
+            throw TraductorSQLException.traducir("abrir la conexión para registrar el voto", e);
         }
     }
 
@@ -129,7 +132,7 @@ public class VotoDAO implements DAO<Voto, Long> {
             ps.setLong(5, entity.getIdVoto());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de voto (update)", e);
         }
         return entity;
     }
@@ -142,7 +145,7 @@ public class VotoDAO implements DAO<Voto, Long> {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de voto (delete)", e);
         }
         return false;
     }
@@ -159,7 +162,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (findByVotacion)", e);
         }
         return list;
     }
@@ -176,7 +179,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (findByOpcion)", e);
         }
         return list;
     }
@@ -191,7 +194,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 return rs.next();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (existsByVotacionAndMiembro)", e);
         }
         return false;
     }
@@ -206,7 +209,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (findByVotacionAndMiembro)", e);
         }
         return Optional.empty();
     }
@@ -220,7 +223,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (countByVotacion)", e);
         }
         return 0;
     }
@@ -234,7 +237,7 @@ public class VotoDAO implements DAO<Voto, Long> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de voto (countByOpcion)", e);
         }
         return 0;
     }

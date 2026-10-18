@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Aportacion;
 import sv.asociacion.util.DateUtils;
@@ -29,7 +31,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (findById)", e);
         }
         return Optional.empty();
     }
@@ -58,7 +60,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (findByIdWithDetails)", e);
         }
         return Optional.empty();
     }
@@ -74,7 +76,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 aportaciones.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (findAll)", e);
         }
         return aportaciones;
     }
@@ -103,7 +105,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de aportacion (save)", e);
         }
         return entity;
     }
@@ -128,7 +130,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
             ps.setLong(9, entity.getIdAportacion());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de aportacion (update)", e);
         }
         return entity;
     }
@@ -141,9 +143,8 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de aportacion (delete)", e);
         }
-        return false;
     }
 
     public boolean anular(Long id) {
@@ -153,9 +154,8 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de aportacion (anular)", e);
         }
-        return false;
     }
 
     public boolean existsByMiembroAndPeriodo(Integer idMiembro, String periodoMes, Long excludeId) {
@@ -189,7 +189,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 if (rs.next()) return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (existsByMiembroAndPeriodo)", e);
         }
         return false;
     }
@@ -232,7 +232,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (findFiltered)", e);
         }
         return list;
     }
@@ -258,7 +258,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (countFiltered)", e);
         }
         return 0;
     }
@@ -287,7 +287,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 if (rs.next()) return rs.getBigDecimal(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (sumFiltered)", e);
         }
         return BigDecimal.ZERO;
     }
@@ -304,7 +304,7 @@ public class AportacionDAO implements DAO<Aportacion, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de aportacion (findByMiembro)", e);
         }
         return list;
     }

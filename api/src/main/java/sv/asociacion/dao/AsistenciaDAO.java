@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Asistencia;
 
@@ -19,7 +21,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (findById)", e);
         }
         return Optional.empty();
     }
@@ -35,7 +37,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 asignaciones.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (findAll)", e);
         }
         return asignaciones;
     }
@@ -56,7 +58,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de asistencia (save)", e);
         }
         return entity;
     }
@@ -73,7 +75,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
             ps.setLong(5, entity.getIdAsistencia());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de asistencia (update)", e);
         }
         return entity;
     }
@@ -86,7 +88,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de asistencia (delete)", e);
         }
         return false;
     }
@@ -103,7 +105,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (findByReunion)", e);
         }
         return list;
     }
@@ -120,7 +122,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (findByMiembro)", e);
         }
         return list;
     }
@@ -134,7 +136,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (countByReunion)", e);
         }
         return 0;
     }
@@ -148,7 +150,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (countAsistieronByReunion)", e);
         }
         return 0;
     }
@@ -163,7 +165,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 return rs.next();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (existsByReunionAndMiembro)", e);
         }
         return false;
     }
@@ -178,7 +180,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de asistencia (findByReunionAndMiembro)", e);
         }
         return Optional.empty();
     }
@@ -192,7 +194,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
             ps.setLong(3, idAsistencia);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de asistencia (toggleAsistencia)", e);
         }
         return false;
     }
@@ -204,7 +206,7 @@ public class AsistenciaDAO implements DAO<Asistencia, Long> {
             ps.setInt(1, idReunion);
             return ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de asistencia (deleteByReunion)", e);
         }
         return 0;
     }

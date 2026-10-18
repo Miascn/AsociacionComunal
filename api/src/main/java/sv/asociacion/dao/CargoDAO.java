@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Cargo;
 
@@ -22,7 +24,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de cargo (findById)", e);
         }
         return Optional.empty();
     }
@@ -43,7 +45,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de cargo (findByIdWithDetail)", e);
         }
         return Optional.empty();
     }
@@ -58,7 +60,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de cargo (findByNombre)", e);
         }
         return Optional.empty();
     }
@@ -74,7 +76,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
                 cargos.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de cargo (findAll)", e);
         }
         return cargos;
     }
@@ -115,7 +117,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de cargo (findFiltered)", e);
         }
         return list;
     }
@@ -136,7 +138,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de cargo (save)", e);
         }
         return entity;
     }
@@ -153,7 +155,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
             ps.setInt(5, entity.getIdCargo());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de cargo (update)", e);
         }
         return entity;
     }
@@ -166,7 +168,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
             ps.setInt(2, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de cargo (toggleActivo)", e);
         }
         return false;
     }
@@ -179,7 +181,7 @@ public class CargoDAO implements DAO<Cargo, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de cargo (delete)", e);
         }
         return false;
     }

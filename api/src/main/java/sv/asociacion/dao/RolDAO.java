@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Rol;
 
@@ -19,7 +21,7 @@ public class RolDAO implements DAO<Rol, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de rol (findById)", e);
         }
         return Optional.empty();
     }
@@ -35,7 +37,7 @@ public class RolDAO implements DAO<Rol, Integer> {
                 roles.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de rol (findAll)", e);
         }
         return roles;
     }
@@ -54,7 +56,7 @@ public class RolDAO implements DAO<Rol, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de rol (save)", e);
         }
         return entity;
     }
@@ -69,7 +71,7 @@ public class RolDAO implements DAO<Rol, Integer> {
             ps.setInt(3, entity.getIdRol());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de rol (update)", e);
         }
         return entity;
     }
@@ -82,7 +84,7 @@ public class RolDAO implements DAO<Rol, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de rol (delete)", e);
         }
         return false;
     }
@@ -96,7 +98,7 @@ public class RolDAO implements DAO<Rol, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de rol (findByNombre)", e);
         }
         return Optional.empty();
     }

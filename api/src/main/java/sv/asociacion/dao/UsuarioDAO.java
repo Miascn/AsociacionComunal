@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Usuario;
 import sv.asociacion.util.DateUtils;
@@ -20,7 +22,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible crear el usuario.", e);
+            throw TraductorSQLException.traducir("crear el usuario", e);
         }
         return Optional.empty();
     }
@@ -36,7 +38,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 usuarios.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de usuario (findAll)", e);
         }
         return usuarios;
     }
@@ -63,7 +65,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de usuario (save)", e);
         }
         return entity;
     }
@@ -86,7 +88,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             ps.setInt(7, entity.getIdUsuario());
             if (ps.executeUpdate() == 0) return null;
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible actualizar el usuario.", e);
+            throw TraductorSQLException.traducir("actualizar el usuario", e);
         }
         return entity;
     }
@@ -99,7 +101,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new IllegalStateException("No fue posible desactivar el usuario.", e);
+            throw TraductorSQLException.traducir("desactivar el usuario", e);
         }
     }
 
@@ -126,7 +128,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 ps.setInt(3, id);
                 return ps.executeUpdate() > 0;
             } catch (SQLException ex) {
-                throw new IllegalStateException("No fue posible restablecer la contraseña.", ex);
+                throw TraductorSQLException.traducir("restablecer la contraseña", ex);
             }
         }
     }
@@ -141,7 +143,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de usuario (findByIdMiembro)", e);
         }
         return Optional.empty();
     }
@@ -155,7 +157,7 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return mapResultSet(rs);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de usuario (findByNombreUsuario)", e);
         }
         return null;
     }

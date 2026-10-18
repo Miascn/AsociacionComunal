@@ -132,9 +132,8 @@ public class UsuarioController {
             context.json(response);
         } catch (NoSuchElementException e) {
             context.status(HttpStatus.NOT_FOUND).json(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            context.status(HttpStatus.INTERNAL_SERVER_ERROR).json(Map.of("error", e.getMessage()));
         }
+        // Cualquier otro fallo lo responde el manejador central sin exponer detalles internos.
     }
 
     private static boolean requireAdministrator(Context context) {

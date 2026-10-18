@@ -8,7 +8,17 @@ import sv.asociacion.service.CensoMiembrosService;
 import sv.asociacion.service.MiembroService;
 import java.util.Map;
 
+/**
+ * Rutas del padron de miembros.
+ *
+ * <p>No captura excepciones: los errores de negocio y de persistencia los traduce a
+ * HTTP el manejador central ({@code ApiServer.configurarManejoErrores}). Cada metodo
+ * queda reducido a lo que le corresponde a un controlador: leer la peticion, llamar
+ * al servicio y elegir el codigo de exito.</p>
+ */
 public class MiembroController {
+    private static final Map<String, String> NO_ENCONTRADO = Map.of("error", "Miembro no encontrado.");
+
     private final MiembroService miembroService;
     /** Lecturas del padron: depende del contrato generico, no de la implementacion. */
     private final CensoMiembrosService censo;
@@ -23,50 +33,26 @@ public class MiembroController {
     }
 
     public void getById(Context context) {
-        var response = censo.findById(context.pathParamAsClass("id", Integer.class).get());
-        if (response == null) context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "Miembro no encontrado."));
-        else context.json(response);
+        responderOEncontrado(context, censo.findById(id(context)), HttpStatus.OK);
     }
 
     public void create(Context context) {
         CreateMemberRequest request = context.bodyAsClass(CreateMemberRequest.class);
-        try {
-            var response = miembroService.createMember(request);
-            context.status(HttpStatus.CREATED).json(response);
-        } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
-        } catch (IllegalStateException e) {
-            context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
-        }
+        context.status(HttpStatus.CREATED).json(miembroService.createMember(request));
     }
 
     public void update(Context context) {
-        try {
-            int id = context.pathParamAsClass("id", Integer.class).get();
-            var response = miembroService.update(id, context.bodyAsClass(CreateMemberRequest.class));
-            if (response == null) context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "Miembro no encontrado."));
-            else context.json(response);
-        } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
-        } catch (IllegalStateException e) {
-            context.status(HttpStatus.CONFLICT).json(Map.of("error", e.getMessage()));
-        }
+        var response = miembroService.update(id(context), context.bodyAsClass(CreateMemberRequest.class));
+        responderOEncontrado(context, response, HttpStatus.OK);
     }
 
     public void changeState(Context context) {
-        try {
-            int id = context.pathParamAsClass("id", Integer.class).get();
-            var response = miembroService.changeState(id, context.bodyAsClass(MemberStateRequest.class).estado());
-            if (response == null) context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "Miembro no encontrado."));
-            else context.json(response);
-        } catch (IllegalArgumentException e) {
-            context.status(HttpStatus.BAD_REQUEST).json(Map.of("error", e.getMessage()));
-        }
+        var response = miembroService.changeState(id(context), context.bodyAsClass(MemberStateRequest.class).estado());
+        responderOEncontrado(context, response, HttpStatus.OK);
     }
 
     public void getCredenciales(Context context) {
-        int id = context.pathParamAsClass("id", Integer.class).get();
-        var cred = miembroService.getCredenciales(id);
+        var cred = miembroService.getCredenciales(id(context));
         if (cred == null) {
             context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "No se encontraron credenciales o usuario asociado para este miembro."));
         } else {
@@ -75,16 +61,15 @@ public class MiembroController {
     }
 
     public void generarCredenciales(Context context) {
-        int id = context.pathParamAsClass("id", Integer.class).get();
-        try {
-            var cred = miembroService.generarCredenciales(id);
-            if (cred == null) {
-                context.status(HttpStatus.NOT_FOUND).json(Map.of("error", "Miembro no encontrado."));
-            } else {
-                context.status(HttpStatus.CREATED).json(cred);
-            }
-        } catch (Exception e) {
-            context.status(HttpStatus.INTERNAL_SERVER_ERROR).json(Map.of("error", e.getMessage()));
-        }
+        responderOEncontrado(context, miembroService.generarCredenciales(id(context)), HttpStatus.CREATED);
+    }
+
+    private static int id(Context context) {
+        return context.pathParamAsClass("id", Integer.class).get();
+    }
+
+    private static void responderOEncontrado(Context context, Object body, HttpStatus exito) {
+        if (body == null) context.status(HttpStatus.NOT_FOUND).json(NO_ENCONTRADO);
+        else context.status(exito).json(body);
     }
 }

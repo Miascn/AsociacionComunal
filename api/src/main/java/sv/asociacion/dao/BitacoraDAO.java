@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Bitacora;
 import sv.asociacion.util.DateUtils;
@@ -23,7 +25,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (findById)", e);
         }
         return Optional.empty();
     }
@@ -44,7 +46,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (findByIdWithUser)", e);
         }
         return Optional.empty();
     }
@@ -60,7 +62,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 bitacoras.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (findAll)", e);
         }
         return bitacoras;
     }
@@ -83,7 +85,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de bitacora (save)", e);
         }
         return entity;
     }
@@ -127,7 +129,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (findFiltered)", e);
         }
         return list;
     }
@@ -151,7 +153,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (countFiltered)", e);
         }
         return 0;
     }
@@ -168,7 +170,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (findByUsuario)", e);
         }
         return list;
     }
@@ -185,7 +187,7 @@ public class BitacoraDAO implements DAO<Bitacora, Long> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de bitacora (findByEntidad)", e);
         }
         return list;
     }

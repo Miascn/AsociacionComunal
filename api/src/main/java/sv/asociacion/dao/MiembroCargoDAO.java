@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.dto.AsignacionCargoResponse;
 import sv.asociacion.domain.entity.MiembroCargo;
@@ -23,7 +25,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findById)", e);
         }
         return Optional.empty();
     }
@@ -39,7 +41,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 list.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findAll)", e);
         }
         return list;
     }
@@ -63,7 +65,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de miembro cargo (save)", e);
         }
         return entity;
     }
@@ -83,7 +85,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
             ps.setInt(8, entity.getIdMiembroCargo());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de miembro cargo (update)", e);
         }
         return entity;
     }
@@ -96,9 +98,8 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de miembro cargo (delete)", e);
         }
-        return false;
     }
 
     public List<MiembroCargo> findByMiembro(Integer idMiembro) {
@@ -113,7 +114,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findByMiembro)", e);
         }
         return list;
     }
@@ -130,7 +131,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findByPeriodo)", e);
         }
         return list;
     }
@@ -144,7 +145,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (countByCargo)", e);
         }
         return 0;
     }
@@ -169,7 +170,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findActiveByCargoAndPeriodo)", e);
         }
         return Optional.empty();
     }
@@ -194,7 +195,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findActiveByMiembroAndPeriodo)", e);
         }
         return Optional.empty();
     }
@@ -208,9 +209,8 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
             ps.setInt(3, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de miembro cargo (revocar)", e);
         }
-        return false;
     }
 
     public void finalizarPorPeriodo(Integer idPeriodo) {
@@ -220,7 +220,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
             ps.setInt(1, idPeriodo);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de miembro cargo (finalizarPorPeriodo)", e);
         }
     }
 
@@ -244,7 +244,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 if (rs.next()) return Optional.of(mapDetailed(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findDetalladoById)", e);
         }
         return Optional.empty();
     }
@@ -295,7 +295,7 @@ public class MiembroCargoDAO implements DAO<MiembroCargo, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de miembro cargo (findDetalladoFiltered)", e);
         }
         return list;
     }

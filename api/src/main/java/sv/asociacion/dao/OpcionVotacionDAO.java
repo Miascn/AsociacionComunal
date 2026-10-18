@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.OpcionVotacion;
 
@@ -19,7 +21,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de opcion votacion (findById)", e);
         }
         return Optional.empty();
     }
@@ -35,7 +37,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
                 opciones.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de opcion votacion (findAll)", e);
         }
         return opciones;
     }
@@ -55,7 +57,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de opcion votacion (save)", e);
         }
         return entity;
     }
@@ -71,7 +73,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
             ps.setInt(4, entity.getIdOpcion());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de opcion votacion (update)", e);
         }
         return entity;
     }
@@ -84,7 +86,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de opcion votacion (delete)", e);
         }
         return false;
     }
@@ -101,7 +103,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de opcion votacion (findByVotacion)", e);
         }
         return opciones;
     }
@@ -115,7 +117,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de opcion votacion (countByVotacion)", e);
         }
         return 0;
     }
@@ -129,7 +131,7 @@ public class OpcionVotacionDAO implements DAO<OpcionVotacion, Integer> {
                 if (rs.next()) return rs.getShort(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de opcion votacion (findMaxOrdenByVotacion)", e);
         }
         return 0;
     }

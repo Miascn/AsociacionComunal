@@ -1,5 +1,7 @@
 package sv.asociacion.api.auth;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import java.security.SecureRandom;
 import java.sql.*;
@@ -39,7 +41,7 @@ public final class MemberProvisioningService {
                 connection.commit(); return new Result(memberId, temporary);
             } catch (Exception exception) { connection.rollback(); throw exception; }
             finally { connection.setAutoCommit(true); }
-        } catch (SQLException exception) { throw new IllegalStateException("No fue posible crear el miembro y su cuenta.", exception); }
+        } catch (SQLException exception) { throw TraductorSQLException.traducir("crear el miembro y su cuenta", exception); }
     }
 
     private String temporaryPassword() {

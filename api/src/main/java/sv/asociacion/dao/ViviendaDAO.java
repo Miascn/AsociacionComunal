@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Residente;
 import sv.asociacion.domain.entity.Vivienda;
@@ -20,7 +22,7 @@ public class ViviendaDAO {
         try (Connection c=DBConnection.getInstance().getConnection(); Statement s=c.createStatement();
              ResultSet rs=s.executeQuery(SELECT+" GROUP BY v.id_vivienda ORDER BY v.codigo")) {
             while(rs.next()) result.add(map(rs));
-        } catch(SQLException e) { throw new IllegalStateException("No fue posible consultar las viviendas.", e); }
+        } catch(SQLException e) { throw TraductorSQLException.traducir("consultar las viviendas", e); }
         return result;
     }
 
@@ -28,7 +30,7 @@ public class ViviendaDAO {
         try (Connection c=DBConnection.getInstance().getConnection();
              PreparedStatement p=c.prepareStatement(SELECT+" WHERE v.id_vivienda=? GROUP BY v.id_vivienda")) {
             p.setInt(1,id); try(ResultSet rs=p.executeQuery()){ return rs.next()?Optional.of(map(rs)):Optional.empty(); }
-        } catch(SQLException e) { throw new IllegalStateException("No fue posible consultar la vivienda.", e); }
+        } catch(SQLException e) { throw TraductorSQLException.traducir("consultar la vivienda", e); }
     }
 
     public List<Residente> residents(int id) {

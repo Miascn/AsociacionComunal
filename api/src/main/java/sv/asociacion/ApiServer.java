@@ -18,6 +18,11 @@ import sv.asociacion.api.auth.MemberProvisioningService;
 import sv.asociacion.config.AppConfig;
 import sv.asociacion.controller.*;
 import sv.asociacion.dao.*;
+import sv.asociacion.exception.ConexionBDException;
+import sv.asociacion.exception.ConflictoException;
+import sv.asociacion.exception.PersistenciaException;
+import sv.asociacion.exception.RecursoNoEncontradoException;
+import sv.asociacion.exception.ValidacionException;
 import sv.asociacion.middleware.AuthMiddleware;
 import sv.asociacion.middleware.JwtAuthMiddleware;
 import sv.asociacion.service.*;
@@ -72,11 +77,49 @@ public final class ApiServer {
                     : "El valor del campo '" + campo + "' no tiene un formato válido."));
         });
 
+        // --- Errores de negocio: el mensaje esta redactado para el usuario y se devuelve.
+        cfg.routes.exception(ValidacionException.class, (e, ctx) -> error(ctx, HttpStatus.BAD_REQUEST, e.getMessage()));
+        cfg.routes.exception(RecursoNoEncontradoException.class, (e, ctx) -> error(ctx, HttpStatus.NOT_FOUND, e.getMessage()));
+        cfg.routes.exception(ConflictoException.class, (e, ctx) -> error(ctx, HttpStatus.CONFLICT, e.getMessage()));
+
+        // Los servicios anteriores al Avance 3 senalan sus reglas con las excepciones
+        // estandar; se conserva el mismo significado que ya les daban los controladores.
+        cfg.routes.exception(IllegalArgumentException.class, (e, ctx) -> error(ctx, HttpStatus.BAD_REQUEST, e.getMessage()));
+        cfg.routes.exception(IllegalStateException.class, (e, ctx) -> error(ctx, HttpStatus.CONFLICT, e.getMessage()));
+        cfg.routes.exception(java.util.NoSuchElementException.class, (e, ctx) -> error(ctx, HttpStatus.NOT_FOUND, e.getMessage()));
+
+        cfg.routes.exception(sv.asociacion.api.auth.AuthException.class, (e, ctx) ->
+            ctx.status(e.status()).json(Map.of("error", e.getMessage(), "code", e.code())));
+
+        // --- Errores de infraestructura: el detalle (SQL, SQLState) se registra en el
+        // servidor y el cliente solo recibe un texto generico.
+        cfg.routes.exception(ConexionBDException.class, (e, ctx) -> {
+            registrarFalloPersistencia(ctx, e);
+            error(ctx, HttpStatus.SERVICE_UNAVAILABLE,
+                "La base de datos no está disponible en este momento. Intente de nuevo en unos minutos.");
+        });
+        cfg.routes.exception(PersistenciaException.class, (e, ctx) -> {
+            registrarFalloPersistencia(ctx, e);
+            error(ctx, HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error al acceder a los datos.");
+        });
+
         cfg.routes.exception(Exception.class, (exception, context) -> {
             exception.printStackTrace(System.err);
             context.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .json(Map.of("error", "No fue posible procesar la solicitud."));
         });
+    }
+
+    private static void error(io.javalin.http.Context ctx, HttpStatus status, String mensaje) {
+        ctx.status(status).json(Map.of("error", mensaje == null ? status.getMessage() : mensaje));
+    }
+
+    private static void registrarFalloPersistencia(io.javalin.http.Context ctx, PersistenciaException e) {
+        Throwable causa = e.getCause();
+        String detalle = causa instanceof java.sql.SQLException sql
+            ? " [SQLState=" + sql.getSQLState() + ", codigo=" + sql.getErrorCode() + "] " + sql.getMessage()
+            : (causa == null ? "" : " " + causa);
+        System.err.println("Persistencia " + ctx.method() + " " + ctx.path() + ": " + e.getMessage() + detalle);
     }
 
     public static void main(String[] args) {

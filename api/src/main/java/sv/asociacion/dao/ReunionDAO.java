@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Reunion;
 import sv.asociacion.util.DateUtils;
@@ -20,7 +22,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de reunion (findById)", e);
         }
         return Optional.empty();
     }
@@ -36,7 +38,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
                 reuniones.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de reunion (findAll)", e);
         }
         return reuniones;
     }
@@ -64,7 +66,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de reunion (save)", e);
         }
         return entity;
     }
@@ -88,7 +90,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
             ps.setInt(8, entity.getIdReunion());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de reunion (update)", e);
         }
         return entity;
     }
@@ -101,7 +103,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de reunion (delete)", e);
         }
         return false;
     }
@@ -118,7 +120,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de reunion (findByEstado)", e);
         }
         return list;
     }
@@ -167,7 +169,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de reunion (findFiltered)", e);
         }
         return list;
     }
@@ -180,7 +182,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
             ps.setInt(2, idReunion);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de reunion (updateEstado)", e);
         }
         return false;
     }
@@ -197,7 +199,7 @@ public class ReunionDAO implements DAO<Reunion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de reunion (findByProyecto)", e);
         }
         return list;
     }

@@ -1,5 +1,7 @@
 package sv.asociacion.api.auth;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import java.sql.*;
 import java.util.Optional;
@@ -40,7 +42,7 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
             statement.setInt(1, id);
             statement.executeUpdate();
         } catch (SQLException exception) {
-            throw new IllegalStateException("No fue posible actualizar el acceso del usuario.", exception);
+            throw TraductorSQLException.traducir("actualizar el acceso del usuario", exception);
         }
     }
 
@@ -56,7 +58,7 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
                     if (statement.executeUpdate() != 1) throw new SQLException("Usuario no encontrado.");
                 }
             }
-        } catch (SQLException exception) { throw new IllegalStateException("No fue posible cambiar la contraseña.", exception); }
+        } catch (SQLException exception) { throw TraductorSQLException.traducir("cambiar la contraseña", exception); }
     }
 
     private Optional<AuthUser> find(String sql, SqlBinder binder) {
@@ -67,7 +69,7 @@ public final class JdbcUserAuthRepository implements UserAuthRepository {
                 return result.next() ? Optional.of(map(result)) : Optional.empty();
             }
         } catch (SQLException exception) {
-            throw new IllegalStateException("No fue posible consultar la identidad del usuario.", exception);
+            throw TraductorSQLException.traducir("consultar la identidad del usuario", exception);
         }
     }
 

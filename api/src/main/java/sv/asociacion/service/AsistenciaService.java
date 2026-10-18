@@ -153,7 +153,8 @@ public class AsistenciaService {
         try {
             asistenciaDAO.saveLoteTransaccional(idReunion, asistencias);
         } catch (java.sql.SQLException e) {
-            throw new RuntimeException("Error al guardar el lote de asistencias: " + e.getMessage(), e);
+            // El mensaje del servidor de BD no se concatena: queda como causa, no llega al cliente.
+            throw sv.asociacion.exception.TraductorSQLException.traducir("guardar el lote de asistencias", e);
         }
 
         return getByReunion(idReunion);

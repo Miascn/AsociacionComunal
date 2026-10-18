@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Proyecto;
 import sv.asociacion.util.DateUtils;
@@ -23,7 +25,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de proyecto (findById)", e);
         }
         return Optional.empty();
     }
@@ -43,7 +45,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de proyecto (findByIdWithCreator)", e);
         }
         return Optional.empty();
     }
@@ -58,7 +60,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de proyecto (findByNombre)", e);
         }
         return Optional.empty();
     }
@@ -74,7 +76,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 proyectos.add(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de proyecto (findAll)", e);
         }
         return proyectos;
     }
@@ -118,7 +120,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de proyecto (findFiltered)", e);
         }
         return list;
     }
@@ -141,7 +143,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de proyecto (save)", e);
         }
         return entity;
     }
@@ -160,7 +162,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
             ps.setInt(7, entity.getIdProyecto());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de proyecto (update)", e);
         }
         return entity;
     }
@@ -173,9 +175,8 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
             ps.setInt(2, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de proyecto (updateEstado)", e);
         }
-        return false;
     }
 
     @Override
@@ -186,9 +187,8 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de proyecto (delete)", e);
         }
-        return false;
     }
 
     public List<Proyecto> findByEstado(Proyecto.Estado estado) {
@@ -203,7 +203,7 @@ public class ProyectoDAO implements DAO<Proyecto, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de proyecto (findByEstado)", e);
         }
         return list;
     }

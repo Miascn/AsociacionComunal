@@ -1,5 +1,7 @@
 package sv.asociacion.dao;
 
+import sv.asociacion.exception.TraductorSQLException;
+
 import sv.asociacion.config.DBConnection;
 import sv.asociacion.domain.entity.Votacion;
 import sv.asociacion.util.DateUtils;
@@ -21,7 +23,7 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
                 if (rs.next()) return Optional.of(mapResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de votacion (findById)", e);
         }
         return Optional.empty();
     }
@@ -64,7 +66,7 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("consultar datos de votacion (findFiltered)", e);
         }
         return list;
     }
@@ -77,7 +79,7 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
             ps.setInt(2, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de votacion (updateEstado)", e);
         }
         return false;
     }
@@ -104,7 +106,7 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("guardar datos de votacion (save)", e);
         }
         return entity;
     }
@@ -127,7 +129,7 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
             ps.setInt(7, entity.getIdVotacion());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("actualizar datos de votacion (update)", e);
         }
         return entity;
     }
@@ -140,7 +142,7 @@ public class VotacionDAO implements DAO<Votacion, Integer> {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw TraductorSQLException.traducir("eliminar datos de votacion (delete)", e);
         }
         return false;
     }
