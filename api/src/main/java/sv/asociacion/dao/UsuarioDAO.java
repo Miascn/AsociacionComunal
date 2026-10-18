@@ -119,7 +119,9 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
             ps.setInt(4, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            // Fallback en caso de que la columna clave_temporal no exista
+            // Solo si la columna clave_temporal no existe (base anterior a V011): 1054 = ER_BAD_FIELD_ERROR.
+            // Cualquier otro error (base caida, permisos) se propaga en lugar de reintentarse.
+            if (e.getErrorCode() != 1054) throw TraductorSQLException.traducir("restablecer la contraseña", e);
             String fallbackSql = "UPDATE usuario SET clave_hash = ?, requiere_cambio_clave = ? WHERE id_usuario = ?";
             try (Connection conn = DBConnection.getInstance().getConnection();
                  PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
@@ -172,9 +174,40 @@ public class UsuarioDAO implements DAO<Usuario, Integer> {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Error al consultar usuarios por rol.", e);
+            throw TraductorSQLException.traducir("consultar usuarios por rol", e);
         }
         return 0;
+    }
+
+    /**
+     * Crea la cuenta de acceso de un miembro que aun no la tiene. Usa el rol MIEMBRO;
+     * si una base antigua no lo tiene sembrado, asigna el rol de menor identificador
+     * (el mismo comportamiento que tenia MiembroService cuando contenia este SQL).
+     *
+     * @return {@code true} si se inserto la cuenta
+     */
+    public boolean crearCuentaMiembro(int idMiembro, String nombreUsuario, String claveHash, String claveTemporal) {
+        String conRolMiembro = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) "
+            + "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol WHERE nombre = 'MIEMBRO'";
+        String conRolMinimo = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) "
+            + "SELECT MIN(id_rol), ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol";
+        try (Connection conn = DBConnection.getInstance().getConnection()) {
+            return insertarCuenta(conn, conRolMiembro, idMiembro, nombreUsuario, claveHash, claveTemporal) > 0
+                || insertarCuenta(conn, conRolMinimo, idMiembro, nombreUsuario, claveHash, claveTemporal) > 0;
+        } catch (SQLException e) {
+            throw TraductorSQLException.traducir("crear la cuenta del miembro", e);
+        }
+    }
+
+    private static int insertarCuenta(Connection conn, String sql, int idMiembro, String nombreUsuario,
+                                      String claveHash, String claveTemporal) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idMiembro);
+            ps.setString(2, nombreUsuario);
+            ps.setString(3, claveHash);
+            ps.setString(4, claveTemporal);
+            return ps.executeUpdate();
+        }
     }
 
     private Usuario mapResultSet(ResultSet rs) throws SQLException {

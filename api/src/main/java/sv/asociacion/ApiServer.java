@@ -148,7 +148,7 @@ public final class ApiServer {
 
         sv.asociacion.service.AuthService jwtService =
             new sv.asociacion.service.AuthService(usuarioDAO, rolDAO, miembroDAO, config.jwtSecret);
-        MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService());
+        MiembroService miembroService = new MiembroService(miembroDAO, new MemberProvisioningService(), usuarioDAO);
         // Lecturas del padron a traves del contrato generico. Se inyecta la misma
         // implementacion JDBC que usa el resto del sistema: el origen de datos de
         // produccion no cambia.

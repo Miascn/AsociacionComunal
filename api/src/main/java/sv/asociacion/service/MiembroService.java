@@ -1,26 +1,35 @@
 package sv.asociacion.service;
 
 import java.util.List;
+import java.util.Objects;
 import sv.asociacion.api.auth.MemberProvisioningService;
 import sv.asociacion.dao.MiembroDAO;
+import sv.asociacion.dao.UsuarioDAO;
 import sv.asociacion.domain.dto.CreateMemberRequest;
 import sv.asociacion.domain.dto.CreateMemberResponse;
+import sv.asociacion.domain.dto.CredencialesMiembroResponse;
 import sv.asociacion.domain.dto.MiembroResponse;
 import sv.asociacion.domain.entity.Miembro;
+import sv.asociacion.domain.entity.Usuario;
+import sv.asociacion.util.GeneradorClaveTemporal;
+import sv.asociacion.util.PasswordHasher;
 
+/**
+ * Reglas del padron de miembros y de sus credenciales de acceso.
+ *
+ * <p>Desde el Avance 3 no abre conexiones ni contiene SQL: la creacion de la cuenta
+ * vive en {@link UsuarioDAO#crearCuentaMiembro}. Tampoco instancia sus
+ * dependencias; las recibe todas por constructor desde {@code ApiServer}.</p>
+ */
 public class MiembroService {
     private final MiembroDAO miembroDAO;
     private final MemberProvisioningService provisioning;
-    private final sv.asociacion.dao.UsuarioDAO usuarioDAO;
+    private final UsuarioDAO usuarioDAO;
 
-    public MiembroService(MiembroDAO miembroDAO, MemberProvisioningService provisioning) {
-        this(miembroDAO, provisioning, new sv.asociacion.dao.UsuarioDAO());
-    }
-
-    public MiembroService(MiembroDAO miembroDAO, MemberProvisioningService provisioning, sv.asociacion.dao.UsuarioDAO usuarioDAO) {
-        this.miembroDAO = miembroDAO;
-        this.provisioning = provisioning;
-        this.usuarioDAO = usuarioDAO != null ? usuarioDAO : new sv.asociacion.dao.UsuarioDAO();
+    public MiembroService(MiembroDAO miembroDAO, MemberProvisioningService provisioning, UsuarioDAO usuarioDAO) {
+        this.miembroDAO = Objects.requireNonNull(miembroDAO);
+        this.provisioning = Objects.requireNonNull(provisioning);
+        this.usuarioDAO = Objects.requireNonNull(usuarioDAO);
     }
 
     public List<MiembroResponse> findAll() {
@@ -77,23 +86,17 @@ public class MiembroService {
         return miembroDAO.findById(id).map(MiembroResponse::from).orElse(null);
     }
 
-    public sv.asociacion.domain.dto.CredencialesMiembroResponse getCredenciales(int idMiembro) {
-        if (usuarioDAO == null) return null;
+    public CredencialesMiembroResponse getCredenciales(int idMiembro) {
         var opt = usuarioDAO.findByIdMiembro(idMiembro);
         if (opt.isEmpty()) return null;
-        sv.asociacion.domain.entity.Usuario u = opt.get();
+        Usuario u = opt.get();
         boolean req = Boolean.TRUE.equals(u.getRequiereCambioClave());
         String claveTemp = u.getClaveTemporal();
         if (req && (claveTemp == null || claveTemp.isBlank())) {
-            String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-            java.security.SecureRandom random = new java.security.SecureRandom();
-            StringBuilder sb = new StringBuilder("Tmp#");
-            for (int i = 0; i < 12; i++) sb.append(chars.charAt(random.nextInt(chars.length())));
-            claveTemp = sb.toString();
-            String hashed = sv.asociacion.util.PasswordHasher.hash(claveTemp);
-            usuarioDAO.resetPassword(u.getIdUsuario(), hashed, true, claveTemp);
+            claveTemp = GeneradorClaveTemporal.generar();
+            usuarioDAO.resetPassword(u.getIdUsuario(), PasswordHasher.hash(claveTemp), true, claveTemp);
         }
-        return new sv.asociacion.domain.dto.CredencialesMiembroResponse(
+        return new CredencialesMiembroResponse(
             idMiembro,
             u.getNombreUsuario(),
             req ? claveTemp : null,
@@ -102,76 +105,39 @@ public class MiembroService {
         );
     }
 
-    public sv.asociacion.domain.dto.CredencialesMiembroResponse generarCredenciales(int idMiembro) {
+    /**
+     * Genera una contrasena provisional nueva. Si el miembro ya tiene cuenta, la
+     * restablece; si no, la crea con su documento como nombre de usuario.
+     */
+    public CredencialesMiembroResponse generarCredenciales(int idMiembro) {
         var miembroOpt = miembroDAO.findById(idMiembro);
         if (miembroOpt.isEmpty()) return null;
-        var miembro = miembroOpt.get();
+        Miembro miembro = miembroOpt.get();
 
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-        java.security.SecureRandom random = new java.security.SecureRandom();
-        StringBuilder sb = new StringBuilder("Tmp!");
-        for (int i = 0; i < 12; i++) sb.append(chars.charAt(random.nextInt(chars.length())));
-        String temporary = sb.toString();
-        String hashed = sv.asociacion.util.PasswordHasher.hash(temporary);
-
-        String username = (miembro.getDui() != null && !miembro.getDui().isBlank())
-            ? miembro.getDui().trim()
-            : ("miembro" + idMiembro);
+        String temporary = GeneradorClaveTemporal.generar();
+        String hashed = PasswordHasher.hash(temporary);
 
         var usuarioOpt = usuarioDAO.findByIdMiembro(idMiembro);
         if (usuarioOpt.isPresent()) {
-            var u = usuarioOpt.get();
+            Usuario u = usuarioOpt.get();
             usuarioDAO.resetPassword(u.getIdUsuario(), hashed, true, temporary);
-            return new sv.asociacion.domain.dto.CredencialesMiembroResponse(
-                idMiembro,
-                u.getNombreUsuario(),
-                temporary,
-                true,
-                "Nueva contraseña provisional generada exitosamente"
-            );
-        } else {
-            try (java.sql.Connection conn = sv.asociacion.config.DBConnection.getInstance().getConnection()) {
-                String sql = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) " +
-                             "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol WHERE nombre = 'MIEMBRO'";
-                try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setInt(1, idMiembro);
-                    ps.setString(2, username);
-                    ps.setString(3, hashed);
-                    ps.setString(4, temporary);
-                    int affected = ps.executeUpdate();
-                    if (affected == 0) {
-                        String fallback = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave, clave_temporal) " +
-                                          "SELECT MIN(id_rol), ?, ?, ?, 'ACTIVO', TRUE, ? FROM rol";
-                        try (java.sql.PreparedStatement psFb = conn.prepareStatement(fallback)) {
-                            psFb.setInt(1, idMiembro);
-                            psFb.setString(2, username);
-                            psFb.setString(3, hashed);
-                            psFb.setString(4, temporary);
-                            psFb.executeUpdate();
-                        }
-                    }
-                } catch (java.sql.SQLException sqle) {
-                    String fallbackSinCol = "INSERT INTO usuario (id_rol, id_miembro, nombre_usuario, clave_hash, estado, requiere_cambio_clave) " +
-                                            "SELECT id_rol, ?, ?, ?, 'ACTIVO', TRUE FROM rol WHERE nombre = 'MIEMBRO'";
-                    try (java.sql.PreparedStatement psFb = conn.prepareStatement(fallbackSinCol)) {
-                        psFb.setInt(1, idMiembro);
-                        psFb.setString(2, username);
-                        psFb.setString(3, hashed);
-                        psFb.executeUpdate();
-                    }
-                }
-            } catch (Exception ex) {
-                throw new IllegalStateException("Error al aprovisionar el usuario del miembro: " + ex.getMessage(), ex);
-            }
-
-            return new sv.asociacion.domain.dto.CredencialesMiembroResponse(
-                idMiembro,
-                username,
-                temporary,
-                true,
-                "Acceso generado exitosamente con contraseña provisional"
-            );
+            return new CredencialesMiembroResponse(idMiembro, u.getNombreUsuario(), temporary, true,
+                "Nueva contraseña provisional generada exitosamente");
         }
+
+        String username = nombreUsuarioPara(miembro);
+        if (!usuarioDAO.crearCuentaMiembro(idMiembro, username, hashed, temporary)) {
+            throw new IllegalStateException("No fue posible crear la cuenta del miembro: no hay roles configurados.");
+        }
+        return new CredencialesMiembroResponse(idMiembro, username, temporary, true,
+            "Acceso generado exitosamente con contraseña provisional");
+    }
+
+    /** El documento del miembro es su usuario; si no lo tiene, se usa un nombre derivado del id. */
+    static String nombreUsuarioPara(Miembro miembro) {
+        return miembro.getDui() != null && !miembro.getDui().isBlank()
+            ? miembro.getDui().trim()
+            : "miembro" + miembro.getIdMiembro();
     }
 
     private static String clean(String value) {
