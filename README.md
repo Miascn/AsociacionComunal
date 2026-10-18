@@ -1,761 +1,302 @@
 # Asociación Comunal
 
-## Arquitectura del backend y crédito
+Sistema para administrar una asociación comunal salvadoreña: padrón de miembros y viviendas, junta directiva y cargos, aportaciones y cuota de mantenimiento, proyectos comunitarios, asambleas con control de asistencia y votaciones.
 
-La API unificada sigue la arquitectura propuesta por Gerson Bermúdez en el PR #24:
-`controller -> service -> dao -> domain`, con `config`, `middleware` y `util` como capas transversales.
-La integración conserva esa separación y elimina la dependencia del módulo backend anterior.
-Los clientes JavaFX usan JWT para las funciones administrativas; Android mantiene sesiones opacas
-compatibles; y los canales de publicación de actualizaciones usan un secreto técnico independiente.
+Proyecto de **Programación II** — Universidad Evangélica de El Salvador, Facultad de Ingeniería. Facilitador: Ing. Daniel Enrique Guevara Gómez.
 
-Sistema multiplataforma para administrar una asociación comunal. El repositorio contiene una aplicación de escritorio para el personal administrativo, una API HTTP, una biblioteca de persistencia JDBC y una aplicación Android para residentes.
-
-> [!IMPORTANT]
-> Este documento describe el estado real del código en agosto de 2026. La autenticación de Android ya utiliza usuarios y sesiones de MySQL; el inicio de sesión del cliente JavaFX todavía utiliza usuarios simulados. Los módulos de miembros, proyectos y viviendas del cliente JavaFX sí consumen la API remota.
+**Repositorio:** <https://github.com/Miascn/AsociacionComunal>
 
 ## Contenido
 
-- [Funcionalidades](#funcionalidades)
+- [Integrantes](#integrantes)
+- [Tecnologías](#tecnologías)
 - [Arquitectura](#arquitectura)
-- [Tecnologías y versiones](#tecnologías-y-versiones)
-- [Estructura del repositorio](#estructura-del-repositorio)
 - [Requisitos](#requisitos)
-- [Configuración de MySQL](#configuración-de-mysql)
-- [Compilación y pruebas](#compilación-y-pruebas)
-- [Ejecución de la API](#ejecución-de-la-api)
-- [Rutas HTTP disponibles](#rutas-http-disponibles)
-- [Ejecución del cliente JavaFX](#ejecución-del-cliente-javafx)
-- [Ejecución de Android](#ejecución-de-android)
-- [Empaquetado y actualizaciones](#empaquetado-y-actualizaciones)
-- [Cómo agregar una función al backend](#cómo-agregar-una-función-al-backend)
+- [Inicio rápido](#inicio-rápido)
+- [Configuración de la base de datos](#configuración-de-la-base-de-datos)
+- [DataSource y pool de conexiones](#datasource-y-pool-de-conexiones)
+- [Ejecución](#ejecución)
+- [Usuarios de prueba](#usuarios-de-prueba)
+- [Programación concurrente](#programación-concurrente)
+- [Manejo de errores](#manejo-de-errores)
+- [Pruebas](#pruebas)
+- [Rutas HTTP principales](#rutas-http-principales)
 - [Seguridad](#seguridad)
-- [Solución de problemas](#solución-de-problemas)
 - [Documentación adicional](#documentación-adicional)
 
-## Funcionalidades
+## Integrantes
 
-### Aplicación de escritorio
+| Integrante | Rol en el equipo |
+| --- | --- |
+| Josué Jeremías Castillo Nieves | Scrum Master y coordinador; desarrollo frontend, backend y app móvil |
+| Carlos Josué Samayoa Contreras | Product Owner y arquitecto; desarrollo backend y documentación |
+| Jonathan Alexis Amaya Hernández | QA |
+| Génesis Michelle Flores Cruz | Business Analyst |
+| David Rafael Coto Garza | QA |
+| Rodrigo Gilberto Sánchez Ávalos | Developer |
+| Gerson Otoniel Bermúdez Ramírez | Developer |
+| Edgard Antonio Mendoza Vaquero | Base de datos |
 
-- Interfaz JavaFX construida con FXML, CSS, AtlantaFX e Ikonli.
-- Inicio de sesión local de desarrollo con bloqueo temporal después de cinco intentos fallidos.
-- Dashboard y navegación por los módulos administrativos.
-- Consulta y registro de miembros mediante la API.
-- Consulta de proyectos mediante la API.
-- CRUD de viviendas, representante y censo de adultos y menores.
-- Tema claro y oscuro.
-- Diseño adaptable para diferentes tamaños de ventana.
-- Descarga e instalación de actualizaciones incrementales para Windows.
-- Creación automática de un acceso directo en el escritorio dentro del paquete QA.
+Los roles corresponden a la distribución Scrum de los avances 1 y 2. La participación de cada integrante en la entrega final se declara en el documento final (`docs/avance3/`).
 
-### API y persistencia
-
-- Servidor HTTP embebido con Javalin y Jetty.
-- Acceso a MySQL mediante JDBC y sentencias preparadas.
-- Entidades y DAOs para miembros, usuarios, roles, cargos, aportaciones, proyectos, votaciones, reuniones, asistencia, bitácora y viviendas.
-- Autenticación con access token y refresh token.
-- Rotación y revocación de sesiones.
-- Contraseñas almacenadas con PBKDF2-HMAC-SHA256.
-- Tokens almacenados en MySQL únicamente mediante su hash SHA-256.
-- Publicación y distribución de actualizaciones de Windows y Android.
-- Endpoint de salud que comprueba la API y la conexión a MySQL.
-
-### Aplicación Android
-
-- Inicio de sesión contra usuarios reales de MySQL.
-- Renovación de sesión y cierre de sesión con revocación en el servidor.
-- Cambio obligatorio de contraseña temporal.
-- Persistencia local de tokens con DataStore y cifrado AES-GCM respaldado por Android Keystore.
-- UI declarativa con Jetpack Compose y Material 3.
-- Tema claro u oscuro según el sistema.
-- Detección, descarga e instalación autorizada de actualizaciones APK.
-
-Los módulos Android de pagos, proyectos, reuniones y votaciones todavía no están implementados.
-
-### Cambio destacado: viviendas y censo familiar
-
-- CRUD de viviendas con código, sector, dirección, referencia y estado.
-- Asignación de un miembro activo como representante.
-- Registro separado de adultos y menores que habitan la vivienda.
-- Vista de detalle con información completa y habitantes.
-- Relación de cada miembro con su vivienda mediante `id_vivienda`.
-- Búsqueda, conteo de viviendas y resumen de población registrada.
-
-## Arquitectura
-
-El repositorio usa un reactor Maven con tres módulos Java y un proyecto Gradle independiente para Android:
-
-```mermaid
-flowchart LR
-    Desktop["Cliente JavaFX<br/>Windows / QA"]
-    Android["Cliente Android<br/>Kotlin + Compose"]
-    API["API HTTP<br/>Javalin + Jetty"]
-    Persistence["Persistencia<br/>entidades + DAO JDBC"]
-    DB[("MySQL<br/>asociacion_comunal")]
-    Actions["GitHub Actions<br/>paquetes y releases"]
-
-    Desktop -->|"HTTPS + token técnico<br/>(datos y actualizaciones)"| API
-    Android -->|"HTTPS + access/refresh token"| API
-    API --> Persistence
-    Persistence --> DB
-    Actions -->|"publicación autenticada"| API
-```
-
-### Responsabilidad de cada módulo
-
-| Módulo | Responsabilidad | Resultado principal |
-| --- | --- | --- |
-| `backend` | Entidades, configuración de MySQL y DAOs JDBC. No levanta un servidor. | `backend-1.0-SNAPSHOT.jar` |
-| `api` | Servidor Javalin, rutas HTTP, autenticación, DTOs y publicación de actualizaciones. Depende de `backend`. | `asociacion-api.jar` ejecutable |
-| `frontend` | Cliente administrativo JavaFX, FXML, controladores y clientes HTTP. | JAR y paquete de Windows |
-| `android-app` | Cliente Android para residentes. Es independiente del reactor Maven. | APK de depuración o firmado |
-
-El `maven-shade-plugin` crea `api/target/asociacion-api.jar` e incluye las dependencias necesarias, entre ellas el módulo `backend`. Por tanto, el código está separado en módulos, pero el servidor se despliega como un solo JAR ejecutable.
-
-### Capas actuales y arquitectura objetivo
-
-La autenticación ya sigue este flujo:
-
-```text
-AuthRoutes -> AuthService -> UserAuthRepository / SessionRepository -> JDBC -> MySQL
-```
-
-Algunas rutas de miembros, proyectos y viviendas todavía llaman directamente a los DAOs desde `ApiServer`:
-
-```text
-ApiServer -> DAO -> MySQL
-```
-
-Toda funcionalidad nueva debe utilizar esta separación:
-
-```text
-Controller o Routes -> Service -> Repository o DAO -> MySQL
-          |               |
-          |               +-- reglas de negocio y transacciones
-          +-- DTOs de request/response y contexto HTTP
-```
-
-- Los controllers definen método HTTP, ruta, código de estado y serialización.
-- Los services contienen validaciones de negocio, autorización, transacciones y coordinación entre repositorios.
-- Los repositories o DAOs contienen exclusivamente consultas y persistencia.
-- Los DTOs controlan qué datos acepta y devuelve la API.
-- Las entidades de persistencia no deben devolverse directamente al cliente.
-
-## Tecnologías y versiones
-
-### Java, API y escritorio
+## Tecnologías
 
 | Tecnología | Versión | Uso |
 | --- | ---: | --- |
-| Java / JDK | 21 | Backend, API, JavaFX, pruebas y `jpackage` |
-| Maven | 3.9.16 local; compatible con 3.9.x | Reactor, dependencias, compilación y pruebas |
-| JavaFX | 21.0.2 | Interfaz de escritorio |
-| Javalin | 7.2.2 | Framework HTTP de la API |
-| Jetty | 12.1.8, resuelta por Javalin | Servidor HTTP embebido |
-| Jackson Databind | 2.21.3 | JSON en API y cliente JavaFX |
+| Java (JDK) | 21+ | API, escritorio y pruebas (compilado con `release 21`) |
+| Maven Wrapper | 3.9.x | Construcción reproducible (`mvnw` / `mvnw.cmd`) |
+| Javalin | 7.2.2 | API REST (Jetty embebido) |
+| MySQL | 8.x | Base de datos relacional InnoDB `utf8mb4` |
 | MySQL Connector/J | 8.3.0 | Controlador JDBC |
-| MySQL | 8.4 documentado | Base de datos InnoDB con `utf8mb4` |
-| AtlantaFX | 2.1.0 | Tema visual JavaFX |
-| Ikonli | 12.4.0 | Iconos Feather en JavaFX |
-| SLF4J Simple | 2.0.17 | Logging de la API |
-| JUnit Jupiter | 5.14.2 | Pruebas de API y JavaFX |
+| Tomcat JDBC Pool | 11.0.27 | `DataSource` con pool de conexiones |
+| Jackson | 2.21.3 | JSON |
+| JJWT | 0.12.6 | Tokens JWT del escritorio |
+| JavaFX | 21 | Cliente de escritorio (FXML, AtlantaFX, Ikonli) |
+| Flutter / Dart | 3.x | App móvil de residentes (complementaria) |
+| JUnit Jupiter | 5.14.2 | Pruebas unitarias |
+| Mockito | 5.24.0 | Dobles de prueba para aislar dependencias |
+| Docker Compose | — | MySQL local opcional |
 
-### Android
+## Arquitectura
 
-| Tecnología | Versión o nivel | Uso |
-| --- | ---: | --- |
-| Gradle Wrapper | 8.11.1 | Construcción reproducible |
-| Android Gradle Plugin | 8.9.0 | Compilación Android |
-| Kotlin | 2.1.10 | Lenguaje del cliente Android |
-| JVM target | 17 | Bytecode Java/Kotlin de Android |
-| Compile/Target SDK | 35 | API de compilación y destino |
-| Min SDK | 23 | Android mínimo compatible |
-| Compose BOM | 2025.02.00 | UI declarativa |
-| Activity Compose | 1.10.0 | Integración de Activity y Compose |
-| Navigation Compose | 2.8.7 | Navegación |
-| Lifecycle | 2.8.7 | Estado y ViewModel |
-| Retrofit | 2.11.0 | Cliente HTTP tipado |
-| OkHttp | 4.12.0 | Transporte HTTP y logging de desarrollo |
-| DataStore Preferences | 1.1.2 | Persistencia local de sesión |
-| Coroutines Android | 1.10.1 | Operaciones asíncronas |
+```text
+Cliente JavaFX (escritorio, directiva) ─┐
+                                        ├── HTTP/JSON ──> API Javalin ──> DataSource (pool) ──> MySQL
+App Flutter (móvil, residentes) ────────┘
+```
 
-### Entrega continua
+Dentro de la API (`api/src/main/java/sv/asociacion`):
 
-- GitHub Actions para probar, empaquetar y publicar.
-- `jpackage` del JDK 21 para crear la imagen ejecutable de Windows.
-- ZIP completo para una instalación nueva y ZIP incremental para actualizaciones.
-- GitHub Releases para distribuir paquetes verificables.
-- SHA-256 para comprobar integridad de ZIP y APK.
+| Paquete | Responsabilidad |
+| --- | --- |
+| `controller` | Rutas HTTP: leer la petición, llamar al servicio y elegir el código de éxito |
+| `service` | Reglas de negocio, validaciones, transacciones y el proceso concurrente de convocatoria |
+| `dao` | Acceso a datos JDBC (`DAO<T,ID>`, `AbstractJdbcDAO<T,ID>`, `RowMapper<T>`) y persistencia en archivos `.dat` (`dao/archivo`) |
+| `domain/entity` | Entidades (`Persona` abstracta, `Miembro`, `Residente`, `Reunion`, ...) |
+| `domain/dto` | Objetos de entrada y salida de la API (records) |
+| `config` | `DataSourceConfig` (pool), `DBConnection`, `AppConfig` |
+| `exception` | Jerarquía de excepciones propias y traducción de `SQLException` |
+| `util` | Fechas, hash y cifrado de credenciales, generador de claves provisionales |
+| `middleware` / `api/auth` | Autenticación (JWT del escritorio, sesiones de la app móvil, token técnico) |
 
-## Estructura del repositorio
+`ApiServer` es la raíz de composición: crea los DAO y servicios y los inyecta por constructor.
 
 ```text
 AsociacionComunal/
-├── api/                         servidor Javalin y autenticación
-│   ├── src/main/java/
-│   ├── src/test/java/
-│   └── pom.xml
-├── backend/                     entidades, DAOs y conexión JDBC
-│   ├── src/main/java/
-│   ├── src/test/java/
-│   └── pom.xml
-├── frontend/                    cliente administrativo JavaFX
-│   ├── src/main/java/
-│   ├── src/main/resources/      FXML, CSS, imágenes y actualizador
-│   ├── src/test/java/
-│   └── pom.xml
-├── android-app/                 proyecto Android con Gradle Wrapper
-├── database/migrations/         migraciones SQL manuales versionadas
-├── scripts/                     configuración y empaquetado de QA
-├── docs/                        guías especializadas
-├── .github/workflows/           CI/CD de Windows y Android
-├── database-example.properties  plantilla de conexión MySQL
-└── pom.xml                      reactor Maven raíz
+├── api/                  API REST (Java 21, Javalin, JDBC)
+├── frontend/             cliente de escritorio JavaFX
+├── flutter-app/          app móvil Flutter para residentes
+├── database/
+│   ├── schema.sql        esquema completo para instalaciones nuevas
+│   ├── data.sql          datos y usuarios de demostración
+│   └── migrations/       migraciones V002-V011 para bases existentes
+├── docs/                 documentación (avances, arquitectura, operación)
+├── scripts/              run.sh y scripts de empaquetado QA (PowerShell)
+├── docker-compose.yml    MySQL 8 local
+└── pom.xml               reactor Maven (api + frontend)
 ```
 
 ## Requisitos
 
-### Para backend, API y JavaFX
+- **JDK 21 o superior** (`java -version`). No hace falta instalar Maven: se usa el wrapper incluido.
+- **MySQL 8**: con Docker (`docker compose`) o una instalación propia.
+- Git Bash, Linux o macOS para `scripts/run.sh` (en Windows también se pueden usar los comandos `mvnw.cmd` equivalentes).
+- Flutter SDK solo si se quiere ejecutar la app móvil.
 
-1. Windows 10/11, Linux o macOS para desarrollo. El paquete QA actual se genera para Windows.
-2. JDK 21, no solamente un JRE. Debe incluir `java`, `javac` y `jpackage`.
-3. Maven 3.9.x disponible como `mvn`/`mvn.cmd`.
-4. Acceso a MySQL 8.x con el esquema `asociacion_comunal`.
-5. Git para control de versiones.
+## Inicio rápido
 
-Comprobar las herramientas:
-
-```powershell
-java -version
-javac -version
-mvn -version
+```bash
+scripts/run.sh db        # MySQL 8 en Docker con schema.sql + data.sql
+scripts/run.sh api       # API en http://localhost:8080 (salud: /health)
+scripts/run.sh desktop   # en otra terminal: escritorio JavaFX contra la API local
+scripts/run.sh test      # todas las pruebas
 ```
 
-La carpeta local `apache-maven-3.9.16/`, cuando existe, está ignorada por Git y no sustituye un Maven Wrapper. Los comandos de esta guía usan `mvn`; en este equipo también se puede sustituir por:
+La primera ejecución crea un `.env` local (ignorado por Git) con secretos aleatorios y la conexión a la base de Docker.
 
-```powershell
-.\apache-maven-3.9.16\bin\mvn.cmd
+## Configuración de la base de datos
+
+### Instalación nueva
+
+Con Docker, `scripts/run.sh db` (o `docker compose up -d mysql`) crea el contenedor, la base `asociacion_comunal`, el usuario de aplicación `asociacion_app` y ejecuta `database/schema.sql` y `database/data.sql` la primera vez que se crea el volumen.
+
+Sin Docker, en un MySQL 8 propio:
+
+```bash
+mysql -u root -p < database/schema.sql
+mysql -u root -p asociacion_comunal < database/data.sql   # opcional: datos de demostración
 ```
 
-### Para Android
+`database/schema.sql` es el esquema efectivo (equivale al esquema base con las migraciones V002–V011 aplicadas). Una base que ya existe se actualiza con `database/migrations/`, en orden, nunca con `schema.sql`.
 
-- Android Studio con Android SDK 35.
-- JDK 21 para ejecutar Gradle.
-- Un emulador o dispositivo con Android 6.0/API 23 o superior.
+### Conexión
 
-No es necesario instalar Gradle globalmente: `android-app` incluye Gradle Wrapper.
+La API lee la conexión de variables de entorno, de `.env` o de `database-local.properties` (ignorados por Git), en ese orden de prioridad:
 
-## Configuración de MySQL
-
-### 1. Crear la configuración local
-
-Desde la raíz del repositorio:
-
-```powershell
-Copy-Item .\database-example.properties .\database-local.properties
-```
-
-Editar `database-local.properties`:
-
-```properties
-db.host=IP_O_NOMBRE_DEL_SERVIDOR
-db.port=3306
-db.name=asociacion_comunal
-db.user=USUARIO_MYSQL
-db.password=CONTRASENA_MYSQL
-db.parameters=serverTimezone=America/El_Salvador&useUnicode=true&characterEncoding=UTF-8
-```
-
-`database-local.properties` está ignorado por Git. Nunca debe subirse al repositorio.
-
-### 2. Variables de entorno admitidas
-
-Las variables de entorno tienen prioridad sobre el archivo local:
-
-| Variable | Obligatoria | Valor predeterminado o función |
+| Variable | Predeterminado | Descripción |
 | --- | --- | --- |
-| `DB_HOST` | No | `localhost` |
-| `DB_PORT` | No | `3306` |
-| `DB_NAME` | No | `asociacion_comunal` |
-| `DB_USER` | Sí, si no está en el archivo | Usuario de aplicación |
-| `DB_PASSWORD` | Sí, si no está en el archivo | Contraseña de aplicación |
-| `DB_PARAMETERS` | No | Zona horaria y UTF-8 |
-| `DB_CONFIG_FILE` | No | Ruta absoluta a otro archivo `.properties` |
+| `DB_HOST` | `localhost` | Servidor MySQL |
+| `DB_PORT` | `3306` | Puerto |
+| `DB_NAME` | `asociacion_comunal` | Base de datos |
+| `DB_USER` | — (obligatoria) | Usuario de aplicación |
+| `DB_PASSWORD` | vacía | Contraseña |
+| `DB_PARAMETERS` | zona horaria y UTF-8 | Parámetros JDBC adicionales |
+| `API_PORT` | `8080` | Puerto HTTP de la API |
+| `API_SHARED_SECRET` | — (obligatoria, ≥32) | Token técnico del escritorio y de publicación |
+| `JWT_SECRET` | — (obligatoria, ≥32) | Firma de los JWT del escritorio |
+| `CREDENTIALS_KEY` | derivada de `JWT_SECRET` | Llave de cifrado de claves provisionales |
 
-La búsqueda automática del archivo se realiza en el directorio actual y en su directorio padre. Para evitar ambigüedad:
+Plantilla: `.env.example`. Ningún secreto real se guarda en el repositorio.
 
-```powershell
-$env:DB_CONFIG_FILE = (Resolve-Path .\database-local.properties).Path
+## DataSource y pool de conexiones
+
+`config/DataSourceConfig` construye un `org.apache.tomcat.jdbc.pool.DataSource`. `DBConnection.getConnection()` conserva su firma, pero ahora **presta** conexiones del pool: el `close()` del try-with-resources devuelve la conexión en lugar de cerrar el socket. El pool se crea al primer uso.
+
+| Parámetro | Valor | Motivo |
+| --- | ---: | --- |
+| `validationQuery` | `SELECT 1` | Consulta mínima para comprobar que MySQL responde |
+| `initialSize` | 4 | Conexiones listas al iniciar; cubren el uso típico de la directiva |
+| `minIdle` | 4 | Mínimo de inactivas que se conservan (igual a `initialSize`) |
+| `maxIdle` | 8 | Exceso tras una ráfaga que se cierra |
+| `maxActive` | 20 | Tope de conexiones prestadas; muy por debajo de las 151 de MySQL |
+| `maxWait` | 10000 ms | Espera máxima por una conexión; luego error 503 en vez de colgarse |
+| `testOnBorrow` | `true` | Nunca entregar una conexión que MySQL ya cerró (`wait_timeout`) |
+| `testOnReturn` | `false` | Ya se valida al prestar; validar al devolver duplicaría el costo |
+| `testWhileIdle` | `true` | El evictor descarta inactivas rotas |
+| `testOnConnect` | `true` | Detecta de inmediato credenciales o red incorrectas |
+| `validationInterval` | 30000 ms | Evita ejecutar `SELECT 1` en cada préstamo |
+| `timeBetweenEvictionRunsMillis` | 30000 ms | Frecuencia del evictor |
+| `minEvictableIdleTimeMillis` | 60000 ms | Inactividad tras la cual una conexión puede cerrarse |
+| `removeAbandoned` | `true` | Recupera conexiones que el código no cerró |
+| `removeAbandonedTimeout` | 60 s | Las operaciones duran milisegundos; 60 s solo los supera una fuga |
+
+Además: interceptores `ConnectionState` (restablece `autoCommit` en cada préstamo) y `StatementFinalizer`. El endpoint `/health` informa conexiones activas, inactivas y el máximo. La justificación completa está en el Javadoc de `DataSourceConfig`.
+
+## Ejecución
+
+### API
+
+```bash
+scripts/run.sh api
+# o manualmente:
+./mvnw -B -pl api -am package -DskipTests
+java -jar api/target/asociacion-api.jar
 ```
 
-### 3. Preparar el esquema y aplicar migraciones
-
-El repositorio no contiene una migración `V001` que cree las 14 tablas originales. Las migraciones incluidas asumen que el esquema base ya contiene, entre otras, las tablas `usuario` y `miembro`.
-
-Después de respaldar la base, aplicar manualmente y en este orden:
-
-1. `V002__crear_sesion_usuario.sql`: crea sesiones para access/refresh tokens.
-2. `V003__forzar_cambio_clave_temporal.sql`: agrega el indicador de cambio obligatorio.
-3. `V004__tipo_documento_miembro.sql`: admite DUI, pasaporte y carnet de residente.
-4. `V005__crear_viviendas_y_residentes.sql`: crea viviendas, habitantes y relaciones con miembros.
-
-Se pueden abrir y ejecutar los archivos desde MySQL Workbench. Con el cliente `mysql`, desde la raíz y usando `cmd.exe` en Windows:
-
-```powershell
-cmd /c "mysql -h HOST -P 3306 -u USUARIO -p asociacion_comunal < database\migrations\V002__crear_sesion_usuario.sql"
-```
-
-Repetir el comando para `V003`, `V004` y `V005`. No se utiliza Flyway ni Liquibase actualmente, por lo que el equipo debe registrar qué migraciones fueron aplicadas en cada ambiente.
-
-### 4. Verificar la conexión
-
-Ejecutar la prueba de diagnóstico del módulo unificado `api`:
-
-```powershell
-mvn -f .\api\pom.xml -Dtest=DatabaseConnectionTest test
-```
-
-La herramienta abre una conexión, muestra la base activa, enumera las tablas y consulta los roles. No inserta, modifica ni elimina datos.
-
-## Compilación y pruebas
-
-### Reactor Maven completo
-
-Desde la raíz:
-
-```powershell
-mvn clean test
-mvn clean install
-```
-
-El orden del reactor es `backend`, `api` y `frontend`. `install` coloca el JAR de `backend` en el repositorio Maven local para que los otros módulos puedan resolverlo cuando se construyen por separado.
-
-### Pruebas por módulo
-
-```powershell
-mvn -f .\api\pom.xml test
-mvn -f .\frontend\pom.xml test
-
-Set-Location .\android-app
-.\gradlew.bat testDebugUnitTest
-Set-Location ..
-```
-
-Cobertura actual:
-
-- `api`: login, sesiones, expiración, rotación, logout, cambio de contraseña, roles y ausencia del hash de contraseña en respuestas.
-- `frontend`: carga de FXML, navegación y manejo local de sesión.
-- `android-app`: validación de login y comparación de versiones.
-- `backend`: la comprobación de base de datos es una herramienta manual, no una prueba JUnit automática.
-
-Los tests estándar de autenticación de la API usan repositorios en memoria y no requieren MySQL. Las pruebas JavaFX pueden necesitar una sesión gráfica en algunos sistemas.
-
-Las pruebas de navegación JavaFX instancian algunos clientes HTTP. Antes de ejecutarlas debe existir una configuración QA sintácticamente válida mediante variables de entorno o `qa-local.properties`; la prueba no necesita que las consultas remotas finalicen correctamente.
-
-## Ejecución de la API
-
-### 1. Construir el JAR ejecutable
-
-```powershell
-mvn -pl api -am clean package
-```
-
-Resultado:
-
-```text
-api/target/asociacion-api.jar
-```
-
-### 2. Configurar el proceso
-
-Además de MySQL, la API requiere un secreto técnico aleatorio de al menos 32 caracteres:
-
-| Variable | Obligatoria | Predeterminado |
-| --- | --- | --- |
-| `API_SHARED_SECRET` | Sí | Ninguno; mínimo 32 caracteres |
-| `API_PORT` | No | `8080`; debe estar entre 1024 y 65535 |
-| `AUTH_ACCESS_TTL_MINUTES` | No | `15` |
-| `AUTH_REFRESH_TTL_DAYS` | No | `30` |
-
-Ejemplo para la terminal actual de PowerShell:
-
-```powershell
-$env:DB_CONFIG_FILE = (Resolve-Path .\database-local.properties).Path
-$secretBytes = New-Object byte[] 32
-$secretGenerator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-try { $secretGenerator.GetBytes($secretBytes) } finally { $secretGenerator.Dispose() }
-$env:API_SHARED_SECRET = -join ($secretBytes | ForEach-Object { $_.ToString("x2") })
-$env:API_PORT = "8080"
-```
-
-No guardar el secreto real en scripts, documentación, capturas ni commits.
-
-### 3. Iniciar
-
-```powershell
-java -jar .\api\target\asociacion-api.jar
-```
-
-La API se enlaza intencionalmente a `127.0.0.1`, no a todas las interfaces. Para acceso remoto debe colocarse detrás de un túnel o proxy HTTPS; MySQL no debe exponerse a Internet.
-
-### 4. Comprobar salud y acceso técnico
-
-```powershell
-Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:8080/health"
-
-$technicalHeaders = @{ Authorization = "Bearer $env:API_SHARED_SECRET" }
-Invoke-RestMethod -Method Get `
-  -Uri "http://127.0.0.1:8080/api/miembros" `
-  -Headers $technicalHeaders
-```
-
-Respuesta esperada de salud cuando MySQL está disponible:
+Comprobación: `curl http://localhost:8080/health`
 
 ```json
-{
-  "service": "asociacion-api",
-  "database": "available"
-}
+{"service":"asociacion-api","database":"available","pool":{"activas":0,"inactivas":4,"maxActivas":20}}
 ```
 
-## Rutas HTTP disponibles
+La API escucha en todas las interfaces (`0.0.0.0`) del puerto configurado. Fuera de un equipo local debe publicarse detrás de un proxy o túnel HTTPS; MySQL nunca debe exponerse a Internet.
 
-### Autenticación de usuarios
+### Escritorio JavaFX
 
-| Método | Ruta | Autenticación | Función |
+```bash
+scripts/run.sh desktop
+# o manualmente (Windows PowerShell):
+$env:QA_API_URL="http://localhost:8080"; $env:QA_API_TOKEN="<valor de API_SHARED_SECRET>"
+.\mvnw.cmd -pl frontend javafx:run
+```
+
+El cliente acepta `http://` solo hacia `localhost` o `127.0.0.1`; cualquier otro destino exige HTTPS. El inicio de sesión se valida contra la API (usuarios de MySQL). Las cuentas con rol `MIEMBRO` no pueden entrar al escritorio: son para la app móvil.
+
+### App móvil (Flutter)
+
+```bash
+cd flutter-app
+flutter pub get
+flutter test
+flutter run
+```
+
+La app usa la URL de `lib/core/constants/api_constants.dart` (por defecto, el servidor del equipo). Es un cliente complementario y no forma parte del alcance Java evaluado.
+
+## Usuarios de prueba
+
+Creados por `database/data.sql`. **Solo para una base local de demostración**: no cargar `data.sql` en ambientes compartidos.
+
+| Usuario | Contraseña | Rol | Dónde |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/login` | Pública | Valida usuario/contraseña y crea una sesión. |
-| `POST` | `/api/auth/refresh` | Refresh token en JSON | Rota access y refresh token. |
-| `POST` | `/api/auth/logout` | Refresh token en JSON | Revoca la sesión. |
-| `POST` | `/api/auth/change-password` | Access token | Cambia la contraseña y revoca sesiones anteriores. |
-| `GET` | `/api/me` | Access token | Devuelve usuario, rol y miembro asociado. |
+| `demo.admin` | `Demo.Admin.2026!` | ADMIN | Escritorio JavaFX y API |
+| `demo.directiva` | `Demo.Directiva.2026!` | DIRECTIVO | Escritorio JavaFX |
+| `demo.miembro` | `Demo.Miembro.2026!` | MIEMBRO | App móvil (`/api/auth/login`) |
 
-Ejemplo de login:
+La convocatoria a reuniones requiere un rol de gestión (ADMIN, PRESIDENTE o SECRETARIO): para la demostración use `demo.admin`.
 
-```powershell
-$body = @{
-  username = "USUARIO_DE_PRUEBA"
-  password = "CONTRASENA_DE_PRUEBA"
-} | ConvertTo-Json
+## Programación concurrente
 
-$login = Invoke-RestMethod -Method Post `
-  -Uri "http://127.0.0.1:8080/api/auth/login" `
-  -ContentType "application/json" `
-  -Body $body
+**Proceso:** convocatoria masiva de miembros a una asamblea (`service/ConvocatoriaConcurrenteService`).
 
-$userHeaders = @{ Authorization = "Bearer $($login.accessToken)" }
-Invoke-RestMethod -Method Get `
-  -Uri "http://127.0.0.1:8080/api/me" `
-  -Headers $userHeaders
+- **Qué hace:** registra una asistencia pendiente por cada miembro activo (o por los indicados) para una reunión.
+- **Por qué es concurrente:** antes se hacían, en serie y por miembro, una consulta de existencia, otra de estado y una inserción. Ahora la lista se divide en lotes de 25 que se escriben en paralelo.
+- **Mecanismo:** `ExecutorService` de tamaño fijo (4 hilos, menor que `maxActive`), `invokeAll` con tiempo máximo de 60 s, resultados con `Future`/`ExecutionException` y cierre del executor con try-with-resources.
+- **Interacción con la base:** cada lote pide **su propia conexión** al `DataSource` con pool (`dao/JdbcConvocatoriaRepository`), ejecuta un batch de `PreparedStatement` en una transacción y devuelve la conexión.
+- **Control de problemas de concurrencia:** la restricción única `uk_asistencia_reunion_miembro` y un `INSERT IGNORE ... SELECT` que solo inscribe miembros activos hacen la operación **idempotente**: dos coordinadores que convocan a la vez no duplican registros. No se depende de `synchronized` en memoria. Un lote fallido no deshace los demás; la respuesta indica los miembros pendientes y repetir la convocatoria es seguro.
+
+Pruébelo con la reunión 1 de los datos de demostración:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/admin/auth/login -H 'Content-Type: application/json' \
+  -d '{"nombreUsuario":"demo.admin","clave":"Demo.Admin.2026!"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
+curl -s -X POST http://localhost:8080/api/reuniones/1/asistencias/convocatoria -H "Authorization: Bearer $TOKEN"
 ```
 
-### Administración
-
-Estas rutas usan temporalmente `Authorization: Bearer <API_SHARED_SECRET>`:
-
-| Método | Ruta | Función |
-| --- | --- | --- |
-| `GET` | `/api/miembros` | Lista miembros sin exponer credenciales. |
-| `POST` | `/api/miembros` | Crea miembro, usuario y contraseña temporal. |
-| `GET` | `/api/proyectos` | Lista proyectos. |
-| `GET` | `/api/viviendas` | Lista viviendas y totales de habitantes. |
-| `GET` | `/api/viviendas/{id}` | Obtiene vivienda y residentes. |
-| `POST` | `/api/viviendas` | Crea una vivienda. |
-| `PUT` | `/api/viviendas/{id}` | Actualiza una vivienda. |
-| `DELETE` | `/api/viviendas/{id}` | Desactiva una vivienda; no la elimina físicamente. |
-
-Ejemplo de creación de miembro:
+Respuesta esperada sobre una base recién cargada (los 7 miembros activos; el inactivo no se convoca; `duracionMs` varía). Una segunda llamada devuelve `"convocados":0,"omitidos":7`:
 
 ```json
-{
-  "documento": "000000000",
-  "tipoDocumento": "DUI",
-  "paisOrigen": null,
-  "nombres": "Nombre",
-  "apellidos": "Apellido",
-  "telefono": "7000-0000",
-  "correo": "persona@example.com",
-  "idVivienda": 1
-}
+{"idReunion":1,"solicitados":7,"convocados":7,"omitidos":0,"lotes":1,"lotesFallidos":0,"hilos":1,"duracionMs":12,"miembrosPendientes":[],"completa":true}
 ```
 
-Para pasaporte o carnet de residente, `tipoDocumento` debe ser `PASAPORTE` o `CARNET_RESIDENTE` y `paisOrigen` es obligatorio. El DUI se envía como nueve dígitos sin guion.
+## Manejo de errores
 
-Ejemplo de vivienda:
+Paquete `exception`: `NegocioException` (abstracta) con `ValidacionException`, `RecursoNoEncontradoException` y `ConflictoException` (de la que hereda `VotoDuplicadoException`); `PersistenciaException` con `ConexionBDException` y `ConvocatoriaIncompletaException`. `TraductorSQLException` convierte cada `SQLException` en la excepción adecuada (SQLState `08xxx` o pool agotado → base no disponible). Ningún DAO silencia ya una `SQLException`.
 
-```json
-{
-  "codigo": "A-001",
-  "sector": "Sector Norte",
-  "direccion": "Calle principal, casa 10",
-  "referencia": "Frente al parque",
-  "idRepresentante": 1,
-  "estado": "ACTIVA",
-  "adultos": ["Persona adulta"],
-  "menores": ["Persona menor"]
-}
+`ApiServer.configurarManejoErrores` centraliza la traducción a HTTP: validación 400, no encontrado 404, conflicto 409, base no disponible 503 y fallo de persistencia 500. El detalle técnico (SQL, SQLState) se registra en el servidor y nunca se envía al cliente.
+
+## Pruebas
+
+```bash
+scripts/run.sh test                 # todo el reactor
+./mvnw -B -pl api test              # solo la API
 ```
 
-### Actualizaciones
+- **API:** 385 pruebas JUnit 5; Mockito aísla DAO y JDBC (por ejemplo `MiembroServiceTest`, `AsistenciaDaoJdbcTest`, `JdbcConvocatoriaRepositoryTest`). No requieren MySQL.
+- **Escritorio:** 70 pruebas. Dos de navegación FXML necesitan una configuración de API sintácticamente válida; en una terminal limpia defina antes `QA_API_URL=http://localhost:8080` y `QA_API_TOKEN` (32+ caracteres). No hace falta que la API esté corriendo.
+- Reportes de Surefire: `api/target/surefire-reports/` y `frontend/target/surefire-reports/`.
+- `DatabaseConnectionTest` es una herramienta manual (`main`) para diagnosticar una base real; no forma parte de la suite.
 
-| Método | Ruta | Acceso | Función |
-| --- | --- | --- | --- |
-| `GET` | `/api/updates/windows/manifest` | Token técnico | Manifiesto compatible anterior. |
-| `GET` | `/api/updates/windows/manifest-v2` | Token técnico | Manifiesto incremental actual. |
-| `GET` | `/api/updates/windows/build-manifest` | Token técnico | Hashes del paquete publicado. |
-| `GET` | `/api/updates/windows/package` | Token técnico | ZIP completo de Windows. |
-| `GET` | `/api/updates/windows/delta` | Token técnico | ZIP incremental. |
-| `POST` | `/api/updates/windows/publish` | Token técnico | Publica artefactos de Windows. |
-| `GET` | `/api/mobile/updates/android/manifest` | Pública | Informa la versión Android disponible. |
-| `GET` | `/api/mobile/updates/android/package` | Pública | Descarga el APK publicado. |
-| `POST` | `/api/updates/android/publish` | Token técnico | Publica un APK validando SHA-256. |
+## Rutas HTTP principales
 
-## Ejecución del cliente JavaFX
-
-### 1. Configurar el acceso a la API
-
-El cliente busca primero `QA_API_URL` y `QA_API_TOKEN`; si ambos no existen, busca `qa-local.properties`. Para desarrollo se puede crear en la raíz:
-
-```properties
-api.url=https://URL-DE-LA-API
-api.token=EL_MISMO_VALOR_CONFIGURADO_COMO_API_SHARED_SECRET
-```
-
-La URL debe usar HTTPS y se normaliza sin `/` final. El archivo está ignorado por Git.
-
-También puede generarse un token técnico nuevo sin mostrarlo en pantalla:
-
-```powershell
-.\scripts\new-qa-config.ps1 -ApiUrl "https://URL-DE-LA-API"
-```
-
-El script crea `qa-local.properties` y `qa-token.upload`. El valor de `qa-token.upload` debe configurarse como `API_SHARED_SECRET` en el servidor correspondiente. Ambos archivos están ignorados por Git y deben tratarse como secretos.
-
-### 2. Instalar la dependencia y ejecutar
-
-```powershell
-mvn -f .\backend\pom.xml clean install
-mvn -f .\frontend\pom.xml javafx:run
-```
-
-### 3. Inicio de sesión actual del escritorio
-
-El login JavaFX todavía es local y simulado:
-
-| Usuario | Contraseña de desarrollo | Rol mostrado |
+| Método | Ruta | Uso |
 | --- | --- | --- |
-| `admin` | `Admin2026!` | Administrador |
-| `secretaria` | `Secretaria2026!` | Secretaria |
-| `tesorero` | `Tesorero2026!` | Tesorero |
+| `GET` | `/health` | Salud de la API, de la base y del pool |
+| `POST` | `/api/admin/auth/login` | Login del escritorio (JWT) |
+| `POST` | `/api/auth/login` · `/refresh` · `/logout` · `/change-password` | Sesiones de la app móvil |
+| `GET/POST/PUT/PATCH` | `/api/miembros` | Padrón de miembros y credenciales |
+| `GET/POST/PUT/DELETE` | `/api/viviendas` | Viviendas y censo |
+| `GET/POST/PUT/PATCH` | `/api/aportaciones` | Aportaciones y cuota de mantenimiento |
+| `GET/POST/PUT/PATCH/DELETE` | `/api/proyectos` | Proyectos comunitarios |
+| `GET/POST/PUT/PATCH/DELETE` | `/api/reuniones` | Asambleas |
+| `POST` | `/api/reuniones/{id}/asistencias/convocar` | Convocatoria (devuelve la lista de asistencia) |
+| `POST` | `/api/reuniones/{id}/asistencias/convocatoria` | Convocatoria concurrente con resultado agregado |
+| `GET/POST/PATCH/DELETE` | `/api/votaciones`, `/api/votos` | Votaciones, opciones y votos |
+| `GET/POST/PATCH/DELETE` | `/api/cargos`, `/api/periodos`, `/api/asignaciones-cargo` | Junta directiva |
 
-Estas cuentas no provienen de MySQL y deben eliminarse al migrar JavaFX a la autenticación oficial de la API. Después de cinco intentos fallidos, la cuenta simulada se bloquea durante 30 segundos.
-
-## Ejecución de Android
-
-### Emulador
-
-El valor predeterminado de desarrollo es `http://10.0.2.2:8080/`; dentro del emulador Android, `10.0.2.2` representa el equipo anfitrión.
-
-```powershell
-Set-Location .\android-app
-.\gradlew.bat testDebugUnitTest
-.\gradlew.bat assembleDebug -PAPI_BASE_URL="http://10.0.2.2:8080/"
-Set-Location ..
-```
-
-El APK se genera en:
-
-```text
-android-app/app/build/outputs/apk/debug/app-debug.apk
-```
-
-La URL de Retrofit debe terminar en `/`. Para un dispositivo físico se necesita una URL HTTPS accesible desde ese dispositivo; `10.0.2.2` funciona únicamente en el emulador estándar.
-
-### Autenticación Android
-
-Android usa las rutas reales `/api/auth/*` y `/api/me`. Para iniciar sesión deben existir:
-
-1. Un registro activo en `usuario`.
-2. Un rol permitido.
-3. Para el rol `MIEMBRO`, un miembro asociado y activo.
-4. Un hash de contraseña PBKDF2 válido.
-5. Las migraciones de sesión aplicadas.
-
-Para generar un hash sin imprimir la contraseña en la terminal:
-
-```powershell
-java -cp .\api\target\asociacion-api.jar sv.asociacion.api.auth.PasswordHashTool
-```
-
-La herramienta solicita la contraseña de forma interactiva y devuelve el valor autocontenido que se almacena en `usuario.clave_hash`.
-
-## Empaquetado y actualizaciones
-
-### Paquete QA de Windows
-
-Antes de empaquetar se necesita `qa-local.properties` o las variables `QA_API_URL` y `QA_API_TOKEN`.
-
-Ejemplo:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File .\scripts\build-qa-package.ps1 `
-  -Version 1.4.9 `
-  -PreviousManifest .\dist\update-manifest-anterior.json `
-  -LegacyImage .\dist\imagen-anterior\AsociacionComunalQA
-```
-
-`PreviousManifest` y `LegacyImage` son opcionales. El script:
-
-1. Compila e instala `backend`.
-2. Compila y prueba `api`.
-3. Compila y prueba `frontend`.
-4. Ejecuta `jpackage` con el JDK activo.
-5. Inserta la configuración QA en la imagen.
-6. Calcula hashes SHA-256.
-7. Genera el paquete completo y el delta.
-
-Resultados en `dist/`:
-
-```text
-AsociacionComunalQA-<version>-win64.zip
-AsociacionComunalQA-<version>-delta.zip
-update-manifest.json
-version.txt
-sha256.txt
-```
-
-No se debe distribuir un paquete si Maven o `jpackage` terminan con error.
-
-### Automatización de Windows
-
-`.github/workflows/qa-package.yml` se ejecuta al hacer push a `develop` o manualmente. Utiliza Java 21, crea la versión `1.4.<número-de-ejecución>`, publica los artefactos en la API y crea una GitHub Release.
-
-Secretos requeridos por el workflow:
-
-- `QA_API_URL`
-- `QA_API_TOKEN`
-
-### Automatización de Android
-
-`.github/workflows/android-release.yml` se ejecuta cuando cambia `android-app/**` en `develop` o manualmente. Prueba el proyecto, firma el APK, lo publica en la API y crea una GitHub Release.
-
-Secretos requeridos:
-
-- `QA_API_URL`
-- `QA_API_TOKEN`
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
-
-## Cómo agregar una función al backend
-
-La siguiente secuencia es la convención para nuevas entidades y endpoints:
-
-1. **Base de datos:** crear una migración SQL nueva, con número consecutivo, restricciones, índices y llaves foráneas.
-2. **Entidad:** agregar o actualizar la clase de dominio en `backend/src/main/java/sv/asociacion/backend/entity`.
-3. **Persistencia:** crear el DAO o repository usando `PreparedStatement`, `try-with-resources` y transacciones cuando una operación modifique varias tablas.
-4. **DTO de entrada:** definir únicamente los campos aceptados por la API y validar formato, obligatoriedad y rangos.
-5. **Service:** implementar reglas de negocio, autorización, estados permitidos y coordinación entre repositorios.
-6. **DTO de salida:** devolver solamente información necesaria. Nunca incluir `clave_hash`, hashes de tokens u otros datos internos.
-7. **Controller/Routes:** mapear verbo, ruta, códigos HTTP y excepciones sin agregar lógica de negocio.
-8. **Registro:** conectar la nueva ruta al arrancar Javalin.
-9. **Cliente:** agregar el método correspondiente en JavaFX o Retrofit solamente si la interfaz lo necesita.
-10. **Pruebas:** cubrir service, autorización, serialización y códigos HTTP antes de integrar.
-11. **Documentación:** actualizar la tabla de rutas y describir cualquier variable o migración nueva.
-
-Estructura recomendada dentro de `api`:
-
-```text
-sv.asociacion.api
-├── controller/       rutas y adaptación HTTP
-├── dto/
-│   ├── request/      datos recibidos
-│   └── response/     datos expuestos
-├── service/          lógica de negocio
-├── repository/       contratos de persistencia, si aplican
-├── auth/             autenticación y autorización
-└── config/           composición de dependencias y servidor
-```
-
-La clase `ApiServer` debe quedar como punto de arranque y composición, no como ubicación de toda la lógica.
+La lista completa está en `ApiServer.java`.
 
 ## Seguridad
 
-- Nunca subir `.env`, `database-local.properties`, `qa-local.properties`, `qa-token.upload`, keystores, tokens o contraseñas.
-- Utilizar un usuario MySQL exclusivo para la aplicación y aplicar el principio de mínimo privilegio.
-- No utilizar la cuenta administrativa de MySQL desde Java.
-- No exponer el puerto `3306` a Internet.
-- Mantener la API enlazada a loopback y publicarla solamente mediante HTTPS.
-- Utilizar `PreparedStatement` para todos los valores externos.
-- No devolver entidades `Usuario` directamente desde un endpoint.
-- No registrar access tokens, refresh tokens ni contraseñas.
-- Respaldar la base antes de ejecutar migraciones manuales.
-- Verificar SHA-256 antes de activar paquetes de actualización.
-- Rotar inmediatamente cualquier secreto que aparezca en un commit, mensaje, log o captura.
-
-> [!WARNING]
-> El token técnico compartido es una solución transitoria y se incorpora al paquete JavaFX de QA. No equivale a autenticación individual. Antes de producción, JavaFX debe utilizar `/api/auth/login`, permisos por rol y tokens de usuario; las credenciales de publicación de actualizaciones deben separarse de las credenciales de lectura del cliente.
-
-## Solución de problemas
-
-### `Could not find artifact sv.asociacion:backend`
-
-Construir desde el reactor o instalar primero el módulo:
-
-```powershell
-mvn -pl api -am package
-# o
-mvn -f .\backend\pom.xml clean install
-```
-
-### `Falta configurar DB_USER` o `DB_PASSWORD`
-
-Comprobar `database-local.properties`, el directorio desde el que se inició Java y el valor de `DB_CONFIG_FILE`.
-
-### `API_SHARED_SECRET debe tener al menos 32 caracteres`
-
-La API no inicia sin ese valor. Configurarlo en la misma terminal o en el administrador del servicio antes de ejecutar el JAR.
-
-### Respuesta `401 No autorizado` en miembros, proyectos o viviendas
-
-El token del cliente no coincide con `API_SHARED_SECRET`. Revisar `QA_API_TOKEN`, `qa-local.properties` y la configuración del proceso de la API sin imprimir sus valores.
-
-### JavaFX indica que no encuentra `config/qa.properties`
-
-Para desarrollo, crear `qa-local.properties` en la raíz o definir simultáneamente `QA_API_URL` y `QA_API_TOKEN`. Para un paquete, volver a construirlo con la configuración QA disponible.
-
-### JavaFX rechaza una URL local `http://...`
-
-`QaApiConfig` exige HTTPS. Utilizar el proxy/túnel HTTPS del ambiente o una configuración de desarrollo expresamente diseñada para ello. Android sí admite tráfico HTTP local para el emulador.
-
-### Retrofit informa que la URL base es inválida
-
-`API_BASE_URL` debe terminar en `/`, por ejemplo `http://10.0.2.2:8080/`.
-
-### El empaquetado no encuentra `jpackage`
-
-Verificar que `java -version` apunta a un JDK 21 completo y que su carpeta `bin` contiene `jpackage.exe`.
-
-### Una migración falla por tabla o columna existente
-
-No volver a ejecutar migraciones a ciegas. Consultar primero el esquema y confirmar qué versión ya fue aplicada. Actualmente no existe una tabla automática de historial de migraciones.
-
-## Estado técnico pendiente
-
-- Migrar el login JavaFX simulado a la autenticación oficial de la API.
-- Separar `ApiServer` en controllers, services y DTOs por dominio.
-- Eliminar llamadas directas desde rutas HTTP hacia DAOs.
-- Sustituir el token técnico compartido por autorización individual y credenciales separadas de publicación.
-- Automatizar migraciones con una herramienta y versionar el esquema base.
-- Reemplazar datos simulados del dashboard.
-- Completar pagos, proyectos, reuniones y votaciones en Android.
+- Contraseñas con PBKDF2-HMAC-SHA256 y sal aleatoria; los tokens de sesión se guardan solo como hash SHA-256.
+- La contraseña provisional (`usuario.clave_temporal`) se guarda **cifrada** con AES-256-GCM: el escritorio debe poder mostrarla hasta que el miembro la cambie, por eso no es un hash. Se borra al cambiar la contraseña.
+- Toda consulta usa `PreparedStatement`; los mensajes de error al cliente no contienen SQL.
+- `.env`, `database-local.properties`, `qa-local.properties` y `qa-token.upload` están ignorados por Git.
 
 ## Documentación adicional
 
-- [Persistencia y esquema MySQL](backend/README.md)
-- [Ejecución de la API](api/README.md)
-- [Autenticación oficial](docs/AUTENTICACION_API.md)
-- [Paquetes y publicación QA](docs/PAQUETE_QA.md)
-- [Convención de versiones](docs/VERSIONES.md)
-- [Aplicación Android](android-app/README.md)
+- `docs/avance3/` — documento final del Avance 3.
+- `docs/avance2/` — documento y evidencias del Avance 2.
+- `docs/FLUJO_GIT.md` — estrategia de ramas.
+- `docs/GUIA_COMPLETA_OPERACION_Y_ACTUALIZACIONES.md` — servidor, paquete QA de Windows y actualizaciones.
+- `docs/AUTENTICACION_API.md` — autenticación de la API.
