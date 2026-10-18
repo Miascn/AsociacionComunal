@@ -108,6 +108,9 @@ public class VotoDAO implements DAO<Voto, Long> {
             } catch (SQLException e) {
                 conn.rollback();
                 throw new PersistenciaException("No fue posible registrar el voto.", e);
+            } finally {
+                // Con pool la conexion se reutiliza: se devuelve en modo autoCommit.
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new PersistenciaException("No fue posible abrir la conexión para registrar el voto.", e);

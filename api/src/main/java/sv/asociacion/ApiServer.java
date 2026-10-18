@@ -306,6 +306,11 @@ public final class ApiServer {
             mobileAuth.register(cfg.routes);
         });
         app.start();
+        // Al apagar la API se detiene Javalin y se cierran las conexiones fisicas del pool.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            app.stop();
+            sv.asociacion.config.DBConnection.getInstance().cerrar();
+        }, "apagado-api"));
         System.out.printf("Asociacion API disponible en http://%s:%d%n", HOST, config.apiPort);
     }
 

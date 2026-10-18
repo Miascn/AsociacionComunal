@@ -5,22 +5,30 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
+import javax.sql.DataSource;
 
+/**
+ * Punto unico de acceso a conexiones de base de datos.
+ *
+ * <p>Desde el Avance 3 las conexiones salen de un pool ({@link DataSourceConfig}).
+ * La firma de {@link #getConnection()} se conservo a proposito: los DAO siguen
+ * escribiendo {@code try (Connection c = DBConnection.getInstance().getConnection())}
+ * y el {@code close()} implicito del try-with-resources devuelve la conexion al
+ * pool en lugar de cerrar el socket. Asi la migracion no obligo a reescribir
+ * ningun DAO.</p>
+ *
+ * <p>El pool se crea de forma perezosa, en la primera solicitud: cargar la clase
+ * no exige credenciales, lo que permite compilar y ejecutar las pruebas sin MySQL.</p>
+ */
 public final class DBConnection {
     private static final Properties LOCAL_PROPERTIES = loadLocalProperties();
     private static DBConnection instance;
 
-    static {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException exception) {
-            throw new IllegalStateException("No se encontró el controlador JDBC de MySQL.", exception);
-        }
-    }
+    /** Pool compartido; volatile para publicarlo de forma segura entre hilos. */
+    private volatile org.apache.tomcat.jdbc.pool.DataSource dataSource;
 
     private DBConnection() {
     }
@@ -32,16 +40,76 @@ public final class DBConnection {
         return instance;
     }
 
+    /**
+     * Presta una conexion del pool. Debe usarse siempre con try-with-resources
+     * para que vuelva al pool aunque ocurra una excepcion.
+     */
     public Connection getConnection() throws SQLException {
+        return getDataSource().getConnection();
+    }
+
+    /**
+     * DataSource con pool, para los componentes que reciben la fuente de
+     * conexiones por constructor (por ejemplo, la convocatoria concurrente).
+     */
+    public DataSource getDataSource() throws SQLException {
+        org.apache.tomcat.jdbc.pool.DataSource actual = dataSource;
+        if (actual == null) {
+            synchronized (this) {
+                actual = dataSource;
+                if (actual == null) {
+                    actual = DataSourceConfig.crearDataSource(
+                        DataSourceConfig.construirPropiedades(buildUrl(), requiredUser(), password())
+                    );
+                    dataSource = actual;
+                }
+            }
+        }
+        return actual;
+    }
+
+    /** Estado del pool para el endpoint de salud; no abre conexiones si el pool aun no existe. */
+    public EstadoPool estadoPool() {
+        org.apache.tomcat.jdbc.pool.DataSource actual = dataSource;
+        if (actual == null) {
+            return new EstadoPool(false, 0, 0, DataSourceConfig.MAX_ACTIVE);
+        }
+        return new EstadoPool(true, actual.getActive(), actual.getIdle(), actual.getMaxActive());
+    }
+
+    /** Comprueba que el pool puede entregar una conexion valida. */
+    public boolean verificarDisponibilidad() {
+        try (Connection connection = getConnection()) {
+            return connection.isValid(DataSourceConfig.VALIDATION_QUERY_TIMEOUT_SEG);
+        } catch (SQLException exception) {
+            return false;
+        }
+    }
+
+    /** Cierra el pool y todas sus conexiones fisicas (al apagar la API). */
+    public synchronized void cerrar() {
+        if (dataSource != null) {
+            dataSource.close(true);
+            dataSource = null;
+        }
+    }
+
+    /** Fotografia del pool: si existe, conexiones prestadas, inactivas y el maximo configurado. */
+    public record EstadoPool(boolean inicializado, int activas, int inactivas, int maxActivas) { }
+
+    private static String requiredUser() throws SQLException {
         String user = setting("DB_USER", "db.user");
-        String password = setting("DB_PASSWORD", "db.password");
         if (user == null || user.isBlank()) {
-            throw new SQLException("Falta configurar DB_USER o la propiedad db.user en database-local.properties.");
+            throw new SQLException(
+                "Falta configurar DB_USER o la propiedad db.user en database-local.properties.", "08001"
+            );
         }
-        if (password == null) {
-            password = "";
-        }
-        return DriverManager.getConnection(buildUrl(), user, password);
+        return user;
+    }
+
+    private static String password() {
+        String password = setting("DB_PASSWORD", "db.password");
+        return password == null ? "" : password;
     }
 
     private static String buildUrl() {
