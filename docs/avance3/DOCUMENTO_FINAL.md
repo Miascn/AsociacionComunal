@@ -7,6 +7,7 @@ Ingeniería en Desarrollo de Software y Ciencia de Datos
 **Programación II** — Entrega final del proyecto
 Facilitador: **Ing. Daniel Enrique Guevara Gómez**
 San Salvador, El Salvador · 2026
+Sección / grupo: *(completar)* · Fecha de entrega: *(completar)*
 
 Repositorio público: <https://github.com/Miascn/AsociacionComunal>
 
@@ -123,7 +124,11 @@ Ningún cliente accede a MySQL directamente.
 | `util` | Fechas, hash y cifrado de credenciales, generador de claves provisionales |
 | `middleware`, `api.auth` | Autenticación y autorización |
 
-`ApiServer` es la **raíz de composición**: crea cada DAO y servicio una sola vez y los entrega por constructor. Ninguna clase de negocio crea sus propias dependencias.
+`ApiServer` es la **raíz de composición**: crea los DAO y servicios y los entrega por constructor. Las clases del Avance 3 (`MiembroService`, `AsistenciaService`, `ConvocatoriaConcurrenteService`, `HealthController`) ya no crean sus propias dependencias. Solo dos servicios anteriores, `ReunionService` y `RolService`, todavía crean un DAO propio con `new` (ver §13, pendiente reconocido).
+
+**Mejora adicional de seguridad.** La contraseña provisional de un miembro (`usuario.clave_temporal`) ya no se guarda en texto plano. Se cifra con AES-256-GCM (`util/CifradorCredenciales`) y el valor almacenado lleva el prefijo `enc:v1:`. La API la descifra solo cuando el escritorio debe volver a mostrarla. No es un hash porque la directiva necesita mostrar la clave al miembro hasta que este la cambie. En el servidor DEV se comprobó que los valores guardados empiezan por `enc:v1:`. No es un requisito de la guía; se documenta como mejora complementaria.
+
+**[EVIDENCIA PENDIENTE: Captura de `clave_temporal` con prefijo `enc:v1:` (valor recortado)]**
 
 ---
 
@@ -234,12 +239,33 @@ El inventario completo del Avance 2 sigue en `docs/avance2/colecciones.md`.
 
 | Problema | Control |
 | --- | --- |
-| Dos hilos o dos coordinadores convocan al mismo miembro | La restricción única `uk_asistencia_reunion_miembro` decide en la base. `INSERT IGNORE` convierte el duplicado en "0 filas afectadas": la operación es idempotente. No se usa `synchronized`, que no protegería frente a otra instancia de la API ni frente al escritorio. |
+| Dos hilos o dos coordinadores convocan al mismo miembro | La restricción única `uk_asistencia_reunion_miembro` decide en la base. `INSERT IGNORE` convierte el duplicado en "0 filas afectadas": la operación es idempotente. |
 | Conexiones compartidas entre hilos | Cada tarea usa su propia `Connection`; JDBC no garantiza que una conexión sea segura para varios hilos |
 | Agotar el pool | 4 hilos (`HILOS_CONVOCATORIA`) frente a `maxActive = 20`: siempre quedan conexiones para las demás peticiones |
 | Miembro desactivado durante la convocatoria | El filtro `estado = 'ACTIVO'` está en la misma sentencia de inserción |
 | Fallo de un lote | Cada lote es una transacción. Los demás quedan confirmados y se lanza `ConvocatoriaIncompletaException` con los miembros pendientes (HTTP 503 si la base no estaba disponible, 500 en otro caso). Repetir la convocatoria completa solo a los pendientes. |
 | Lote que no termina | `invokeAll` con tiempo máximo cancela la tarea, que queda registrada como pendiente |
+
+**Por qué `synchronized` no sería suficiente.** `synchronized` solo coordina hilos dentro de la misma JVM. El duplicado puede venir de fuera de ese proceso:
+
+- dos administradores que pulsan "Auto-convocar" a la vez generan dos peticiones HTTP distintas;
+- la API podría ejecutarse en más de una instancia;
+- otra herramienta podría escribir directamente en MySQL.
+
+Ninguno de esos casos pasa por el mismo monitor de Java. La única autoridad que ve todas las escrituras es la base de datos, por eso la garantía es la restricción única y no un bloqueo en memoria. Además, `synchronized` obligaría a los hilos a esperar unos por otros, y se perdería la ventaja de escribir los lotes en paralelo.
+
+**Uso desde el escritorio.** El botón **"Auto-convocar miembros activos"** de la ventana de asistencias llama a `POST /api/reuniones/{id}/asistencias/convocar`. `AsistenciaService.convocarMiembros` valida la reunión (por ejemplo, rechaza una reunión cancelada) y delega en `ConvocatoriaConcurrenteService`.
+
+**Validación en el servidor DEV** (despliegue de `develop` / `qa-v1.4.42`, MySQL real):
+
+| Ejecución | Solicitados | Convocados | Omitidos | Registros en `asistencia` para la reunión |
+| --- | ---: | ---: | ---: | ---: |
+| Primera convocatoria | 25 | 25 | 0 | 25 |
+| Segunda convocatoria (misma reunión) | 25 | 0 | 25 | 25 (sin cambio) |
+
+La segunda ejecución no creó duplicados: la restricción única y `INSERT IGNORE` funcionaron sobre la base real.
+
+**[EVIDENCIA PENDIENTE: Captura de la 1.ª convocatoria (25 convocados), la 2.ª (25 omitidos) y `SELECT COUNT(*)` = 25]**
 
 **Evidencia en las pruebas** (`ConvocatoriaConcurrenteServiceTest`, `JdbcConvocatoriaRepositoryTest`):
 
@@ -294,6 +320,10 @@ try (Connection conn = conexion();
 
 **Transacciones.** El voto (`VotoDAO.registrarUnico`), el lote de asistencias, la convocatoria por lotes, el cambio de estado de un miembro y el alta de miembro con su cuenta usan `setAutoCommit(false)`, `commit` y `rollback`.
 
+**Cierre de recursos.** `Connection`, `PreparedStatement` y `ResultSet` se declaran en try-with-resources, de modo que se cierran aunque ocurra una excepción. Con el pool, cerrar la `Connection` la devuelve al pool en lugar de cerrar el socket con MySQL.
+
+**Errores de conexión.** Si MySQL no responde o el pool se agota, `TraductorSQLException` convierte la `SQLException` en `ConexionBDException` y el cliente recibe **HTTP 503** con un mensaje genérico, sin SQL (§15). En el servidor DEV se detuvo MySQL: la API respondió 503 sin exponer detalles y volvió a operar normalmente (HTTP 200) al recuperarse la base.
+
 ---
 
 ## 12. Configuración del DataSource
@@ -339,6 +369,20 @@ Clase: `api/src/main/java/sv/asociacion/config/DataSourceConfig.java`. Implement
 
 Además, `/health` informa las conexiones activas, inactivas y el máximo del pool en ejecución.
 
+**Evidencia en el servidor DEV** (despliegue de `develop` / `qa-v1.4.42`):
+
+- `GET /health` respondió **HTTP 200** con `"database":"available"`.
+- El bloque `pool` mostró **`maxActivas = 20`**, el valor de `DataSourceConfig.MAX_ACTIVE`: la API usa el pool de Tomcat JDBC y no `DriverManager`.
+- El arranque no registró errores inesperados.
+
+Forma de la respuesta (los valores de `activas` e `inactivas` cambian con la carga):
+
+```json
+{"service":"asociacion-api","database":"available","pool":{"activas":0,"inactivas":4,"maxActivas":20}}
+```
+
+**[EVIDENCIA PENDIENTE: Captura de `GET /health` en DEV con HTTP 200 y `maxActivas: 20`]**
+
 ---
 
 ## 13. Cohesión y acoplamiento
@@ -376,9 +420,9 @@ Ahora:
 
 Se revisaron nombres, responsabilidades, duplicación, tamaño de métodos y organización de paquetes en las clases del Avance 3.
 
-### Antes / después 1 — controladores sin `try/catch` repetidos
+### Antes / después 1 — controlador sin `try/catch` repetidos
 
-**Antes** (`MiembroController`, rama `develop`): cada método repetía la traducción de excepciones; había 94 bloques similares en 16 controladores.
+**Antes** (`MiembroController` en `34bd8df`, entrega del Avance 2): cada método repetía su propia traducción de excepciones a HTTP.
 
 ```java
 public void create(Context context) {
@@ -425,6 +469,8 @@ Esto corrigió además dos defectos:
 
 - el `catch (Exception)` devolvía `e.getMessage()`, que podía contener texto de MySQL;
 - un fallo de base de datos en `MiembroDAO.save` se envolvía en `IllegalStateException` y se respondía como **409 Conflicto**.
+
+**Alcance real.** `MiembroController` se migró por completo como ejemplo. Los demás controladores anteriores al Avance 3 conservan sus `try/catch` locales de `IllegalArgumentException` (400) e `IllegalStateException` (409), que coinciden con el mapeo central. Donde además tenían un `catch (Exception)`, se agregó antes un `catch` que vuelve a lanzar `PersistenciaException` y `NegocioException` al manejador central. Así, un fallo de base de datos ya no se responde como 400 ni expone su mensaje. Eliminar esos bloques locales en todos los controladores queda como mejora siguiente; no se hizo para no cambiar el comportamiento de funciones estables antes de la entrega.
 
 ### Antes / después 2 — reutilización del acceso JDBC
 
@@ -476,7 +522,7 @@ public List<Asistencia> findByReunion(Integer idReunion) {
 | `ConvocatoriaIncompletaException` | Uno o más lotes de la convocatoria fallaron | 503 / 500 |
 | `AuthException` | Autenticación o autorización | Su propio estado (401/403) |
 
-**Errores JDBC.** Antes, 123 bloques `catch (SQLException e) { e.printStackTrace(); }` en 15 DAO devolvían una lista vacía, `false` o `null`: una caída de la base se veía como "no hay datos". Ahora todos lanzan la excepción traducida por `TraductorSQLException`:
+**Errores JDBC.** Antes, 123 bloques `catch (SQLException e) { e.printStackTrace(); }` en 15 DAO devolvían una lista vacía, `false` o `null`: una caída de la base se veía como "no hay datos". Ahora toda consulta y escritura de los DAO lanza la excepción traducida por `TraductorSQLException`:
 
 ```java
 } catch (SQLException e) {
@@ -493,6 +539,8 @@ public List<Asistencia> findByReunion(Integer idReunion) {
 
 El mensaje de la excepción es un texto seguro; la `SQLException` original se conserva como causa para el registro del servidor.
 
+**Excepción deliberada.** Algunos mapeadores de filas (`ReunionDAO`, `CargoDAO`, `MiembroCargoDAO`, `VotacionDAO`, `UsuarioDAO`) leen columnas opcionales dentro de un `catch (SQLException ignored)`. El objetivo es seguir funcionando con una base que todavía no tiene una columna nueva. Es una tolerancia solo de lectura; la sección siguiente muestra su costo.
+
 **Errores de negocio.** Los servicios nuevos o modificados lanzan excepciones propias, por ejemplo `ValidacionException` ante un id inválido en la convocatoria. Los servicios anteriores al Avance 3 siguen usando `IllegalArgumentException` (400) e `IllegalStateException` (409). El manejador central conserva ese significado para no cambiar el comportamiento de funciones estables.
 
 **Uso de try / catch / finally / throw / throws:**
@@ -504,6 +552,35 @@ El mensaje de la excepción es un texto seguro; la `SQLException` original se co
 - Las excepciones se capturan solo donde hay algo que hacer con ellas: deshacer la transacción, traducirlas o agregarlas por lote.
 
 **Traducción a HTTP centralizada** en `ApiServer.configurarManejoErrores`. Los errores técnicos se registran en el servidor con su SQLState y código; el cliente recibe solo un mensaje genérico.
+
+| Situación | Excepción | HTTP | Mensaje al cliente |
+| --- | --- | ---: | --- |
+| Dato inválido | `ValidacionException` / `IllegalArgumentException` | 400 | Mensaje de negocio |
+| Recurso inexistente | `RecursoNoEncontradoException` | 404 | Mensaje de negocio |
+| Choque con el estado actual | `ConflictoException` / `IllegalStateException` | 409 | Mensaje de negocio |
+| Error de SQL en una operación | `PersistenciaException` | 500 | "Ocurrió un error al acceder a los datos." |
+| Base caída o pool agotado | `ConexionBDException` | 503 | Mensaje genérico de base no disponible |
+
+**Validación con la base real (DEV).** Con MySQL detenido, la API respondió **503** sin SQL ni SQLState en la respuesta. Al volver MySQL, la API recuperó la operación normal (HTTP 200).
+
+**[EVIDENCIA PENDIENTE: Captura de la respuesta 503 sin SQL y de `/health` en 200 tras la recuperación]**
+
+### Hallazgo de QA: diferencia de esquema expuesta por el nuevo manejo de excepciones
+
+Durante las pruebas funcionales, crear o editar una reunión en DEV respondía "Ocurrió un error al acceder a los datos." (HTTP 500).
+
+- **Causa.** El registro del servidor mostró `SQLState=42S22`, código MySQL `1054`, `Unknown column 'id_proyecto'`. A la tabla `reunion` de la base DEV le faltaban las columnas `id_proyecto` y `descripcion` y su relación con `proyecto`, que agrega la migración `V009` desde el Avance 2.
+- **No fue una regresión del Avance 3.** El código de `ReunionDAO` espera esas columnas desde el Avance 2.
+- **Por qué apareció ahora.** Antes del Avance 3 el `catch` de `save`/`update` imprimía la excepción y devolvía la entidad sin cambios. La API respondía 201/200 aunque la reunión **no se hubiera guardado**: un éxito falso. Las consultas tampoco fallaban, porque el mapeador ignoraba las columnas ausentes. Al propagar la excepción, el Avance 3 hizo visible un problema que ya existía.
+- **Corrección.** Se aplicó en DEV solo la parte de `V009` que corresponde a `reunion`, la misma DDL versionada en el repositorio, sin tocar otras tablas:
+  - `id_proyecto INT NULL`;
+  - `descripcion VARCHAR(500) NULL`;
+  - la llave foránea `fk_reunion_proyecto` con `ON DELETE SET NULL`;
+  - el índice `idx_reunion_proyecto`.
+- **Reprueba.** QA volvió a probar crear y editar reuniones y la convocatoria, con resultado correcto.
+- **Lección.** Un error silenciado no desaparece: se convierte en pérdida de datos invisible. Falta además un control que verifique qué migraciones tiene aplicadas cada ambiente. Por coherencia, `database/schema.sql` se alineó con la misma definición de `V009`: `descripcion VARCHAR(500)` y el índice `idx_reunion_proyecto`.
+
+**[EVIDENCIA PENDIENTE: Captura del registro con `SQLState=42S22` / `1054`, de `SHOW CREATE TABLE reunion` corregido y de una reunión creada con éxito]**
 
 ---
 
@@ -550,14 +627,34 @@ void restableceCuentaExistente() {
 }
 ```
 
-**Evidencia de ejecución** (`./mvnw clean test`, ver capturas en el anexo):
+**Evidencia de ejecución.** Las pruebas corrieron en GitHub Actions (flujo "Compilar y publicar QA") sobre el merge del PR #40 en `develop` (`048bc33`). También se ejecutaron localmente con `./mvnw clean test`. Las capturas se listan en el Anexo B.
 
 | Módulo | Pruebas | Fallos | Errores | Omitidas |
 | --- | ---: | ---: | ---: | ---: |
 | API (`api`) | 385 | 0 | 0 | 0 |
 | Escritorio (`frontend`) | 70 | 0 | 0* | 0 |
 
-\* Dos pruebas de navegación FXML requieren una configuración de API sintácticamente válida (`QA_API_URL` y `QA_API_TOKEN`). Sin ella fallan por entorno; con ella, el módulo pasa 70/70. Ninguna prueba requiere MySQL.
+\* Dos pruebas de navegación FXML requieren una configuración de API sintácticamente válida (`QA_API_URL` y `QA_API_TOKEN`). En GitHub Actions esas variables existen y el módulo pasa 70/70. En una terminal sin ellas, esas dos fallan por entorno. Ninguna prueba requiere MySQL. No se midió el porcentaje de cobertura.
+
+- **CI:** ejecución <https://github.com/Miascn/AsociacionComunal/actions/runs/39178684908>, flujo "Compilar y publicar QA", evento `push` en `develop`, commit `048bc33`, resultado `success`.
+- **Local:** `./mvnw -pl api clean test` el 25/10/2026 terminó con código 0 (BUILD SUCCESS). Los reportes de Surefire suman 42 clases, 385 pruebas, 0 fallos, 0 errores y 0 omitidas.
+
+**[EVIDENCIA PENDIENTE: Captura de la ejecución de GitHub Actions con API 385/385 y escritorio 70/70]**
+
+**[EVIDENCIA PENDIENTE: Captura de `./mvnw clean test` con BUILD SUCCESS]**
+
+**Qué cubren las pruebas, según la guía:**
+
+| Exigencia de la guía | Ejemplos |
+| --- | --- |
+| Métodos de Service | `MiembroServiceTest`, `AsistenciaServiceConvocatoriaTest`, `ConvocatoriaConcurrenteServiceTest` |
+| Métodos de Controller | `ManejoErroresRoutesTest`, `ConvocatoriaRoutesTest`, `HealthControllerTest` |
+| Clases de utilidad | `DateUtilsTest`, `PasswordHasherTest`, `GeneradorClaveTemporalTest`, `CifradorCredencialesTest`, `TraductorSQLExceptionTest` |
+| Validaciones y reglas de negocio | Id inválido en la convocatoria, reunión cancelada, miembro duplicado, falta de roles |
+| Casos exitosos | Convocatoria completa, credenciales generadas, pool que reutiliza conexiones |
+| Casos de error | Base caída (503), lote fallido, tiempo máximo, pool agotado, SQL sin filtrar al cliente |
+| Concurrencia | Solapamiento real de tareas, límite de hilos, dos convocatorias simultáneas sin duplicados |
+| DataSource | Parámetros del pool, `maxActive`/`maxWait`, restauración de `autoCommit` |
 
 ---
 
@@ -582,9 +679,24 @@ void restableceCuentaExistente() {
 | `0b833cb` | fix(api): protege credenciales temporales de usuario con cifrado en reposo |
 | `950667c` | chore: actualiza scripts y artefactos de base de datos para la entrega final |
 | `4fd5ac5` | docs: actualiza README para la entrega final |
-| *(merge)* | docs: incorpora la estrategia de ramas (FLUJO_GIT.md) desde docs/flujo-git-actualizado |
+| `906ce7f` | docs: incorpora la estrategia de ramas (FLUJO_GIT.md) desde docs/flujo-git-actualizado |
+| `4d39086` | docs: agrega documentacion final del Avance 3 |
 
+- **Integración:**
+  - Pull Request **#40** (`feature/avance3-implementation` → `develop`) se aprobó y se integró con un **merge commit** (`048bc33`), sin squash, para conservar los commits por bloque como evidencia.
+  - El flujo de GitHub Actions "Compilar y publicar QA" compiló, ejecutó las pruebas (API 385/385, escritorio 70/70) y publicó la versión **`qa-v1.4.42`**.
+  - Esa versión es la que se desplegó en el servidor DEV.
+  - Enlaces:
+    - PR: <https://github.com/Miascn/AsociacionComunal/pull/40> (estado `MERGED`, 18/10/2026; merge `048bc33917e1d1954f2429ace754c19271273e3b`);
+    - versión: <https://github.com/Miascn/AsociacionComunal/releases/tag/qa-v1.4.42> (apunta a `048bc33`; archivos `AsociacionComunalQA-1.4.42-win64.zip` y `sha256.txt`).
+- **Cierre de la entrega:** la alineación final de `database/schema.sql` con `V009` y esta documentación se integran a `develop` mediante la rama `fix/avance3-entrega-final` y su Pull Request.
 - **Participación:** el historial de `develop` registra commits de las cuentas `MiasCN` (Josué Castillo), `SamayoaGit` / Carlos Samayoa y `G3rze` (Gerson Bermúdez). La participación de cada integrante en esta entrega se declara en la portada.
+
+**[EVIDENCIA PENDIENTE: Captura del PR #40 en estado Merged]**
+
+**[EVIDENCIA PENDIENTE: Captura de `git log --oneline --graph` con el merge `048bc33`]**
+
+**[EVIDENCIA PENDIENTE: Captura de la versión `qa-v1.4.42` en GitHub]**
 
 ---
 
@@ -595,10 +707,57 @@ void restableceCuentaExistente() {
 3. Un **manejo de excepciones explícito** cambia lo que el usuario ve: antes, una caída de la base se mostraba como una lista vacía o como un conflicto 409; ahora se distingue un error de negocio (4xx) de un fallo técnico (500) y de una base no disponible (503), sin exponer detalles internos.
 4. **Depender de interfaces** (`ConvocatoriaRepository`, `DataSource`, `DAO<T,ID>`) y recibir las dependencias por constructor hizo posible probar la lógica concurrente y los DAO sin MySQL, con JUnit y Mockito.
 5. Las abstracciones genéricas (`AbstractJdbcDAO<T,ID>`, `RowMapper<T>`) eliminan código repetido y concentran en un solo lugar el manejo correcto de recursos y errores, de modo que el próximo DAO hereda ese comportamiento sin volver a escribirlo.
+6. Las **pruebas en un ambiente real** encontraron lo que las pruebas unitarias no podían ver: a la base DEV le faltaba parte de la migración `V009`. El problema existía desde el Avance 2, pero el antiguo `catch` con `printStackTrace` lo ocultaba detrás de respuestas exitosas. Propagar las excepciones lo hizo visible y permitió corregirlo. También mostró que hace falta controlar qué migraciones tiene aplicadas cada ambiente.
 
 ---
 
-### Anexo — cómo ejecutar y verificar
+### Anexo A — Validación en el ambiente DEV
+
+Validación realizada por el equipo sobre el servidor DEV con `develop` (`048bc33`) / `qa-v1.4.42` desplegado y MySQL real:
+
+| Verificación | Resultado |
+| --- | --- |
+| `GET /health` | HTTP 200, `database = available`, pool activo con `maxActivas = 20` |
+| Arranque de la API | Sin errores inesperados |
+| Convocatoria concurrente (1.ª ejecución) | 25 solicitados, 25 convocados, 0 omitidos |
+| Convocatoria concurrente (2.ª ejecución) | 25 solicitados, 0 convocados, 25 omitidos; la tabla `asistencia` sigue con 25 registros |
+| Base de datos detenida | HTTP 503 sin SQL en la respuesta |
+| Base de datos recuperada | La API vuelve a operar normalmente (HTTP 200) |
+| Claves provisionales | Guardadas cifradas con el prefijo `enc:v1:` |
+| Pruebas funcionales de QA | Inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales: correctos tras corregir `V009` en DEV |
+| Diferencia de esquema `V009` | Causa identificada (§15), esquema de `reunion` corregido en DEV, reprueba de QA correcta |
+
+**[EVIDENCIA PENDIENTE: Capturas de las pruebas funcionales de QA: inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales]**
+
+### Anexo B — Evidencias
+
+**Evidencia verificable en GitHub** (consultada con `gh` el 25/10/2026):
+
+| Evidencia | Dato verificado |
+| --- | --- |
+| Pull Request #40 | `feature/avance3-implementation` → `develop`, estado `MERGED`, 18/10/2026 |
+| Merge commit | `048bc33917e1d1954f2429ace754c19271273e3b` |
+| GitHub Actions | "Compilar y publicar QA", `push` en `develop` sobre `048bc33`, resultado `success` (ejecución 39178684908) |
+| Versión QA | `qa-v1.4.42`, publicada el 19/10/2026, apunta a `048bc33` |
+| Pruebas locales | `./mvnw -pl api clean test`: código de salida 0; 385 pruebas, 0 fallos, 0 errores |
+
+**Capturas pendientes.** Las inserta el equipo en la copia que se entrega; no se incluyen capturas que no se hayan tomado. Cada fila indica qué debe verse y dónde colocarla.
+
+| # | Evidencia | Qué debe mostrar la captura | Dónde insertarla |
+| ---: | --- | --- | --- |
+| 1 | Pull Request #40 | `feature/avance3-implementation` → `develop`, estado *Merged*, lista de commits | §17 |
+| 2 | Merge commit | `048bc33` en el historial de `develop` (por ejemplo `git log --oneline --graph`) | §17 |
+| 3 | GitHub Actions | Ejecución exitosa de "Compilar y publicar QA" con API 385/385 y escritorio 70/70 | §16 |
+| 4 | Versión QA | Release `qa-v1.4.42` en GitHub | §17 |
+| 5 | `/health` | HTTP 200, `database: available`, `maxActivas: 20` | §12 |
+| 6 | Concurrencia | Respuesta de la 1.ª convocatoria (25 convocados), de la 2.ª (25 omitidos) y `SELECT COUNT(*)` igual a 25 | §10 |
+| 7 | Base caída | Respuesta HTTP 503 sin SQL y, después, `/health` en 200 | §15 |
+| 8 | Cifrado de claves | Valor de `clave_temporal` que empieza por `enc:v1:` (recortar el resto del valor) | §6 |
+| 9 | QA funcional | Inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales | Anexo A |
+| 10 | Corrección `V009` | Registro con `SQLState=42S22` / `1054`, `SHOW CREATE TABLE reunion` después de la corrección y reunión creada con éxito | §15 |
+| 11 | Pruebas locales | Salida de `./mvnw clean test` con `BUILD SUCCESS` | §16 |
+
+### Anexo C — cómo ejecutar y verificar
 
 Ver `README.md`:
 

@@ -267,12 +267,13 @@ CREATE TABLE reunion (
     id_reunion INT AUTO_INCREMENT PRIMARY KEY,
     id_proyecto INT NULL,
     titulo VARCHAR(150) NOT NULL,
-    descripcion TEXT NULL,
+    descripcion VARCHAR(500) NULL,
     fecha_hora DATETIME NOT NULL,
     lugar VARCHAR(150),
     tipo ENUM('ORDINARIA', 'EXTRAORDINARIA') NOT NULL DEFAULT 'ORDINARIA',
     estado ENUM('PROGRAMADA', 'REALIZADA', 'CANCELADA') NOT NULL DEFAULT 'PROGRAMADA',
-    CONSTRAINT fk_reunion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL
+    CONSTRAINT fk_reunion_proyecto FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE SET NULL,
+    INDEX idx_reunion_proyecto (id_proyecto)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

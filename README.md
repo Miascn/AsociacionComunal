@@ -251,7 +251,7 @@ Respuesta esperada sobre una base recién cargada (los 7 miembros activos; el in
 
 ## Manejo de errores
 
-Paquete `exception`: `NegocioException` (abstracta) con `ValidacionException`, `RecursoNoEncontradoException` y `ConflictoException` (de la que hereda `VotoDuplicadoException`); `PersistenciaException` con `ConexionBDException` y `ConvocatoriaIncompletaException`. `TraductorSQLException` convierte cada `SQLException` en la excepción adecuada (SQLState `08xxx` o pool agotado → base no disponible). Ningún DAO silencia ya una `SQLException`.
+Paquete `exception`: `NegocioException` (abstracta) con `ValidacionException`, `RecursoNoEncontradoException` y `ConflictoException` (de la que hereda `VotoDuplicadoException`); `PersistenciaException` con `ConexionBDException` y `ConvocatoriaIncompletaException`. `TraductorSQLException` convierte cada `SQLException` en la excepción adecuada (SQLState `08xxx` o pool agotado → base no disponible). Las consultas y escrituras de los DAO ya no silencian ninguna `SQLException`. La única tolerancia que queda es la de algunos mapeadores que leen columnas opcionales.
 
 `ApiServer.configurarManejoErrores` centraliza la traducción a HTTP: validación 400, no encontrado 404, conflicto 409, base no disponible 503 y fallo de persistencia 500. El detalle técnico (SQL, SQLState) se registra en el servidor y nunca se envía al cliente.
 
