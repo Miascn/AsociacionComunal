@@ -7,22 +7,22 @@ Ingeniería en Desarrollo de Software y Ciencia de Datos
 **Programación II** — Entrega final del proyecto
 Facilitador: **Ing. Daniel Enrique Guevara Gómez**
 San Salvador, El Salvador · 2026
-Sección / grupo: *(completar)* · Fecha de entrega: *(completar)*
+Grupo 2 · Fecha de entrega: 25 de octubre de 2026
 
-Repositorio público: <https://github.com/Miascn/AsociacionComunal>
+Repositorio público: <https://github.com/Miascn/AsociacionComunal> · rama `develop`, commit final `a391c7f`
 
-| Fotografía | Nombre completo | CIF | ¿Participó? |
-| --- | --- | --- | --- |
-| *(insertar)* | Carlos Josué Samayoa Contreras | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | Josué Jeremías Castillo Nieves | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | Jonathan Alexis Amaya Hernández | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | Génesis Michelle Flores Cruz | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | David Rafael Coto Garza | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | Rodrigo Gilberto Sánchez Ávalos | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | Gerson Otoniel Bermúdez Ramírez | *(completar)* | *(SÍ/NO)* |
-| *(insertar)* | Edgard Antonio Mendoza Vaquero | *(completar)* | *(SÍ/NO)* |
+| Integrante | ¿Participó en el Avance 3? |
+| --- | --- |
+| Carlos Josué Samayoa Contreras | SÍ |
+| Josué Jeremías Castillo Nieves | SÍ |
+| Jonathan Alexis Amaya Hernández | SÍ |
+| David Rafael Coto Garza | SÍ |
+| Génesis Michelle Flores Cruz | NO |
+| Rodrigo Gilberto Sánchez Ávalos | NO |
+| Gerson Otoniel Bermúdez Ramírez | NO |
+| Edgard Antonio Mendoza Vaquero | NO |
 
-> Los CIF, las fotografías y la participación se completan en la copia que se entrega; no se publican en el repositorio.
+> Versión pública del documento: los datos personales de la portada (CIF y fotografías) solo figuran en la copia entregada a la universidad.
 
 ---
 
@@ -127,8 +127,6 @@ Ningún cliente accede a MySQL directamente.
 `ApiServer` es la **raíz de composición**: crea los DAO y servicios y los entrega por constructor. Las clases del Avance 3 (`MiembroService`, `AsistenciaService`, `ConvocatoriaConcurrenteService`, `HealthController`) ya no crean sus propias dependencias. Solo dos servicios anteriores, `ReunionService` y `RolService`, todavía crean un DAO propio con `new` (ver §13, pendiente reconocido).
 
 **Mejora adicional de seguridad.** La contraseña provisional de un miembro (`usuario.clave_temporal`) ya no se guarda en texto plano. Se cifra con AES-256-GCM (`util/CifradorCredenciales`) y el valor almacenado lleva el prefijo `enc:v1:`. La API la descifra solo cuando el escritorio debe volver a mostrarla. No es un hash porque la directiva necesita mostrar la clave al miembro hasta que este la cambie. En el servidor DEV se comprobó que los valores guardados empiezan por `enc:v1:`. No es un requisito de la guía; se documenta como mejora complementaria.
-
-**[EVIDENCIA PENDIENTE: Captura de `clave_temporal` con prefijo `enc:v1:` (valor recortado)]**
 
 ---
 
@@ -265,8 +263,6 @@ Ninguno de esos casos pasa por el mismo monitor de Java. La única autoridad que
 
 La segunda ejecución no creó duplicados: la restricción única y `INSERT IGNORE` funcionaron sobre la base real.
 
-**[EVIDENCIA PENDIENTE: Captura de la 1.ª convocatoria (25 convocados), la 2.ª (25 omitidos) y `SELECT COUNT(*)` = 25]**
-
 **Evidencia en las pruebas** (`ConvocatoriaConcurrenteServiceTest`, `JdbcConvocatoriaRepositoryTest`):
 
 - Las tareas corren en los hilos del executor y se solapan: cuatro lotes están en curso al mismo tiempo, comprobado con un `CountDownLatch`.
@@ -380,8 +376,6 @@ Forma de la respuesta (los valores de `activas` e `inactivas` cambian con la car
 ```json
 {"service":"asociacion-api","database":"available","pool":{"activas":0,"inactivas":4,"maxActivas":20}}
 ```
-
-**[EVIDENCIA PENDIENTE: Captura de `GET /health` en DEV con HTTP 200 y `maxActivas: 20`]**
 
 ---
 
@@ -563,8 +557,6 @@ El mensaje de la excepción es un texto seguro; la `SQLException` original se co
 
 **Validación con la base real (DEV).** Con MySQL detenido, la API respondió **503** sin SQL ni SQLState en la respuesta. Al volver MySQL, la API recuperó la operación normal (HTTP 200).
 
-**[EVIDENCIA PENDIENTE: Captura de la respuesta 503 sin SQL y de `/health` en 200 tras la recuperación]**
-
 ### Hallazgo de QA: diferencia de esquema expuesta por el nuevo manejo de excepciones
 
 Durante las pruebas funcionales, crear o editar una reunión en DEV respondía "Ocurrió un error al acceder a los datos." (HTTP 500).
@@ -579,8 +571,6 @@ Durante las pruebas funcionales, crear o editar una reunión en DEV respondía "
   - el índice `idx_reunion_proyecto`.
 - **Reprueba.** QA volvió a probar crear y editar reuniones y la convocatoria, con resultado correcto.
 - **Lección.** Un error silenciado no desaparece: se convierte en pérdida de datos invisible. Falta además un control que verifique qué migraciones tiene aplicadas cada ambiente. Por coherencia, `database/schema.sql` se alineó con la misma definición de `V009`: `descripcion VARCHAR(500)` y el índice `idx_reunion_proyecto`.
-
-**[EVIDENCIA PENDIENTE: Captura del registro con `SQLState=42S22` / `1054`, de `SHOW CREATE TABLE reunion` corregido y de una reunión creada con éxito]**
 
 ---
 
@@ -627,7 +617,7 @@ void restableceCuentaExistente() {
 }
 ```
 
-**Evidencia de ejecución.** Las pruebas corrieron en GitHub Actions (flujo "Compilar y publicar QA") sobre el merge del PR #40 en `develop` (`048bc33`). También se ejecutaron localmente con `./mvnw clean test`. Las capturas se listan en el Anexo B.
+**Evidencia de ejecución.** Las pruebas corrieron en GitHub Actions (flujo "Compilar y publicar QA") sobre el merge del PR #40 en `develop` (`048bc33`). También se ejecutaron localmente con `./mvnw clean test`. El Anexo B resume las evidencias.
 
 | Módulo | Pruebas | Fallos | Errores | Omitidas |
 | --- | ---: | ---: | ---: | ---: |
@@ -639,9 +629,9 @@ void restableceCuentaExistente() {
 - **CI:** ejecución <https://github.com/Miascn/AsociacionComunal/actions/runs/39178684908>, flujo "Compilar y publicar QA", evento `push` en `develop`, commit `048bc33`, resultado `success`.
 - **Local:** `./mvnw -pl api clean test` el 25/10/2026 terminó con código 0 (BUILD SUCCESS). Los reportes de Surefire suman 42 clases, 385 pruebas, 0 fallos, 0 errores y 0 omitidas.
 
-**[EVIDENCIA PENDIENTE: Captura de la ejecución de GitHub Actions con API 385/385 y escritorio 70/70]**
+![Ejecución de GitHub Actions](evidencias/actions.png)
 
-**[EVIDENCIA PENDIENTE: Captura de `./mvnw clean test` con BUILD SUCCESS]**
+*Figura: ejecución "Compilar y publicar QA" sobre el merge del PR #40 (`048bc33`), estado Success. Los totales de pruebas (385 y 70) aparecen en el registro de la ejecución, visible al iniciar sesión en GitHub.*
 
 **Qué cubren las pruebas, según la guía:**
 
@@ -689,14 +679,24 @@ void restableceCuentaExistente() {
   - Enlaces:
     - PR: <https://github.com/Miascn/AsociacionComunal/pull/40> (estado `MERGED`, 18/10/2026; merge `048bc33917e1d1954f2429ace754c19271273e3b`);
     - versión: <https://github.com/Miascn/AsociacionComunal/releases/tag/qa-v1.4.42> (apunta a `048bc33`; archivos `AsociacionComunalQA-1.4.42-win64.zip` y `sha256.txt`).
-- **Cierre de la entrega:** la alineación final de `database/schema.sql` con `V009` y esta documentación se integran a `develop` mediante la rama `fix/avance3-entrega-final` y su Pull Request.
+- **Cierre de la entrega:** la alineación final de `database/schema.sql` con `V009` y esta documentación se integraron a `develop` con el Pull Request **#41** (`fix/avance3-entrega-final` → `develop`), mediante un merge commit. **Commit final de `develop`: `a391c7f`.**
 - **Participación:** el historial de `develop` registra commits de las cuentas `MiasCN` (Josué Castillo), `SamayoaGit` / Carlos Samayoa y `G3rze` (Gerson Bermúdez). La participación de cada integrante en esta entrega se declara en la portada.
 
-**[EVIDENCIA PENDIENTE: Captura del PR #40 en estado Merged]**
+![Pull Request 40](evidencias/pr40.png)
 
-**[EVIDENCIA PENDIENTE: Captura de `git log --oneline --graph` con el merge `048bc33`]**
+*Figura: PR #40, implementación del Avance 3 (13 commits), integrado a `develop` el 18/10/2026.*
 
-**[EVIDENCIA PENDIENTE: Captura de la versión `qa-v1.4.42` en GitHub]**
+![Pull Request 41](evidencias/pr41.png)
+
+*Figura: PR #41, cierre de la entrega (alineación de `schema.sql` con `V009` y documentación final), integrado el 25/10/2026.*
+
+![Historial de develop](evidencias/commits.png)
+
+*Figura: historial de `develop` con los merges `a391c7f` (PR #41) y `048bc33` (PR #40) y los commits por bloque.*
+
+![Versión qa-v1.4.42](evidencias/release.png)
+
+*Figura: versión `qa-v1.4.42` generada por GitHub Actions desde `048bc33`; es la versión validada en el servidor DEV. Las tildes rotas del título son un problema de codificación del nombre que asigna el flujo de publicación; no afectan al paquete.*
 
 ---
 
@@ -727,35 +727,30 @@ Validación realizada por el equipo sobre el servidor DEV con `develop` (`048bc3
 | Pruebas funcionales de QA | Inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales: correctos tras corregir `V009` en DEV |
 | Diferencia de esquema `V009` | Causa identificada (§15), esquema de `reunion` corregido en DEV, reprueba de QA correcta |
 
-**[EVIDENCIA PENDIENTE: Capturas de las pruebas funcionales de QA: inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales]**
-
 ### Anexo B — Evidencias
 
 **Evidencia verificable en GitHub** (consultada con `gh` el 25/10/2026):
 
 | Evidencia | Dato verificado |
 | --- | --- |
-| Pull Request #40 | `feature/avance3-implementation` → `develop`, estado `MERGED`, 18/10/2026 |
+| Pull Request #40 | `feature/avance3-implementation` → `develop`, estado `MERGED`, 18/10/2026 (captura en §17) |
 | Merge commit | `048bc33917e1d1954f2429ace754c19271273e3b` |
-| GitHub Actions | "Compilar y publicar QA", `push` en `develop` sobre `048bc33`, resultado `success` (ejecución 39178684908) |
-| Versión QA | `qa-v1.4.42`, publicada el 19/10/2026, apunta a `048bc33` |
-| Pruebas locales | `./mvnw -pl api clean test`: código de salida 0; 385 pruebas, 0 fallos, 0 errores |
+| Pull Request #41 | `fix/avance3-entrega-final` → `develop`, estado `MERGED`, 25/10/2026 (captura en §17) |
+| Commit final de `develop` | `a391c7f` (merge del PR #41) |
+| GitHub Actions | "Compilar y publicar QA", `push` en `develop` sobre `048bc33`, resultado `success` (ejecución 39178684908; captura en §16) |
+| Versión QA validada | `qa-v1.4.42`, publicada el 19/10/2026, apunta a `048bc33` (captura en §17) |
+| Pruebas locales | `./mvnw -pl api clean test`: código de salida 0 (BUILD SUCCESS); 385 pruebas, 0 fallos, 0 errores |
 
-**Capturas pendientes.** Las inserta el equipo en la copia que se entrega; no se incluyen capturas que no se hayan tomado. Cada fila indica qué debe verse y dónde colocarla.
+**Evidencias de la validación en el servidor DEV y de QA.** Las realizó el equipo sobre la base real y se documentan con sus resultados en las secciones indicadas:
 
-| # | Evidencia | Qué debe mostrar la captura | Dónde insertarla |
+| # | Evidencia | Resultado obtenido | Sección |
 | ---: | --- | --- | --- |
-| 1 | Pull Request #40 | `feature/avance3-implementation` → `develop`, estado *Merged*, lista de commits | §17 |
-| 2 | Merge commit | `048bc33` en el historial de `develop` (por ejemplo `git log --oneline --graph`) | §17 |
-| 3 | GitHub Actions | Ejecución exitosa de "Compilar y publicar QA" con API 385/385 y escritorio 70/70 | §16 |
-| 4 | Versión QA | Release `qa-v1.4.42` en GitHub | §17 |
-| 5 | `/health` | HTTP 200, `database: available`, `maxActivas: 20` | §12 |
-| 6 | Concurrencia | Respuesta de la 1.ª convocatoria (25 convocados), de la 2.ª (25 omitidos) y `SELECT COUNT(*)` igual a 25 | §10 |
-| 7 | Base caída | Respuesta HTTP 503 sin SQL y, después, `/health` en 200 | §15 |
-| 8 | Cifrado de claves | Valor de `clave_temporal` que empieza por `enc:v1:` (recortar el resto del valor) | §6 |
-| 9 | QA funcional | Inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales | Anexo A |
-| 10 | Corrección `V009` | Registro con `SQLState=42S22` / `1054`, `SHOW CREATE TABLE reunion` después de la corrección y reunión creada con éxito | §15 |
-| 11 | Pruebas locales | Salida de `./mvnw clean test` con `BUILD SUCCESS` | §16 |
+| 1 | `/health` | HTTP 200, `database: available`, `maxActivas: 20` | §12 |
+| 2 | Concurrencia | 1.ª convocatoria: 25 convocados; 2.ª: 0 convocados y 25 omitidos; `COUNT(*)` = 25 | §10 |
+| 3 | Base caída | HTTP 503 sin SQL; al recuperarse la base, HTTP 200 | §15 |
+| 4 | Cifrado de claves | `clave_temporal` almacenada con prefijo `enc:v1:` | §6 |
+| 5 | QA funcional | Inicio de sesión, miembros, reuniones, aportaciones, Auto-convocar, inicio de sesión móvil y generación de credenciales: aprobados | Anexo A |
+| 6 | Corrección `V009` | Causa `SQLState=42S22` / `1054` identificada; esquema de `reunion` corregido; crear y editar reuniones aprobados | §15 |
 
 ### Anexo C — cómo ejecutar y verificar
 
